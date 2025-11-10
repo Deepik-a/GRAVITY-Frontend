@@ -1,9 +1,9 @@
 "use client";
-
 import { useAxiosInterceptor } from "@/services/api/useAxiosInterceptor";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "react-toastify";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+             <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+          {children}
+        </GoogleOAuthProvider>
           {/* ToastContainer renders at the root level */}
           <ToastContainer
           position="top-right"
