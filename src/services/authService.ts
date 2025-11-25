@@ -1,10 +1,13 @@
 import api from "./api/useApi";
 import { AxiosError } from "axios";
-import { SignupData, LoginData, AuthResponse, GoogleAuthResponse,Profile } from "@/types/authTypes";
+import {
+  SignupData,
+  LoginData,
+  AuthResponse,
+  GoogleAuthResponse,
+  Profile,
+} from "@/types/authTypes";
 
-/**
- * Utility function to extract a safe error message
- */
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   const err = error as AxiosError<{ error?: string; message?: string }>;
   return (
@@ -14,175 +17,105 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
   );
 };
 
-/**
- * ✅ Signup User
- * Backend should set cookies (accessToken, refreshToken)
- */
-export const signupUser = async (data: SignupData): Promise<AuthResponse> => {
-  console.log("📩 Reached signupUser service");
+const AUTH = "/auth";
+const ADMIN = "/admin";
 
+// --------------------------------------------------
+// GENERIC POST WRAPPER
+// --------------------------------------------------
+const post = async (endpoint: string, body: unknown, fallback: string) => {
   try {
-    const response = await api.post<AuthResponse>("/signup", data, {
-      withCredentials: true, // include cookies
+    const response = await api.post(endpoint, body, {
+      withCredentials: true,
     });
-
-    console.log("✅ Signup Success:", response.data);
     return response.data;
   } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Signup failed — unexpected error occurred.");
-    console.error("❌ Signup Error:", errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(extractErrorMessage(error, fallback));
   }
 };
 
-/**
- * ✅ Login User
- * Backend sets cookies, frontend does not manually store tokens
- */
-export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
-  console.log("📩 Reached loginUser service");
+// --------------------------------------------------
+// USER / COMPANY SIGNUP
+// --------------------------------------------------
+export const signupUser = async (data: SignupData): Promise<AuthResponse> => {
+  return post(`${AUTH}/signup`, data, "Signup failed");
+};
 
+// --------------------------------------------------
+// USER / COMPANY LOGIN
+// --------------------------------------------------
+export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
+  return post(`${AUTH}/login`, data, "Login failed");
+};
+
+// --------------------------------------------------
+// ADMIN LOGIN
+// --------------------------------------------------
+export const loginAdmin = async (
+  data: LoginData
+): Promise<{ accessToken: string; refreshToken: string; message: string }> => {
+  return post(`${ADMIN}/login`, data, "Admin login failed");
+};
+
+// --------------------------------------------------
+// FORGOT PASSWORD
+// --------------------------------------------------
+export const forgotPassword = (email: string) =>
+  post(`${AUTH}/forgot-password`, { email }, "Forgot password failed");
+
+// --------------------------------------------------
+// VERIFY OTP
+// --------------------------------------------------
+export const verifyOtp = (email: string, otp: string, purpose: string) =>
+  post(`${AUTH}/verify-otp`, { email, otp, purpose }, "Verify OTP failed");
+
+// --------------------------------------------------
+// RESEND OTP
+// --------------------------------------------------
+export const resendOtp = (email: string) =>
+  post(`${AUTH}/resend-otp`, { email }, "Resend OTP failed");
+
+// --------------------------------------------------
+// RESET PASSWORD
+// --------------------------------------------------
+export const resetPassword = (email: string, newPassword: string) =>
+  post(`${AUTH}/reset-password`, { email, newPassword }, "Reset password failed");
+
+// --------------------------------------------------
+// GOOGLE LOGIN
+// --------------------------------------------------
+export const googleLogin = async (
+  googleIdToken: string,
+  role: string
+): Promise<GoogleAuthResponse> => {
+  return post(
+    `${AUTH}/google`,
+    { token: googleIdToken, role },
+    "Google login failed"
+  );
+};
+
+// --------------------------------------------------
+// GET PROFILE
+// --------------------------------------------------
+export const getProfile = async (): Promise<Profile> => {
   try {
-    const response = await api.post<AuthResponse>("/login", data, {
+    const response = await api.get(`${AUTH}/profile`, {
       withCredentials: true,
     });
 
-    console.log("✅ Login Success:", response.data);
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Login failed — unexpected error occurred.");
-    console.error("❌ Login Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
+    const p = response.data.profile;
 
-/**
- * ✅ Verify OTP
- */
-export const verifyOtp = async (
-  email: string,
-  otp: string
-): Promise<AuthResponse> => {
-  console.log("📩 Verifying OTP for:", email);
-  try {
-    const response = await api.post<AuthResponse>(
-      "/verify-otp",
-      { email, otp },
-      { withCredentials: true }
-    );
-
-    console.log("✅ OTP Verified:", response.data);
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "OTP verification failed — unexpected error occurred.");
-    console.error("❌ OTP Verification Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Resend OTP
- */
-export const resendOtp = async (email: string): Promise<{ message: string }> => {
-  console.log("📨 Reached resendOtp service, email:", email);
-  try {
-    const response = await api.post<{ message: string }>("/resend-otp", { email });
-    console.log("✅ Resend OTP Response:", response.data.message);
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Resend OTP failed — unexpected error occurred.");
-    console.error("❌ Resend OTP Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Forgot Password
- */
-export const forgotPassword = async (email: string) => {
-  try {
-    const response = await api.post("/forgot-password", { email });
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Forgot Password failed — unexpected error occurred.");
-    console.error("❌ Forgot Password Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Verify Forgot Password OTP
- */
-export const verifyForgotOtp = async (email: string, otp: string) => {
-  try {
-    const response = await api.post("/verify-forgot-otp", { email, otp });
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Verify Forgot OTP failed — unexpected error occurred.");
-    console.error("❌ Verify Forgot OTP Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Reset Password
- */
-export const resetPassword = async (email: string, newPassword: string) => {
-  try {
-    const response = await api.post("/reset-password", { email, newPassword });
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Reset Password failed — unexpected error occurred.");
-    console.error("❌ Reset Password Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Google Login (cookie-based)
- */
-export const googleLogin = async (googleIdToken: string): Promise<GoogleAuthResponse> => {
-  console.log("📩 Google login attempt");
-  try {
-    const response = await api.post<GoogleAuthResponse>(
-      "/google",
-      { token: googleIdToken },
-      { withCredentials: true }
-    );
-
-    console.log("✅ Google Login Success:", response.data);
-    return response.data;
-  } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Google login failed — unexpected error occurred.");
-    console.error("❌ Google Login Error:", errorMsg);
-    throw new Error(errorMsg);
-  }
-};
-
-/**
- * ✅ Fetch User Profile
- * (Browser automatically sends cookies with request)
- */
-export const getProfile = async () => {
-  try {
-       const response = await api.get("/profile", { withCredentials: true });
-    const profile = response.data.profile;
-
-    // 🧩 Transform backend fields → frontend shape
-    const transformedProfile: Profile = {
-      id: profile.userId,               // ✅ rename
-      name: profile.name,
-      email: profile.email,
-      phone: profile.phone || "",
-      location: profile.location || "",
-      bio: profile.bio || "",
-      profileImage: profile.profileImage || "",
+    return {
+      id: p.userId,
+      name: p.name,
+      email: p.email,
+      phone: p.phone || "",
+      location: p.location || "",
+      bio: p.bio || "",
+      profileImage: p.profileImage || "",
     };
-
-    return transformedProfile;
   } catch (error) {
-    const errorMsg = extractErrorMessage(error, "Failed to fetch user profile.");
-    console.error("❌ Get Profile Error:", errorMsg);
-    throw new Error(errorMsg);
+    throw new Error(extractErrorMessage(error, "Failed to fetch profile"));
   }
 };

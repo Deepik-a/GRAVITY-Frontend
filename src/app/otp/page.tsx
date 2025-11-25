@@ -2,7 +2,6 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { verifyOtp, resendOtp } from "../../services/authService";
-import { verifyForgotOtp } from "../../services/authService";
 import { toast } from "react-toastify";
 import AuthLayout from "../../components/auth/AuthLayout";
 
@@ -10,7 +9,6 @@ export default function OtpPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
-  const action = searchParams.get("action") || "signup"; // 'signup' or 'login'
 
   const [otp, setOtp] = useState<string[]>(new Array(5).fill(""));
   const [timeLeft, setTimeLeft] = useState<number>(30);
@@ -123,43 +121,68 @@ export default function OtpPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const getFromLocalStorage = (key: string) => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(key);
+};
 
-    const otpValue = otp.join("");
+const roleFromStorage = getFromLocalStorage("role");
 
-    // Validate OTP is complete
-    if (otpValue.length !== 5) {
-      toast.error("Please enter the complete 5-digit OTP");
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const otpValue = otp.join("");
+
+  // Validate OTP is complete
+  if (otpValue.length !== 5) {
+    toast.error("Please enter the complete 5-digit OTP");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    // ⭐ Get purpose and email from localStorage
+    const purpose = localStorage.getItem("otpPurpose");
+    const emailFromStorage = localStorage.getItem("otpEmail");
+
+    if (!purpose || !emailFromStorage) {
+      toast.error("OTP session expired. Please try again.");
       return;
     }
 
-    setIsLoading(true);
+    // Use the stored email instead of any other source
+    const emailToVerify = emailFromStorage;
 
-    try {
-      if (action === "forgot") {
-        await verifyForgotOtp(email, otpValue);
-        toast.success("✅ OTP verified! You can now reset your password.");
-        setTimeout(() => {
-          router.push(`/ResetPassword?email=${encodeURIComponent(email)}`);
-        }, 1500);
-      } else {
-        await verifyOtp(email, otpValue);
-        toast.success("✅ Email verified successfully!");
-        setTimeout(() => {
-          router.push(
-            `/signup?verified=true&email=${encodeURIComponent(
-              email
-            )}&show=login`
-          );
-        }, 1500);
-      }
-    } catch (error) {
-      toast.error((error as Error).message);
-    } finally {
-      setIsLoading(false);
+    // Call verifyOtp backend function
+    await verifyOtp(emailToVerify, otpValue, purpose);
+
+    if (purpose === "forgot-password") {
+      toast.success("✅ OTP verified! You can now reset your password.");
+      setTimeout(() => {
+        router.push(`/ResetPassword?email=${encodeURIComponent(emailToVerify)}`);
+      }, 1500);
+    } else if (purpose === "signup") {
+     toast.success("✅ Email verified successfully!");
+  setTimeout(() => {
+    if (roleFromStorage === "company") {
+       router.push(`/Company/VerificationPage?email=${encodeURIComponent(emailToVerify)}`);
+    } else {
+      router.push(
+        `/signup?verified=true&email=${encodeURIComponent(emailToVerify)}&show=login`
+      );
     }
-  };
+  }, 1500);
+    } else {
+      toast.error("Invalid OTP purpose.");
+    }
+  } catch (error) {
+    toast.error((error as Error).message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // When resending OTP
   const handleResendOtp = async () => {

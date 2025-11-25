@@ -7,9 +7,14 @@ import { useRouter } from 'next/navigation';
 const GravityLandingPage = () => {
   const [activeText, setActiveText] = useState('HomeOwners');
   const [showModal, setShowModal] = useState(false);
-  const [userType, setUserType] = useState<'homeowner' | 'builder' | null>(null);
+  const [userType, setUserType] = useState<'user' | 'company' | null>(null);
   const router = useRouter();
   
+   const handleSelect = (type: 'user' | 'company') => {
+    setUserType(type);
+    // Navigate to sign-up page with type as query param
+    router.push(`/signup?userType=${type}`);
+  };
   // Mock data for top rated companies
   const topCompanies = [
     {
@@ -72,6 +77,7 @@ const GravityLandingPage = () => {
         <title>GRAVITY - Connecting HomeOwners with Trusted Builders & Experts</title>
         <meta name="description" content="The future of home construction is here. Connect with verified builders, get transparent pricing, and build your dream home with confidence." />
       </Head>
+      {JSON.stringify(userType)}
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-[#000E29]/90 backdrop-blur-sm z-50 border-b border-[#D29804]/20">
@@ -370,16 +376,16 @@ const GravityLandingPage = () => {
             <div className="space-y-4 mb-8">
               {/* Homeowner Option */}
               <button
-                onClick={() => setUserType('homeowner')}
+                onClick={() => handleSelect('user')}
                 className={`w-full p-6 rounded-2xl border-2 transition-all ${
-                  userType === 'homeowner' 
+                  userType === 'user' 
                     ? 'border-[#EEB21B] bg-[#EEB21B]/10' 
                     : 'border-white/20 bg-white/5 hover:border-[#EEB21B]/50'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="text-left">
-                    <div className="text-lg font-semibold text-white">Homeowner</div>
+                    <div className="text-lg font-semibold text-white">HomeOwner/HomeDreamer</div>
                     <div className="text-sm text-gray-300 mt-1">Looking to build your dream home</div>
                   </div>
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#D29804] to-[#EEB21B] flex items-center justify-center">
@@ -392,9 +398,9 @@ const GravityLandingPage = () => {
 
               {/* Builder Option */}
               <button
-                onClick={() => setUserType('builder')}
+                onClick={() => handleSelect('company')}
                 className={`w-full p-6 rounded-2xl border-2 transition-all ${
-                  userType === 'builder' 
+                  userType === 'company' 
                     ? 'border-[#EEB21B] bg-[#EEB21B]/10' 
                     : 'border-white/20 bg-white/5 hover:border-[#EEB21B]/50'
                 }`}

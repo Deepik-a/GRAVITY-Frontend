@@ -11,6 +11,7 @@ import {
   validateConfirmPassword,
 } from "@/utils/validation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { SignupData } from "@/types/authTypes";
 
 
 export default function SignupPage() {
@@ -22,6 +23,17 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [hydrated, setHydrated] = useState(false);
     const [loading, setLoading] = useState(false);
+     const [role, setRole] = useState<'user' | 'company' | null>(null);
+
+  useEffect(() => {
+  const userType = searchParams.get('userType');
+  if (userType === 'user' || userType === 'company') {
+    setRole(userType);
+    console.log("🎯 Role detected from URL:", userType);
+  } else {
+    console.warn("⚠️ No valid role found in URL params");
+  }
+}, [searchParams]);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -107,68 +119,112 @@ export default function SignupPage() {
   };
 
   // ✅ Signup submit handler
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-     if (loading) return; // prevent double submission
-      setLoading(true); // prevent double submission
-    console.log("🚀 handleSubmit function CALLED");
-    console.log("📋 Form data:", formData);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    // Validate
-    const nameError = validateName(formData.name);
-    const emailError = validateEmail(formData.email);
-    const phoneError = validatePhone(formData.phone);
-    const passwordError = validatePassword(formData.password);
-    const confirmPasswordError = validateConfirmPassword(
-      formData.password,
-      formData.confirmPassword
-    );
+  if (!role) {
+    alert("Role not selected");
+    return;
+  }
 
-    console.log("🔍 Validation errors:", {
-      nameError, emailError, phoneError, passwordError, confirmPasswordError
-    });
+  if (loading) return;
+  setLoading(true);
 
-    setErrors({ name: nameError, email: emailError, phone: phoneError, password: passwordError, confirmPassword: confirmPasswordError });
+  // Validation
+  const nameError = validateName(formData.name);
+  const emailError = validateEmail(formData.email);
+  const phoneError = validatePhone(formData.phone);
+  const passwordError = validatePassword(formData.password);
+  const confirmPasswordError = validateConfirmPassword(
+    formData.password,
+    formData.confirmPassword
+  );
 
-    if (nameError || emailError || phoneError || passwordError || confirmPasswordError) {
-      console.log("❌ Validation failed, returning early");
-      toast.warning("Please fix all validation errors before submitting.");
-      return;
-    }
-    
-    console.log("✅ Validation passed, making API call");
-    try {
-      console.log("formdata", formData);
-      const response = await signupUser(formData);
-      toast.success(response.message || "Signup successful!");
+  setErrors({
+    name: nameError,
+    email: emailError,
+    phone: phoneError,
+    password: passwordError,
+    confirmPassword: confirmPasswordError,
+  });
 
-      // ✅ Redirect to OTP page
-      router.push(`/otp?email=${encodeURIComponent(formData.email)}&action=signup`);
+  if (nameError || emailError || phoneError || passwordError || confirmPasswordError) {
+    toast.warning("Please fix all validation errors before submitting.");
+    setLoading(false);
+    return;
+  }
 
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error("Signup Error:", err.message);
-      console.error("Failed formdata:", formData);
-      toast.warning(err.message || "Signup failed!");
-    }
+  const signupData: SignupData = {
+    ...formData,
+    role, // ✅ correct role
   };
+  console.log(signupData, "signupData from frontend");
+
+  try {
+    const response = await signupUser(signupData);
+    toast.success(response.message || "Signup successful!");
+
+    // ⭐ Save OTP purpose, email, and role
+    localStorage.setItem("otpPurpose", "signup");
+    localStorage.setItem("otpEmail", formData.email);
+    //role is stored because after otp verification go to company verification page for company and login for user
+    localStorage.setItem("role", role); // ✅ store role
+
+    router.push(`/otp?email=${encodeURIComponent(formData.email)}&action=signup`);
+  } catch (error: unknown) {
+    const err = error as Error;
+    toast.warning(err.message || "Signup failed!");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   // ✅ Login submit handler
-  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    try {
-      console.log("loginData", loginData);
-      const response = await loginUser(loginData);
-      toast.success(response.message || "Login successful!");
-      // Handle successful login (redirect to dashboard, etc.)
-       // ✅ Redirect to landing page after successful login
-    router.push("/LandingPage"); // change "/landing" to your actual landing page route
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error("Login Error:", err.message);
-      toast.warning(err.message || "Login failed!");
+// ✅ Login submit handler (role added)
+const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+
+
+  try {
+    const finalLoginData = {
+      email: loginData.email,
+      password: loginData.password,
+      role: role,  // <-- add role here
+    };
+
+    console.log("📤 Sending Login Payload:", finalLoginData);
+
+    const response = await loginUser(finalLoginData);
+
+    console.log("response of login",response)
+    toast.success(response.message || "Login successful!");
+
+    // 🔥 Role-based redirect (same behavior as Google Auth)
+    if (response.role === "user") {
+      router.push("/User/HomePage");
+
+    } else if (response.role === "company") {
+   
+        router.push("/Company/CompanyDetails");
+
+    } else if (response.role === "admin") {
+      router.push("/Admin/AdminDashboard");
+
+    } else {
+      router.push("/");
     }
-  };
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Login Error:", err.message);
+    toast.warning(err.message || "Login failed!");
+  }
+};
+
+
 
   // ✅ Forgot Password handler
   const handleForgotPassword = () => {
@@ -176,35 +232,54 @@ export default function SignupPage() {
       toast.info("Please enter your email address first");
       return;
     }
+
+      // ⭐ Save OTP purpose + email
+  localStorage.setItem("otpPurpose", "forgot-password");
+  localStorage.setItem("otpEmail", loginData.email);
+
     // Redirect to forgot password page with email pre-filled
-    router.push(`/ForgotPassword?email=${encodeURIComponent(loginData.email)}&action=forgot`);
+    router.push(`/ForgotPassword?email=${encodeURIComponent(loginData.email)}`);
   };
 
 
-const handleGoogleSignup = async (credentialResponse: CredentialResponse) => {
-  if (credentialResponse.credential) {
-    try {
-      const res = await googleLogin(credentialResponse.credential);
-      toast.success(res.message || "Google signup successful!");
-      router.push("/LandingPage");
-    } catch (error: unknown) {
-      const err = error as Error;
-      toast.error(err.message || "Google signup failed!");
-    }
+// ✅ Unified Google Auth handler
+const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
+  if (!credentialResponse.credential) {
+    toast.error("Google authentication failed");
+    return;
   }
-};
+  try {
+    console.log(`🚀 Google ${isSignup ? "Signup" : "Login"} for role:`, role);
 
-// ✅ Google Login handler
-const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
-  if (credentialResponse.credential) {
-    try {
-      const res = await googleLogin(credentialResponse.credential);
-      toast.success(res.message || "Google login successful!");
-      router.push("/LandingPage");
-    } catch (error: unknown) {
-      const err = error as Error;
-      toast.error(err.message || "Google login failed!");
+    // 1️⃣ Call backend Google login/signup
+    const res = await googleLogin(credentialResponse.credential, role);
+
+    // 2️⃣ Show success toast
+    const action = isSignup ? "signup" : "login";
+    toast.success(res.message || `Google ${action} successful!`);
+
+    // 3️⃣ Decide redirect based on role & status
+    if (res.user.role === "user") {
+    console.log("res.user.role ", res.user.role) // ✅ correct
+       
+      router.push("/User/HomePage");
+    } else if (res.user.role === "company") {
+      if (res.user.isPending) {
+        // Company not verified → go to document upload page
+     router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
+
+      } else {
+        // Verified company → go to dashboard
+        router.push("/Company/CompanyDetails");
+      }
+    } else {
+      // Fallback for unknown roles
+      router.push("/");
     }
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error(`❌ Google ${isSignup ? "Signup" : "Login"} Error:`, err.message);
+    toast.error(err.message || `Google ${isSignup ? "signup" : "login"} failed!`);
   }
 };
 
@@ -224,25 +299,37 @@ const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
       <div className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
         <div className="flex flex-col md:flex-row min-h-[600px]">
           {/* Left Side - Video */}
-          <div
-            className={`md:w-1/2 transition-all duration-700 ${
-              isSignup ? "order-1 md:order-1" : "order-1 md:order-2"
-            }`}
-          >
-            <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
-              <video
-                className="absolute top-0 left-0 w-full h-full object-cover object-bottom"
-                src="/assets/SignUpBackgroundVideo.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                poster="/assets/AlternativeSignUpImage.jpg"
-              />
-            </div>
-          </div>
+     
+<div
+  className={`md:w-1/2 transition-all duration-700 ${
+    isSignup ? "order-1 md:order-1" : "order-1 md:order-2"
+  }`}
+>
+  <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
+    <video
+      className="absolute top-0 left-0 w-full h-full object-cover object-bottom"
+      src={
+        role === "company"
+          ? "/assets/AlternativeSignUpImage.jpg"   // company poster
+          : "/assets/SignUpBackgroundVideo.mp4" // default homeowner/user video
+      }
+      autoPlay
+      loop
+      muted
+      playsInline
+      poster={
+        role === "company"
+          ? "/assets/AlternativeSignUpImage.jpg"
+          : "/assets/worker.png"
+      }
+    />
+  </div>
+</div>
+
+
 
           {/* Right Side - Form Section */}
+         
           <div
             className={`md:w-1/2 transition-all duration-700 ${
               isSignup ? "order-2 md:order-2" : "order-2 md:order-1"
@@ -301,7 +388,7 @@ const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
 <div className="flex justify-center">
   <div className="w-full"> {/* Full width container */}
     <GoogleLogin
-      onSuccess={handleGoogleLogin}
+      onSuccess={handleGoogleAuth}
       onError={() => toast.error("Google Login Failed")}
       shape="rectangular"
       size="large"
@@ -341,23 +428,24 @@ const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
                       </div>
 
                       {/* Name */}
-                      <div>
-                        <label className="block text-gray-700 text-xs font-semibold mb-2 tracking-wide">
-                          FULL NAME
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          placeholder="John Doe"
-                          value={formData.name}
-                          onChange={handleChange}
-                          className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-[#1E40AF] focus:ring-2 focus:ring-[#1E40AF]/30 outline-none transition-all duration-300"
-                          required
-                        />
-                        {errors.name && (
-                          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                        )}
-                      </div>
+                    <div>
+  <label className="block text-gray-700 text-xs font-bold mb-2 tracking-wide">
+    {role === "company" ? "Company Name" : "Full Name"}
+  </label>
+  <input
+    type="text"
+    name="name"
+    placeholder={role === "company" ? "ABC Builders" : "John Doe"}
+    value={formData.name}
+    onChange={handleChange}
+    className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:border-[#1E40AF] focus:ring-2 focus:ring-[#1E40AF]/30 outline-none transition-all duration-300 text-sm font-medium"
+    required
+  />
+  {errors.name && (
+    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+  )}
+</div>
+
 
                       {/* Phone */}
                       <div>
@@ -492,7 +580,7 @@ const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
                       {/* Google Sign In */}
                       <div className="flex justify-center">
                         <GoogleLogin
-                          onSuccess={handleGoogleLogin}
+                          onSuccess={handleGoogleAuth}
                           onError={() => toast.error("Google Login Failed")}
                           shape="rectangular"
                           size="large"

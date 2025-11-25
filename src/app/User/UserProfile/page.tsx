@@ -21,7 +21,7 @@ import {
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [, setIsEditModalOpen] = useState(false);
 
   // ✅ Profile state and loading
   const [profileData, setProfileData] = useState<Profile | null>(null);
@@ -49,17 +49,17 @@ const Dashboard = () => {
   }, []);
 
   // ✅ Handle profile edits
-  const handleInputChange = (field: keyof Profile, value: string) => {
-    setProfileData((prev) =>
-      prev ? { ...prev, [field]: value } : { [field]: value } as Profile
-    );
-  };
+  // const handleInputChange = (field: keyof Profile, value: string) => {
+  //   setProfileData((prev) =>
+  //     prev ? { ...prev, [field]: value } : { [field]: value } as Profile
+  //   );
+  // };
 
-  const handleSaveChanges = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Saving profile data:", profileData);
-    setIsEditModalOpen(false);
-  };
+  // const handleSaveChanges = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   console.log("Saving profile data:", profileData);
+  //   setIsEditModalOpen(false);
+  // };
 
   // ✅ Get initials safely
   const getInitials = (name?: string) => {
