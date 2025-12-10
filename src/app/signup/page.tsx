@@ -66,16 +66,16 @@ export default function SignupPage() {
     
     if (verified === 'true') {
       toast.success("🎉 Email verified successfully! Please log in to continue.");
+    }
       
-      // Pre-fill email in login form if provided
-      if (email) {
-        setLoginData(prev => ({ ...prev, email: decodeURIComponent(email) }));
-      }
+    // Pre-fill email in login form if provided
+    if (email) {
+      setLoginData(prev => ({ ...prev, email: decodeURIComponent(email) }));
+    }
       
-      // Show login form if specified
-      if (show === 'login') {
-        setIsSignup(false);
-      }
+    // Show login form if specified
+    if (show === 'login') {
+      setIsSignup(false);
     }
   }, [searchParams]);
 
@@ -173,7 +173,14 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     router.push(`/otp?email=${encodeURIComponent(formData.email)}&action=signup`);
   } catch (error: unknown) {
     const err = error as Error;
-    toast.warning(err.message || "Signup failed!");
+    // Handle cross-role registration errors
+    if (err.message.includes("registered as company") || err.message.includes("registered as user")) {
+      toast.error(err.message);
+      // Optional: Automatically switch to login view since they already exist
+      // setIsSignup(false); 
+    } else {
+      toast.warning(err.message || "Signup failed!");
+    }
   } finally {
     setLoading(false);
   }
@@ -200,15 +207,38 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const response = await loginUser(finalLoginData);
 
     console.log("response of login",response)
-    toast.success(response.message || "Login successful!");
+    
+    // Check for role mismatch
+    const uiRole = role || 'user';
+    const returnedRole = response.role;
+
+    if (returnedRole === 'company' && uiRole === 'user') {
+      toast.success("Account found as Company. Redirecting to Company Dashboard...");
+    } else if (returnedRole === 'user' && uiRole === 'company') {
+      toast.success("Account found as User. Redirecting to User Dashboard...");
+    } else {
+      toast.success(response.message || "Login successful!");
+    }
 
     // 🔥 Role-based redirect (same behavior as Google Auth)
     if (response.role === "user") {
       router.push("/User/HomePage");
 
     } else if (response.role === "company") {
-   
-        router.push("/Company/CompanyDetails");
+        
+        const docStatus = response.documentStatus;
+        if (docStatus === "rejected") {
+           toast.error("Documents rejected. Please upload again.");
+           router.push(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
+        } else if (docStatus === "pending") {
+           toast.info("Company verification is pending approval by admin. Please wait.");
+        } else if (!docStatus) {
+           // No docs found (unexpected for existing user but safe fallback)
+           router.push(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
+        } else {
+           // Verified
+           router.push("/Company/CompanyDetails");
+        }
 
     } else if (response.role === "admin") {
       router.push("/Admin/AdminDashboard");
@@ -248,15 +278,31 @@ const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
     toast.error("Google authentication failed");
     return;
   }
+
+  if (!role && isSignup) {
+    toast.warning("Please select a role to sign up.");
+    return;
+  }
+
   try {
     console.log(`🚀 Google ${isSignup ? "Signup" : "Login"} for role:`, role);
 
     // 1️⃣ Call backend Google login/signup
-    const res = await googleLogin(credentialResponse.credential, role);
-
-    // 2️⃣ Show success toast
-    const action = isSignup ? "signup" : "login";
-    toast.success(res.message || `Google ${action} successful!`);
+    // Pass role if selected; backend handles "role required" for new users
+    const res = await googleLogin(credentialResponse.credential, role || undefined);
+console.log(res,"res from signup")
+    // 2️⃣ Handling Role Mismatch & Success Messages
+    const uiRole = role || 'user';
+    const returnedRole = res.user.role;
+    
+    if (returnedRole === 'company' && uiRole === 'user') {
+      toast.success("Email is already registered as company and Google signup successful");
+    } else if (returnedRole === 'user' && uiRole === 'company') {
+       toast.success("Email is already registered as user. Redirecting to User Dashboard...");
+    } else {
+      const action = isSignup ? "signup" : "login";
+      toast.success(res.message || `Google ${action} successful!`);
+    }
 
     // 3️⃣ Decide redirect based on role & status
     if (res.user.role === "user") {
@@ -264,14 +310,24 @@ const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
        
       router.push("/User/HomePage");
     } else if (res.user.role === "company") {
-      if (res.user.isPending) {
-        // Company not verified → go to document upload page
-     router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
-
-      } else {
-        // Verified company → go to dashboard
-        router.push("/Company/CompanyDetails");
-      }
+       // Logic for Rejected, Pending, New
+       const docStatus = res.documentStatus;
+       console.log(docStatus,"docStataus")
+       if (docStatus === "rejected") {
+         toast.error("Documents rejected. Please upload again.");
+         router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
+       } else if (docStatus === "pending") {
+         // Admin approval pending
+         toast.info("Company verification is pending approval by admin. Please wait.");
+         // User requested: "don't redirect to the any page"
+         // Do nothing or maybe clear loading state?
+       } else if (!docStatus || res.isNewUser) {
+          // New company or no docs
+          router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
+       } else {
+         // Verified
+         router.push("/Company/CompanyDetails");
+       }
     } else {
       // Fallback for unknown roles
       router.push("/");

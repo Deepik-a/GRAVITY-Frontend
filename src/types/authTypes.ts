@@ -24,6 +24,8 @@ export interface AuthResponse {
     email: string;
     phone: string;
   };
+  documentStatus?: "pending" | "verified" | "rejected";
+  rejectionReason?: string;
 }
 
 
@@ -34,9 +36,9 @@ export interface GoogleAuthResponse {
     email: string;
     token: string;
     role: 'user' | 'company';
-    isPending?: boolean; // optional for users
   };
   isNewUser: boolean;
+ documentStatus?:"pending"|"verified"|"rejected";
 }
 
 
@@ -58,12 +60,13 @@ export interface CompanyProfile {
   phone: string;
   role: string;
   status: "pending" | "verified" | "blocked";
-  documentStatus: "pending" | "verified" | "rejected";
+  documentStatus: "pending" | "verified" | "rejected";  // <-- THIS MUST EXIST
+    rejectReason?: string;  // <-- NEW FIELD
   documents: {
-      GST_Certificate: string;
-  RERA_License: string;
-  Trade_License: string;
-  }
+    GST_Certificate?: string;
+    RERA_License?: string;
+    Trade_License?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

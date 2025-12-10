@@ -86,7 +86,7 @@ export const resetPassword = (email: string, newPassword: string) =>
 // --------------------------------------------------
 export const googleLogin = async (
   googleIdToken: string,
-  role: string
+  role?: string
 ): Promise<GoogleAuthResponse> => {
   return post(
     `${AUTH}/google`,

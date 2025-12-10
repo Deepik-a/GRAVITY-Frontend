@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Sidebar from '../../../components/admin/SideBarLayout';
+
 
 const AdminDashboard: React.FC = () => {
   const [activeItem, setActiveItem] = useState('Overview');
@@ -17,7 +17,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
+
       
       {/* Main Content */}
       <div className="flex-1 overflow-auto">

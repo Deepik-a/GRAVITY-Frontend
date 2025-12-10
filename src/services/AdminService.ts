@@ -56,11 +56,11 @@ export const getCompanies = async (): Promise<CompanyProfile[]> => {
 };
 
 // Approve or reject a company
-export const verifyCompany = async (companyId: string, approve: boolean) => {
+export const verifyCompany = async (companyId: string, approve: boolean,reason?: string) => {
   try {
     const response = await api.post(
       "admin/verify-company",
-      { companyId, approve },
+      { companyId, approve,reason },
       { withCredentials: true }
     );
     return response.data;

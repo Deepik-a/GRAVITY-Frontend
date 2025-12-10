@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Sidebar from '../../../components/admin/SideBarLayout';
 import { getUsers } from '../../../services/AdminService';
 import { Profile } from '../../../types/authTypes'; // adjust path as needed
 
@@ -10,11 +9,10 @@ import { Profile } from '../../../types/authTypes'; // adjust path as needed
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>('All Users');
-  const [sidebarActive, setSidebarActive] = useState<string>('User Management');
+  // const [activeTab, setActiveTab] = useState<string>('All Users');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const tabs = ['All Users', 'Verified', 'Pending', 'Blocked', 'Premium', 'Free Plan'];
+  // const tabs = ['All Users', 'Verified', 'Pending', 'Blocked', 'Premium', 'Free Plan'];
 
   // Fetch users from API
   useEffect(() => {
@@ -42,7 +40,7 @@ const UserManagementPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      <Sidebar activeItem={sidebarActive} onItemClick={setSidebarActive} />
+    
 
       <div className="flex-1 overflow-auto">
         {/* Mobile Header */}
@@ -72,7 +70,7 @@ const UserManagementPage: React.FC = () => {
               <p className="text-gray-700">Manage homeowners and their accounts</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative">
+              {/* <div className="relative">
                 <input
                   type="text"
                   placeholder="Search users..."
@@ -81,16 +79,16 @@ const UserManagementPage: React.FC = () => {
                   className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] focus:border-transparent text-gray-900"
                 />
                 <i className="fas fa-search absolute left-3 top-3 text-gray-500"></i>
-              </div>
-              <button className="bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl">
+              </div> */}
+              {/* <button className="bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl">
                 <i className="fas fa-filter mr-2"></i> Filters
-              </button>
+              </button> */}
             </div>
           </div>
 
           {/* Tabs */}
           <div className="overflow-x-auto mb-6">
-            <div className="flex space-x-2 min-w-max">
+            {/* <div className="flex space-x-2 min-w-max">
               {tabs.map((tab) => (
                 <button
                   key={tab}
@@ -104,7 +102,7 @@ const UserManagementPage: React.FC = () => {
                   {tab}
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Users Table */}
@@ -148,6 +146,7 @@ const UserManagementPage: React.FC = () => {
     <tr>
       <td colSpan={7} className="text-center py-4 text-gray-500">
         No users found.
+
       </td>
     </tr>
   )}

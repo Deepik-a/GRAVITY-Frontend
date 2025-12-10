@@ -110,7 +110,12 @@ const handleSubmit = async (e: React.FormEvent) => {
     toast.success("Documents uploaded successfully!");
     console.log("📥 Backend response:", result);
 
-    setTimeout(() => router.push("/signup"), 1500);
+   // include email so the login form can be pre-filled (optional)
+const emailParam = encodeURIComponent(email);
+
+// use replace so back button won't return to upload-success
+router.replace(`/signup?show=login&email=${emailParam}`);
+return;
 
   } catch (error: unknown) {
     toast.error("Upload failed");
@@ -123,9 +128,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
 
-  const handleLogout = () => {
-    router.push("/login");
-  };
 
   const setFileInputRef = (docType: string) => (el: HTMLInputElement | null) => {
     fileInputRefs.current[docType] = el;
@@ -213,15 +215,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     <AuthLayout>
       <div className="text-center w-full flex flex-col h-full">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
-          <button
-            onClick={handleLogout}
-            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 text-xs sm:text-sm"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Logout
-          </button>
+       
         </div>
 
         <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#081C45] to-[#1E40AF] bg-clip-text text-transparent mb-2">
