@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import api from "./useApi";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export const useAxiosInterceptor = () => {
+    const router = useRouter();
+
   useEffect(() => {
     // Request interceptor: no need to manually attach tokens
     const requestInterceptor = api.interceptors.request.use(
@@ -20,6 +24,13 @@ export const useAxiosInterceptor = () => {
           console.warn("Unauthorized - token expired or invalid");
           // Optionally, trigger re-login or silent refresh here
         }
+
+        // ⛔ Handle Blocked User (403 + Specific Message)
+        if (error.response?.status === 403 && error.response?.data?.message === "Your account has been blocked. Please contact admin.") {
+            toast.error("You have been removed from the site, contact admin");
+            
+        }
+
         return Promise.reject(error);
       }
     );
@@ -29,5 +40,5 @@ export const useAxiosInterceptor = () => {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
     };
-  }, []);
+  }, [router]);
 };

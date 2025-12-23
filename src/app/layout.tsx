@@ -1,9 +1,6 @@
-"use client";
-import { useAxiosInterceptor } from "@/services/api/useAxiosInterceptor";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ToastContainer } from "react-toastify";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { Providers } from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,23 +17,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useAxiosInterceptor(); // Enables JWT interceptor globally
-
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-             <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          {children}
-        </GoogleOAuthProvider>
-          {/* ToastContainer renders at the root level */}
-          <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          closeOnClick
-          pauseOnHover
-          draggable
-          theme="colored"/>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

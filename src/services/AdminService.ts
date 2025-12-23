@@ -68,3 +68,21 @@ export const verifyCompany = async (companyId: string, approve: boolean,reason?:
     throw new Error(extractErrorMessage(error, "Failed to verify company"));
   }
 };
+
+export const toggleUserBlockStatus = async (userId: string, isBlocked: boolean) => {
+  try {
+    const response = await api.patch("admin/users/block", { id: userId, isBlocked }, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to update user block status"));
+  }
+};
+
+export const toggleCompanyBlockStatus = async (companyId: string, isBlocked: boolean) => {
+  try {
+     const response = await api.patch("admin/companies/block", { id: companyId, isBlocked }, { withCredentials: true });
+     return response.data;
+  } catch (error) {
+     throw new Error(extractErrorMessage(error, "Failed to update company block status"));
+  }
+};

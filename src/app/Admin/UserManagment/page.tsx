@@ -1,163 +1,198 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { getUsers } from '../../../services/AdminService';
-import { Profile } from '../../../types/authTypes'; // adjust path as needed
-
+import { getUsers, toggleUserBlockStatus } from '../../../services/AdminService';
+import { Profile } from '../../../types/authTypes';
+import DataTable from '../../../app/Admin/DataTable'; 
+import { toast } from 'react-toastify';
+import { MapPin, Phone } from 'lucide-react'; // Optional: for nice icons
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  // const [activeTab, setActiveTab] = useState<string>('All Users');
+  
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(''); // ✅ debounced value
+  const [filterStatus, setFilterStatus] = useState<'all' | 'blocked' | 'unblocked'>('all');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 7;
 
-  // const tabs = ['All Users', 'Verified', 'Pending', 'Blocked', 'Premium', 'Free Plan'];
-
-  // Fetch users from API
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        const apiUsers: Profile[] = await getUsers();
-        setUsers(apiUsers);
-      } catch (err) {
-        console.error(err);
-        alert('Failed to fetch users.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
 
-  // Search filter
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const apiUsers: Profile[] = await getUsers();
+      setUsers(apiUsers);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchQuery);
+  }, 300); // ⏳ DEBOUNCING HAPPENS HERE
 
-  return (
-    <div className="min-h-screen flex bg-gray-50">
-    
+  return () => clearTimeout(timer);
+}, [searchQuery]);
 
-      <div className="flex-1 overflow-auto">
-        {/* Mobile Header */}
-        <div className="bg-white shadow-sm p-4 flex items-center justify-between md:hidden">
-          <button className="p-2 rounded-lg bg-gray-100">
-            <i className="fas fa-bars text-[#1E40AF]"></i>
-          </button>
-          <h1 className="text-lg font-bold bg-gradient-to-r from-[#081C45] to-[#1E40AF] bg-clip-text text-transparent">
-            <i className="fas fa-crown text-[#D29804] mr-2"></i>User Management
-          </h1>
-          <div className="w-8 h-8 rounded-full overflow-hidden">
-            <Image
-              src="/assets/AlternativeSignUpImage.jpg"
-              alt="Admin"
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        </div>
 
-        <div className="p-4 md:p-6">
-          {/* Page Header */}
-          <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="mb-4 md:mb-0">
-              <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-700">Manage homeowners and their accounts</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              {/* <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E40AF] focus:border-transparent text-gray-900"
-                />
-                <i className="fas fa-search absolute left-3 top-3 text-gray-500"></i>
-              </div> */}
-              {/* <button className="bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl">
-                <i className="fas fa-filter mr-2"></i> Filters
-              </button> */}
-            </div>
-          </div>
+  const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
+    try {
+      await toggleUserBlockStatus(userId, !currentStatus);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: !currentStatus } : u));
+      toast.success(`User ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
+    } catch {
+      toast.error("Failed to update user status");
+    }
+  };
 
-          {/* Tabs */}
-          <div className="overflow-x-auto mb-6">
-            {/* <div className="flex space-x-2 min-w-max">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  className={`tab-button whitespace-nowrap transition-all duration-300 px-3 py-2 rounded-lg font-medium ${
-                    activeTab === tab
-                      ? 'active bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white shadow-lg'
-                      : 'text-gray-800 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div> */}
-          </div>
+const filteredUsers = useMemo(() => {
+  return users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      user.email.toLowerCase().includes(debouncedSearch.toLowerCase());
 
-          {/* Users Table */}
-          <div className="bg-white rounded-2xl shadow-md mb-6 md:mb-8 overflow-hidden border border-gray-100">
-            {loading ? (
-              <p className="p-4 text-center">Loading users...</p>
+    const matchesFilter =
+      filterStatus === 'all'
+        ? true
+        : filterStatus === 'blocked'
+        ? user.isBlocked
+        : !user.isBlocked;
+
+    return matchesSearch && matchesFilter;
+  });
+}, [users, debouncedSearch, filterStatus]); // ✅ debouncedSearch dependency
+
+
+  const totalItems = filteredUsers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
+
+  // --- UPDATED COLUMNS ---
+  const columns = [
+    { 
+      header: 'User', 
+      render: (user: Profile) => (
+        <div className="flex items-center gap-3">
+          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 border">
+            {user.profileImage ? (
+              <Image 
+                src={user.profileImage} 
+                alt={user.name} 
+                fill 
+                className="object-cover"
+              />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px]">
-                  <thead>
-                    <tr className="bg-gray-50 text-left">
-                      <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Name</th>
-                      <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Email</th>
-                      <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Phone</th>
-                      <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Location</th>
-                      <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Bio</th>
-                       <th className="py-3 px-4 md:py-4 md:px-6 font-medium text-gray-900 text-sm md:text-base">Avatar</th>
-                    </tr>
-                  </thead>
-<tbody className="divide-y divide-gray-200">
-  {filteredUsers.map((user) => (
-    <tr key={user.id} className="hover:bg-gray-50">
-      <td className="py-3 px-4 md:py-4 md:px-6 text-gray-900">{user.name|| "Not Given"}</td>
-      <td className="py-3 px-4 md:py-4 md:px-6 text-gray-900">{user.email || "Not Given"}</td>
-      <td className="py-3 px-4 md:py-4 md:px-6 text-gray-900">{user.phone || "Not Given"}</td>
-      <td className="py-3 px-4 md:py-4 md:px-6 text-gray-900">{user.location || "Not Given"}</td>
-      <td className="py-3 px-4 md:py-4 md:px-6 text-gray-900">{user.bio || "Not Given"}</td>
-      <td className="py-3 px-4 md:py-4 md:px-6">
-        <Image
-          src={user.profileImage || '/assets/AlternativeSignUpImage.jpg'}
-          alt={user.name || "User Avatar"}
-          width={40}
-          height={40}
-          className="w-10 h-10 rounded-full object-cover"
-        />
-      </td>
-    </tr>
-  ))}
-
-  {filteredUsers.length === 0 && (
-    <tr>
-      <td colSpan={7} className="text-center py-4 text-gray-500">
-        No users found.
-
-      </td>
-    </tr>
-  )}
-</tbody>
-
-
-                </table>
+              <div className="flex items-center justify-center h-full text-gray-400 font-bold">
+                {user.name.charAt(0)}
               </div>
             )}
           </div>
+          <div className="flex flex-col">
+            <span className="font-semibold text-gray-900 leading-none">{user.name}</span>
+            <span className="text-xs text-gray-500 mt-1">{user.email}</span>
+          </div>
         </div>
+      )
+    },
+    { 
+      header: 'Bio & Location', 
+      render: (user: Profile) => (
+        <div className="max-w-[200px]">
+          <p className="text-xs text-gray-600 line-clamp-2 italic mb-1">
+            {user.bio || 'No bio provided'}
+          </p>
+          <div className="flex items-center text-xs text-gray-500">
+            <MapPin size={12} className="mr-1 text-red-400" />
+            {user.location || 'N/A'}
+          </div>
+        </div>
+      )
+    },
+    { 
+      header: 'Contact', 
+      render: (user: Profile) => (
+        <div className="flex items-center text-sm text-gray-700">
+          <Phone size={14} className="mr-2 text-blue-500" />
+          {user.phone || '—'}
+        </div>
+      )
+    },
+    { 
+      header: 'Status', 
+      render: (user: Profile) => (
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          user.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+        }`}>
+          {user.isBlocked ? 'Blocked' : 'Active'}
+        </span>
+      )
+    },
+    { 
+      header: 'Actions', 
+      render: (user: Profile) => (
+        <div className="flex gap-3">
+          <button 
+            onClick={() => handleToggleBlock(user.id, !!user.isBlocked)}
+            className={`text-sm font-medium hover:underline ${user.isBlocked ? 'text-green-600' : 'text-red-600'}`}
+          >
+            {user.isBlocked ? 'Unblock' : 'Block'}
+          </button>
+          {/* <button className="text-sm font-medium text-blue-600 hover:underline">Edit</button> */}
+        </div>
+      )
+    }
+  ];
+
+  if (loading) return <div className="p-10 text-center">Loading users...</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 text-black">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
+          <div className="flex flex-wrap gap-3">
+            <input
+              type="text"
+              placeholder="Search users..."
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-64"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <select 
+              className="px-4 py-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'blocked' | 'unblocked')}
+            >
+              <option value="all">All Status</option>
+              <option value="blocked">Blocked</option>
+              <option value="unblocked">Active</option>
+            </select>
+          </div>
+        </div>
+
+        <DataTable
+          columns={columns}
+          data={currentItems}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
       </div>
     </div>
   );

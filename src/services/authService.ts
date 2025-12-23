@@ -19,6 +19,7 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
 
 const AUTH = "/auth";
 const ADMIN = "/admin";
+const USER="/user"
 
 // --------------------------------------------------
 // GENERIC POST WRAPPER
@@ -100,7 +101,7 @@ export const googleLogin = async (
 // --------------------------------------------------
 export const getProfile = async (): Promise<Profile> => {
   try {
-    const response = await api.get(`${AUTH}/profile`, {
+    const response = await api.get(`${USER}/profile`, {
       withCredentials: true,
     });
 

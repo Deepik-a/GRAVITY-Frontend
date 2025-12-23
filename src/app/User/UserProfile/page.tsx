@@ -257,12 +257,12 @@ const Dashboard = () => {
                   <h3 className="text-xl font-semibold text-[#081c45]">
                     Profile Information
                   </h3>
-                  <button
+                  {/* <button
                     onClick={() => setIsEditModalOpen(true)}
                     className="bg-gradient-to-r from-[#081c45] to-[#1e40af] text-white shadow-lg px-4 py-2 rounded-lg text-sm flex items-center gap-2"
                   >
                     <Edit className="w-4 h-4" /> Edit
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="space-y-4">

@@ -50,6 +50,7 @@ export type Profile = {
   location?: string;
   bio?: string;           // ✅ lowercase 'bio'
   profileImage?: string;
+  isBlocked?: boolean;
 };
 
 
@@ -69,4 +70,5 @@ export interface CompanyProfile {
   };
   createdAt: string;
   updatedAt: string;
+  isBlocked?: boolean;
 }
