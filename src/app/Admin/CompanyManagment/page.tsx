@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { getCompanies, verifyCompany, toggleCompanyBlockStatus } from "../../../services/AdminService";
+import { searchCompanies, verifyCompany, toggleCompanyBlockStatus } from "../../../services/AdminService";
 
 import { CompanyProfile } from "@/types/authTypes";
 import { toast } from "react-toastify";
@@ -22,6 +22,8 @@ const [debouncedSearch, setDebouncedSearch] = useState(searchTerm)
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 7;
 
   // Modal State
@@ -40,21 +42,39 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [searchTerm]);
 
+  /* ---------------- Refs ---------------- */
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    fetchCompanies();
+    // Focus search input on mount
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   }, []);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getCompanies();
-      setCompanies(data);
+      const res = await searchCompanies(
+        debouncedSearch.trim(),
+        currentPage,
+        itemsPerPage,
+        filterStatus
+      );
+      setCompanies(res.companies);
+      setTotalItems(res.total);
+      setTotalPages(res.totalPages);
     } catch (err) {
       setError((err as Error).message);
+      toast.error("Failed to load companies");
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, currentPage, filterStatus]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [fetchCompanies]);
 
   const handleToggleBlock = async (id: string, currentStatus: boolean) => {
     try {
@@ -72,11 +92,8 @@ useEffect(() => {
     try {
       await verifyCompany(companyId, approve, reason);
       toast.success(`Company ${approve ? "accepted" : "rejected"} successfully!`);
-      setCompanies((prev) =>
-        prev.map((c) =>
-          c.id === companyId ? { ...c, documentStatus: approve ? "verified" : "rejected" } : c
-        )
-      );
+      // Optionally refresh companies to show updated status
+      fetchCompanies();
     } catch {
       toast.error("Failed to update document status");
     }
@@ -93,31 +110,9 @@ useEffect(() => {
     setCurrentCompanyId(null);
   };
 
- // 🔹 FILTER USING DEBOUNCED VALUE
-const filteredCompanies = useMemo(() => {
-  return companies.filter((company) => {
-    const matchesSearch =
-      company.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      company.email.toLowerCase().includes(debouncedSearch.toLowerCase());
-
-    const matchesFilter =
-      filterStatus === "all" || company.documentStatus === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
-}, [companies, debouncedSearch, filterStatus]);
-
-
-  const totalItems = filteredCompanies.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const currentItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCompanies.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredCompanies, currentPage]);
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus]);
+  }, [debouncedSearch, filterStatus]);
 
   const columns = [
     {
@@ -206,8 +201,6 @@ const filteredCompanies = useMemo(() => {
     },
   ];
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center font-bold">Loading...</div>;
-
   return (
     <div className="min-h-screen bg-gray-50 p-6 text-black">
       <h1 className="text-3xl font-black mb-6 text-gray-800 tracking-tight">Company Management</h1>
@@ -216,6 +209,7 @@ const filteredCompanies = useMemo(() => {
         <div className="relative w-full md:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Search company by name or email..."
             value={searchTerm}
@@ -239,15 +233,22 @@ const filteredCompanies = useMemo(() => {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={currentItems}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={totalItems}
-      />
+      {loading ? (
+        <div className="p-10 text-center text-gray-500 font-bold">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          Loading companies...
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={companies}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
+      )}
 
       {/* View Modal */}
       {showViewModal && selectedCompany && (

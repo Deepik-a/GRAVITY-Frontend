@@ -1,6 +1,6 @@
 import api from "./api/useApi";
 import { AxiosError } from "axios";
-import { Profile,CompanyProfile } from "@/types/authTypes";
+import { Profile, CompanyProfile } from "@/types/authTypes";
 
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
@@ -16,7 +16,7 @@ export const getUsers = async (): Promise<Profile[]> => {
 
     // Map API response to Profile[]
     return response.data.users.map((p) => ({
-      id: p.id , // fallback if backend uses userId
+      id: p.id, // fallback if backend uses userId
       name: p.name,
       email: p.email,
       phone: p.phone || "",
@@ -29,6 +29,59 @@ export const getUsers = async (): Promise<Profile[]> => {
   }
 };
 
+export const searchUsers = async (
+  query: string,
+  page: number,
+  limit: number
+) => {
+  try {
+    const response = await api.get(
+      `admin/users-search?q=${query}&page=${page}&limit=${limit}`,
+      { withCredentials: true }
+    );
+
+    return {
+      users: response.data.users,       // ✅ from controller
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit,
+      totalPages: response.data.totalPages
+    };
+  } catch (error) {
+    throw new Error(
+      extractErrorMessage(error, "Failed to search data")
+    );
+  }
+};
+
+
+
+
+export const searchCompanies = async (
+  query: string,
+  page: number,
+  limit: number,
+  status: string = "all"
+) => {
+  try {
+    const response = await api.get(
+      `admin/companies-search?q=${query}&page=${page}&limit=${limit}&status=${status}`,
+      { withCredentials: true }
+    );
+
+    return {
+      companies: response.data.companies,
+      total: response.data.total,
+      page: response.data.page,
+      limit: response.data.limit,
+      totalPages: response.data.totalPages
+    };
+  } catch (error) {
+    throw new Error(
+      extractErrorMessage(error, "Failed to search companies")
+    );
+  }
+};
 
 
 export const getCompanies = async (): Promise<CompanyProfile[]> => {
@@ -56,11 +109,11 @@ export const getCompanies = async (): Promise<CompanyProfile[]> => {
 };
 
 // Approve or reject a company
-export const verifyCompany = async (companyId: string, approve: boolean,reason?: string) => {
+export const verifyCompany = async (companyId: string, approve: boolean, reason?: string) => {
   try {
     const response = await api.post(
       "admin/verify-company",
-      { companyId, approve,reason },
+      { companyId, approve, reason },
       { withCredentials: true }
     );
     return response.data;
@@ -80,9 +133,9 @@ export const toggleUserBlockStatus = async (userId: string, isBlocked: boolean) 
 
 export const toggleCompanyBlockStatus = async (companyId: string, isBlocked: boolean) => {
   try {
-     const response = await api.patch("admin/companies/block", { id: companyId, isBlocked }, { withCredentials: true });
-     return response.data;
+    const response = await api.patch("admin/companies/block", { id: companyId, isBlocked }, { withCredentials: true });
+    return response.data;
   } catch (error) {
-     throw new Error(extractErrorMessage(error, "Failed to update company block status"));
+    throw new Error(extractErrorMessage(error, "Failed to update company block status"));
   }
 };
