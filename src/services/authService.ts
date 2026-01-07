@@ -6,15 +6,22 @@ import {
   AuthResponse,
   GoogleAuthResponse,
   Profile,
-} from "@/types/authTypes";
+} from "@/types/AuthTypes";
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
-  const err = error as AxiosError<{ error?: string; message?: string }>;
-  return (
-    err.response?.data?.error ||
-    err.response?.data?.message ||
-    fallback
-  );
+  if (error && typeof error === "object") {
+    const err = error as AxiosError<any>;
+
+    const backendError =
+      err.response?.data?.message ||
+      err.response?.data?.error;
+
+    if (typeof backendError === "string") {
+      return backendError;
+    }
+  }
+
+  return fallback;
 };
 
 const AUTH = "/auth";
@@ -108,15 +115,69 @@ export const getProfile = async (): Promise<Profile> => {
     const p = response.data.profile;
 
     return {
-      id: p.userId,
+      id: p.id,
       name: p.name,
       email: p.email,
       phone: p.phone || "",
       location: p.location || "",
       bio: p.bio || "",
       profileImage: p.profileImage || "",
+      isBlocked: p.isBlocked || false,
     };
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to fetch profile"));
+  }
+};
+
+export const updateProfile = async (data: Partial<Profile>): Promise<Profile> => {
+  try {
+    const response = await api.put(`${USER}/profile`, data, {
+      withCredentials: true,
+    });
+     const p = response.data.profile;
+     return {
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      phone: p.phone || "",
+      location: p.location || "",
+      bio: p.bio || "",
+      profileImage: p.profileImage || "",
+      isBlocked: p.isBlocked || false,
+     }
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to update profile"));
+  }
+};
+
+export const uploadProfileImage = async (file: File): Promise<{ url: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await api.post(`${USER}/profile/image`, formData, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to upload image"));
+  }
+};
+
+export const deleteProfileField = async (field: keyof Profile): Promise<void> => {
+  try {
+    // We can implement this by updating the profile with an empty value for the field
+    // OR by calling a specific DELETE endpoint if the backend supports it.
+    // For now, let's assume we call a specific endpoint or use a special update.
+    // Let's use a specific endpoint for clarity as per the function name.
+    await api.patch(`${USER}/profile/field`, { field }, {
+        withCredentials: true
+    });
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to delete field"));
   }
 };

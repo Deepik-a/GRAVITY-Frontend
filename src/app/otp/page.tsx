@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { verifyOtp, resendOtp } from "../../services/authService";
+import { verifyOtp, resendOtp } from "../../services/AuthService";
 import { toast } from "react-toastify";
 import AuthLayout from "../../components/auth/AuthLayout";
 

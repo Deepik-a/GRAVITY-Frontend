@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { getUsers, toggleUserBlockStatus, searchUsers } from '../../../services/AdminService';
-import { Profile } from '../../../types/authTypes';
+import { Profile } from '../../../types/AuthTypes';
 import DataTable from '../../../app/Admin/DataTable';
 import { toast } from 'react-toastify';
 import { MapPin, Phone } from 'lucide-react';
@@ -110,8 +110,9 @@ const fetchUsers = useCallback(async () => {
         )
       );
       toast.success(`User ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
-    } catch {
-      toast.error('Failed to update user status');
+    } catch (err: unknown) {
+      const message = (err as Error).message || 'Failed to update user status';
+      toast.error(message);
     }
   };
 

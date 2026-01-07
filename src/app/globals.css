@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Add these styles to your global CSS file */
+
+/* Smooth transitions for sidebar */
+.layout-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects for cards */
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Active state for navigation */
+.nav-item-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid rgb(59, 130, 246);
+}

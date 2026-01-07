@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { resetPassword } from "../../services/authService";
+import { resetPassword } from "../../services/AuthService";
 import { toast } from "react-toastify";
 import AuthLayout from "../../components/auth/AuthLayout";
 

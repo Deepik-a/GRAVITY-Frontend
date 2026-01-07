@@ -1,6 +1,6 @@
 import api from "./api/useApi";
 import { AxiosError } from "axios";
-import { Profile, CompanyProfile } from "@/types/authTypes";
+import { Profile, CompanyProfile } from "@/types/AuthTypes";
 
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {

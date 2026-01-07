@@ -1,5 +1,6 @@
 "use client";
-import { signupUser, loginUser, googleLogin } from "@/services/authService";
+import { signupUser, loginUser, googleLogin } from "@/services/AuthService";
+import { getProfile as apiGetProfile } from "@/services/CompanyService";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -9,9 +10,9 @@ import {
   validatePhone,
   validatePassword,
   validateConfirmPassword,
-} from "@/utils/validation";
+} from "@/utils/Validation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
-import { SignupData } from "@/types/authTypes";
+import { SignupData } from "@/types/AuthTypes";
 
 
 export default function SignupPage() {
@@ -170,6 +171,17 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     //role is stored because after otp verification go to company verification page for company and login for user
     localStorage.setItem("role", role); // ✅ store role
 
+    // ⭐ Store draft profile info if company
+    if (role === "company") {
+      const draftProfile = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        profile: {}
+      };
+      localStorage.setItem("companyProfile", JSON.stringify(draftProfile));
+    }
+
     router.push(`/otp?email=${encodeURIComponent(formData.email)}&action=signup`);
   } catch (error: unknown) {
     const err = error as Error;
@@ -199,7 +211,6 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const finalLoginData = {
       email: loginData.email,
       password: loginData.password,
-      role: role,  // <-- add role here
     };
 
     console.log("📤 Sending Login Payload:", finalLoginData);
@@ -213,11 +224,28 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const returnedRole = response.role;
 
     if (returnedRole === 'company' && uiRole === 'user') {
-      toast.success("Account found as Company. Redirecting to Company Dashboard...");
+      toast.success("Account found as Company. Redirecting to Company Side...");
     } else if (returnedRole === 'user' && uiRole === 'company') {
       toast.success("Account found as User. Redirecting to User Dashboard...");
     } else {
       toast.success(response.message || "Login successful!");
+    }
+
+    // ⭐ Store basic user info
+    localStorage.setItem("user", JSON.stringify(response.user));
+    localStorage.setItem("token", response.token);
+    localStorage.setItem("role", response.role);
+
+    // 🔥 If company, fetch profile to prefill
+    if (response.role === "company") {
+      try {
+        const profileData = await apiGetProfile(response.user.id);
+        if (profileData) {
+          localStorage.setItem("companyProfile", JSON.stringify(profileData));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch initial company profile on Login", err);
+      }
     }
 
     // 🔥 Role-based redirect (same behavior as Google Auth)
@@ -237,7 +265,12 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
            router.push(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
         } else {
            // Verified
-           router.push("/Company/CompanyDetails");
+           const isProfileFilled = response.user.isProfileFilled;
+           if (isProfileFilled) {
+             router.push("/Company/CompanyDashBoard");
+           } else {
+             router.push("/Company/CompanyDetail");
+           }
         }
 
     } else if (response.role === "admin") {
@@ -249,7 +282,7 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("Login Error:", err.message);
+    console.error(`Login Error: ${err.message}`);
     toast.warning(err.message || "Login failed!");
   }
 };
@@ -304,6 +337,43 @@ console.log(res,"res from signup")
       toast.success(res.message || `Google ${action} successful!`);
     }
 
+    // ⭐ Store basic user info
+    const userData = {
+      id: res.user.id,
+      name: res.user.name,
+      email: res.user.email,
+      role: res.user.role,
+      phone: (res.user as { phone?: string }).phone || ""
+    };
+    
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", res.user.token);
+    localStorage.setItem("role", res.user.role);
+
+    // 🔥 If company, fetch profile to prefill
+    if (res.user.role === "company") {
+      try {
+        // Use the normalized userData.id
+        if (userData.id) {
+          const profileData = await apiGetProfile(userData.id);
+          if (profileData && Object.keys(profileData).length > 0) {
+            localStorage.setItem("companyProfile", JSON.stringify(profileData));
+          } else {
+            throw new Error("Empty profile data");
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch full profile for Google user, setting draft", err);
+        const draftProfile = {
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          profile: {} 
+        };
+        localStorage.setItem("companyProfile", JSON.stringify(draftProfile));
+      }
+    }
+
     // 3️⃣ Decide redirect based on role & status
     if (res.user.role === "user") {
     console.log("res.user.role ", res.user.role) // ✅ correct
@@ -326,7 +396,12 @@ console.log(res,"res from signup")
           router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
        } else {
          // Verified
-         router.push("/Company/CompanyDetails");
+         const isProfileFilled = res.user.isProfileFilled;
+         if (isProfileFilled) {
+           router.push("/Company/CompanyDashBoard");
+         } else {
+           router.push("/Company/CompanyDetail");
+         }
        }
     } else {
       // Fallback for unknown roles

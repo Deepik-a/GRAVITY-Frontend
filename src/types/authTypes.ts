@@ -20,9 +20,11 @@ export interface AuthResponse {
   token: string;
   role:string;
   user: {
+    id: string;
     name: string;
     email: string;
     phone: string;
+    isProfileFilled?: boolean;
   };
   documentStatus?: "pending" | "verified" | "rejected";
   rejectionReason?: string;
@@ -32,10 +34,12 @@ export interface AuthResponse {
 export interface GoogleAuthResponse {
   message: string;
   user: {
+    id: string;
     name: string;
     email: string;
     token: string;
     role: 'user' | 'company';
+    isProfileFilled?: boolean;
   };
   isNewUser: boolean;
  documentStatus?:"pending"|"verified"|"rejected";
@@ -59,6 +63,7 @@ export interface CompanyProfile {
   name: string;
   email: string;
   phone: string;
+  location?: string;
   role: string;
   status: "pending" | "verified" | "blocked";
   documentStatus: "pending" | "verified" | "rejected";  // <-- THIS MUST EXIST
@@ -71,4 +76,42 @@ export interface CompanyProfile {
   createdAt: string;
   updatedAt: string;
   isBlocked?: boolean;
+  isProfileFilled?: boolean;
+  profile?: {
+    categories: string[];
+    services: string[];
+    consultationFee: number;
+    establishedYear: number;
+    companySize: string;
+    overview: string;
+    projectsCompleted: number;
+    happyCustomers: number;
+    awardsWon: number;
+    awardsRecognition: string;
+    contactOptions: {
+      chatSupport: boolean;
+      videoCalls: boolean;
+    };
+    teamMembers: {
+      id: number;
+      name: string;
+      qualification: string;
+      role: string;
+      photo?: string;
+    }[];
+    projects: {
+      id: number;
+      title: string;
+      description: string;
+      beforeImage?: string;
+      afterImage?: string;
+      date?: string;
+    }[];
+    brandIdentity: {
+      logo?: string;
+      banner1?: string;
+      banner2?: string;
+      profilePicture?: string;
+    };
+  } | null;
 }
