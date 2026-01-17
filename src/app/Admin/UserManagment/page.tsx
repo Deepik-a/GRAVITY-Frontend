@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { getUsers, toggleUserBlockStatus, searchUsers } from '../../../services/AdminService';
 import { Profile } from '../../../types/AuthTypes';
 import DataTable from '../../../app/Admin/DataTable';
+import { resolveImageUrl } from "@/utils/urlHelper";
 import { toast } from 'react-toastify';
 import { MapPin, Phone } from 'lucide-react';
 
@@ -124,7 +125,13 @@ const fetchUsers = useCallback(async () => {
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 border">
             {user.profileImage ? (
-              <Image src={user.profileImage} alt={user.name} fill className="object-cover" />
+              <Image
+                src={resolveImageUrl(user.profileImage) || ""}
+                alt={user.name}
+                fill
+                className="object-cover"
+                unoptimized
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-400 font-bold">
                 {user.name.charAt(0)}

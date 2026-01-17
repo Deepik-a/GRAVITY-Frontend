@@ -7,6 +7,7 @@ import { User, LogOut, ChevronDown, Bell, Menu, X } from "lucide-react";
 import { getProfile } from "@/services/AuthService";
 import { Profile } from "@/types/AuthTypes";
 import Image from "next/image";
+import { resolveImageUrl } from "@/utils/urlHelper";
 
 export default function UserNavbar() {
   const router = useRouter();
@@ -135,7 +136,7 @@ export default function UserNavbar() {
                     <div className="w-9 h-9 rounded-full border-2 border-[rgb(210,152,4)] overflow-hidden bg-gray-200 relative">
                       {user.profileImage ? (
                         <Image
-                          src={user.profileImage}
+                          src={resolveImageUrl(user.profileImage) || ""}
                           alt={user.name}
                           fill
                           className="object-cover"

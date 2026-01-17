@@ -130,3 +130,27 @@ export const getCompanyBookings = async () => {
     throw new Error(extractErrorMessage(error, "Get company bookings failed"));
   }
 };
+
+export const confirmBooking = async (bookingId: string) => {
+  try {
+    const response = await api.patch(`/company/bookings/${bookingId}/confirm`, {}, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Confirm booking failed", error);
+    throw new Error(extractErrorMessage(error, "Confirm booking failed"));
+  }
+};
+
+export const getWallet = async () => {
+  try {
+    const response = await api.get("/company/wallet", {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Get wallet failed", error);
+    throw new Error(extractErrorMessage(error, "Failed to fetch wallet data"));
+  }
+};

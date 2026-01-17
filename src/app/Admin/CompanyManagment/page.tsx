@@ -7,20 +7,7 @@ import { CompanyProfile } from "@/types/AuthTypes";
 import { toast } from "react-toastify";
 import { Search, Filter, ShieldAlert, ShieldCheck, Eye, X, MapPin, ImageOff, MessageSquare, Video, Info } from "lucide-react";
 import DataTable from '../../../app/Admin/DataTable';  
-
-// Helper to validate image URLs for Next.js Image component
-const getSafeImageUrl = (src: string | undefined | null): string | null => {
-  if (!src || typeof src !== 'string') return null;
-  const trimmed = src.trim();
-  if (!trimmed || trimmed === "undefined" || trimmed === "null") return null;
-  
-  if (trimmed.startsWith("http") || trimmed.startsWith("/") || trimmed.startsWith("data:")) {
-    return trimmed;
-  }
-  
-  // If it's a relative path, Next.js Image requires a leading slash
-  return `/${trimmed}`;
-};
+import { resolveImageUrl } from "@/utils/urlHelper";
 
 const CompanyManagementPage = () => {
   const [companies, setCompanies] = useState<CompanyProfile[]>([]);
@@ -297,9 +284,9 @@ useEffect(() => {
                 Object.entries(selectedCompany.documents).map(([key, value]) => (
                   <div key={key} className="flex flex-col border border-gray-200 p-5 rounded-xl bg-gray-50">
                     <p className="font-black mb-4 capitalize text-gray-800 text-lg border-b pb-2">{key.replace(/_/g, " ")}</p>
-                    {getSafeImageUrl(value) ? (
+                    {resolveImageUrl(value) ? (
                       <div className="relative w-full h-64 bg-white rounded-lg overflow-hidden border border-gray-300 shadow-inner">
-                        <Image src={getSafeImageUrl(value)!} alt={key} fill className="object-contain p-2" />
+                        <Image src={resolveImageUrl(value)!} alt={key} fill className="object-contain p-2" unoptimized />
                       </div>
                     ) : (
                       <div className="w-full h-64 flex items-center justify-center bg-gray-200 rounded-lg text-gray-500 font-black italic">
@@ -403,12 +390,13 @@ const CompanyDetailsDrawer = ({
             
             {/* Hero Section */}
             <div className="relative h-56 rounded-3xl overflow-hidden bg-gray-900 shadow-2xl group">
-              {getSafeImageUrl(company.profile?.brandIdentity?.banner1) ? (
+              {resolveImageUrl(company.profile?.brandIdentity?.banner1) ? (
                 <Image 
-                  src={getSafeImageUrl(company.profile!.brandIdentity!.banner1)!} 
+                  src={resolveImageUrl(company.profile!.brandIdentity!.banner1)!} 
                   alt="Banner" 
                   fill 
                   className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
+                  unoptimized
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 opacity-80" />
@@ -418,10 +406,11 @@ const CompanyDetailsDrawer = ({
                 <div className="flex items-center gap-6">
                   <div className="w-24 h-24 rounded-2xl bg-white border-4 border-white shadow-2xl overflow-hidden relative transform rotate-3">
                     <Image 
-                      src={getSafeImageUrl(company.profile?.brandIdentity?.logo) || `https://ui-avatars.com/api/?name=${encodeURIComponent(company.name)}&background=6366f1&color=fff&bold=true`} 
+                      src={resolveImageUrl(company.profile?.brandIdentity?.logo) || `https://ui-avatars.com/api/?name=${encodeURIComponent(company.name)}&background=6366f1&color=fff&bold=true`} 
                       alt="Logo" 
                       fill 
                       className="object-cover"
+                      unoptimized
                     />
                   </div>
                   <div className="text-white">
@@ -507,8 +496,8 @@ const CompanyDetailsDrawer = ({
                 {company.profile?.projects?.map((proj) => (
                   <div key={proj.id} className="group flex flex-col gap-3">
                     <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-md">
-                      {getSafeImageUrl(proj.afterImage) ? (
-                        <Image src={getSafeImageUrl(proj.afterImage)!} alt={proj.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+                      {resolveImageUrl(proj.afterImage) ? (
+                        <Image src={resolveImageUrl(proj.afterImage)!} alt={proj.title} fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
                       ) : (
                         <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
                           <ImageOff size={32} strokeWidth={1} />

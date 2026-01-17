@@ -62,15 +62,25 @@ export default function UserBookSlots() {
     }
     setBookingLoading(true);
     try {
-      await bookSlot({ 
+      const { createCheckoutSession } = await import("@/services/UserService");
+      
+      const booking = await bookSlot({ 
         companyId, 
         date: selectedDate, 
         startTime: selectedSlot,
         // @ts-expect-error - sessionHours might be added to API later
         sessionHours 
       });
-      toast.success("Booking and Payment initiated successfully!");
-      fetchSlots(); // Refresh slots
+      
+      toast.info("Booking created! Redirecting to payment...");
+      
+      const session = await createCheckoutSession(booking.id);
+      if (session?.url) {
+        window.location.href = session.url;
+      } else {
+        throw new Error("Failed to create payment session");
+      }
+      
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Booking failed";
       toast.error(message);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { setSlotConfig, deleteSlotConfig, getSlotConfigs } from "@/services/CompanyService";
+import { setSlotConfig, deleteSlotConfig, getSlotConfigs, getCompanyBookings } from "@/services/CompanyService";
 import { Plus, Trash2, Calendar, Clock, Save, AlertCircle, Edit2, X } from "lucide-react";
 
 const weekdaysList = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -24,6 +24,8 @@ interface SlotConfig {
 export default function SlotManagement() {
   const [loading, setLoading] = useState(false);
   const [configs, setConfigs] = useState<SlotConfig[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [showModal, setShowModal] = useState(false);
   const [config, setConfig] = useState<SlotConfig>({
     startDate: "",
@@ -41,9 +43,10 @@ export default function SlotManagement() {
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Load existing configs
+  // Load existing configs and bookings
   useEffect(() => {
     fetchConfigs();
+    fetchBookings();
   }, []);
 
   const fetchConfigs = async () => {
@@ -52,6 +55,23 @@ export default function SlotManagement() {
       setConfigs(data);
     } catch (error) {
       console.error("Failed to fetch configs:", error);
+    }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const data = await getCompanyBookings();
+      setBookings(data);
+      
+      // Calculate counts
+      const counts: Record<string, number> = {};
+      data.forEach((b: any) => {
+        const dateStr = new Date(b.date).toISOString().split('T')[0];
+        counts[dateStr] = (counts[dateStr] || 0) + 1;
+      });
+      setBookingCounts(counts);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
     }
   };
 
@@ -124,6 +144,12 @@ export default function SlotManagement() {
       toast.error("Exceptional date must be within the date range");
       return;
     }
+
+    // Check booking count
+    if (bookingCounts[newExDate] > 5) {
+      toast.error(`Cannot set ${formatDate(newExDate)} as holiday: it already has ${bookingCounts[newExDate]} bookings.`);
+      return;
+    }
     
     if (config.exceptionalDays.includes(newExDate)) {
       toast.warn("Date already added");
@@ -180,14 +206,14 @@ export default function SlotManagement() {
   const handleEdit = (config: SlotConfig) => {
     if (!config.id) return;
     
-    // Check if config is older than 5 minutes
-    if (config.createdAt) {
-      const createdAt = new Date(config.createdAt);
-      const now = new Date();
-      const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
-      
-      if (diffMinutes > 5) {
-        toast.error("Cannot edit: Rule is older than 5 minutes");
+    // Check if any day in the range has > 5 bookings
+    const start = new Date(config.startDate);
+    const end = new Date(config.endDate);
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      if (bookingCounts[dateStr] > 5) {
+        toast.error(`Cannot edit: ${formatDate(dateStr)} has more than 5 bookings.`);
         return;
       }
     }
@@ -278,9 +304,10 @@ export default function SlotManagement() {
   <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-400 p-4 rounded-r-lg flex items-start gap-3">
     <AlertCircle className="text-yellow-600 mt-1" size={20} />
     <div>
-      <p className="text-sm text-yellow-800 font-medium">Important Note</p>
+      <p className="text-sm text-yellow-800 font-medium">Editing Policy</p>
       <p className="text-xs text-yellow-700">
-        Rules can only be edited within 5 minutes of creation. After 5 minutes, you must delete and create new rules.
+        When editing an existing rule, only exceptional days (holidays) can be modified. 
+        Editing is disabled if any day in the rule's range has more than 5 bookings.
       </p>
     </div>
   </div>
@@ -291,10 +318,13 @@ export default function SlotManagement() {
       <h2 className="text-xl font-semibold text-gray-800">Existing Rules</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {configs.map((config) => {
-          const createdAt = config.createdAt ? new Date(config.createdAt) : new Date();
-          const now = new Date();
-          const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
-          const canEdit = diffMinutes <= 5;
+    const canEdit = Object.keys(bookingCounts).every(dateStr => {
+      const d = new Date(dateStr);
+      if (d >= new Date(config.startDate) && d <= new Date(config.endDate)) {
+        return bookingCounts[dateStr] <= 5;
+      }
+      return true;
+    });
           
           return (
             <div key={config.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4 hover:shadow-md transition-all">
@@ -400,11 +430,12 @@ export default function SlotManagement() {
                 required
                 min={getMinDate()}
                 value={config.startDate}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, startDate: e.target.value });
                   if (errors.startDate) setErrors(prev => ({ ...prev, startDate: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.startDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.startDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.startDate && (
                 <p className="text-sm text-red-600">{errors.startDate}</p>
@@ -419,11 +450,12 @@ export default function SlotManagement() {
                 required
                 min={getMinEndDate()}
                 value={config.endDate}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, endDate: e.target.value });
                   if (errors.endDate) setErrors(prev => ({ ...prev, endDate: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.endDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.endDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.endDate && (
                 <p className="text-sm text-red-600">{errors.endDate}</p>
@@ -441,11 +473,12 @@ export default function SlotManagement() {
                 type="time"
                 required
                 value={config.startTime}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, startTime: e.target.value });
                   if (errors.startTime) setErrors(prev => ({ ...prev, startTime: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.startTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.startTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.startTime && (
                 <p className="text-sm text-red-600">{errors.startTime}</p>
@@ -459,11 +492,12 @@ export default function SlotManagement() {
                 type="time"
                 required
                 value={config.endTime}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, endTime: e.target.value });
                   if (errors.endTime) setErrors(prev => ({ ...prev, endTime: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.endTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.endTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.endTime && (
                 <p className="text-sm text-red-600">{errors.endTime}</p>
@@ -480,11 +514,12 @@ export default function SlotManagement() {
                 required
                 min="15"
                 value={config.slotDuration}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, slotDuration: Number(e.target.value) });
                   if (errors.slotDuration) setErrors(prev => ({ ...prev, slotDuration: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.slotDuration ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.slotDuration ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.slotDuration && (
                 <p className="text-sm text-red-600">{errors.slotDuration}</p>
@@ -498,11 +533,12 @@ export default function SlotManagement() {
                 required
                 min="10"
                 value={config.bufferTime}
+                disabled={!!editingId}
                 onChange={(e) => {
                   setConfig({ ...config, bufferTime: Number(e.target.value) });
                   if (errors.bufferTime) setErrors(prev => ({ ...prev, bufferTime: "" }));
                 }}
-                className={`w-full p-3 rounded-xl border ${errors.bufferTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black`}
+                className={`w-full p-3 rounded-xl border ${errors.bufferTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.bufferTime && (
                 <p className="text-sm text-red-600">{errors.bufferTime}</p>
@@ -519,12 +555,13 @@ export default function SlotManagement() {
                 <button
                   key={day}
                   type="button"
-                  onClick={() => handleWeekdayToggle(day)}
+                  onClick={() => !editingId && handleWeekdayToggle(day)}
+                  disabled={!!editingId}
                   className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
                     config.weekdays.includes(day)
                       ? "bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white border-transparent shadow-md"
                       : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
-                  }`}
+                  } ${editingId ? 'cursor-not-allowed opacity-80' : ''}`}
                 >
                   {day}
                 </button>

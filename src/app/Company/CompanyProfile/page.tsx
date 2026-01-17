@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Building, Users, Award, Calendar, Edit, Save, X, CheckCircle, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { getProfile as apiGetProfile, saveProfile as apiSaveProfile } from '@/services/CompanyService';
+import { getProfile as apiGetProfile, saveProfile as apiSaveProfile, uploadCompanyImage } from '@/services/CompanyService';
+import { resolveImageUrl } from '@/utils/urlHelper';
+import { Camera } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface CompanyProfile {
@@ -47,6 +49,7 @@ interface CompanyProfile {
     profilePicture?: string;
   };
 }
+
 
 const defaultCompanyProfile: CompanyProfile = {
   id: '1',
@@ -134,6 +137,7 @@ export default function CompanyProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
 
   // Category and service options
   const categoryOptions = ['Residential', 'Commercial', 'Villas', 'Industrial', 'Hospitality'];
@@ -234,6 +238,42 @@ export default function CompanyProfilePage() {
     }
   };
 
+  const handleImageUpload = async (file: File, field: string, id?: number) => {
+    try {
+      setUploadingField(id ? `${field}-${id}` : field);
+      const imageUrl = await uploadCompanyImage(file);
+      
+      if (field.startsWith('brandIdentity.')) {
+        const brandField = field.split('.')[1] as keyof CompanyProfile['brandIdentity'];
+        setTempProfile(prev => ({
+          ...prev,
+          brandIdentity: {
+            ...prev.brandIdentity,
+            [brandField]: imageUrl
+          }
+        }));
+      } else if (field === 'teamMemberPhoto' && id !== undefined) {
+        setTempProfile(prev => ({
+          ...prev,
+          teamMembers: prev.teamMembers.map(m => m.id === id ? { ...m, photo: imageUrl } : m)
+        }));
+      } else if ((field === 'projectBefore' || field === 'projectAfter') && id !== undefined) {
+        const projectField = field === 'projectBefore' ? 'beforeImage' : 'afterImage';
+        setTempProfile(prev => ({
+          ...prev,
+          projects: prev.projects.map(p => p.id === id ? { ...p, [projectField]: imageUrl } : p)
+        }));
+      }
+      
+      toast.success("Image uploaded successfully!");
+    } catch (err) {
+      console.error("Failed to upload image:", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingField(null);
+    }
+  };
+
   const handleCancelClick = () => {
     setTempProfile(profile);
     setIsEditing(false);
@@ -327,18 +367,73 @@ export default function CompanyProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Banner */}
-      <div className="relative h-64 bg-gradient-to-r from-blue-600 to-indigo-700">
+      <div className="relative h-64 bg-slate-900 group">
+        {tempProfile.brandIdentity.banner1 ? (
+            <Image 
+              src={resolveImageUrl(tempProfile.brandIdentity.banner1) || ''} 
+              alt="Banner" 
+              fill 
+              className="object-cover opacity-60"
+              unoptimized
+            />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700"></div>
+        )}
+        
+        {isEditing && (
+          <label className="absolute inset-0 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 z-20">
+            <Camera size={32} />
+            <span className="font-bold mt-2">CHANGE COVER PHOTO</span>
+            <input 
+              type="file" 
+              className="hidden" 
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.banner1')}
+            />
+          </label>
+        )}
+        
+        {uploadingField === 'brandIdentity.banner1' && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
+            <Loader2 size={32} className="animate-spin text-white" />
+          </div>
+        )}
+
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container mx-auto px-4 h-full flex items-center">
+        <div className="relative container mx-auto px-4 h-full flex items-center z-10">
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden">
-              <Image 
-                src={tempProfile.brandIdentity.logo || 'https://via.placeholder.com/400x400'} 
-                alt="Logo" 
-                width={96} 
-                height={96} 
-                className="w-full h-full object-contain" 
-              />
+            <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden group relative">
+              {tempProfile.brandIdentity.logo ? (
+                <Image 
+                  src={resolveImageUrl(tempProfile.brandIdentity.logo) || ''} 
+                  alt="Logo" 
+                  width={96} 
+                  height={96} 
+                  className="w-full h-full object-contain" 
+                />
+              ) : (
+                <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <Building size={32} />
+                </div>
+              )}
+              
+              {isEditing && (
+                <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera size={20} />
+                  <span className="text-[10px] font-bold mt-1">CHANGE</span>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.logo')}
+                  />
+                </label>
+              )}
+              {uploadingField === 'brandIdentity.logo' && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <Loader2 size={16} className="animate-spin text-blue-600" />
+                </div>
+              )}
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">{profile.name}</h1>
@@ -488,25 +583,70 @@ export default function CompanyProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {tempProfile.teamMembers.map(member => (
                   <div key={member.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg">
-                    <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
-                      <Image
-                        src={member.photo || 'https://via.placeholder.com/64x64'}
-                        alt={member.name}
-                        width={64}
-                        height={64}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 relative group">
+                      {member.photo ? (
+                        <Image
+                          src={resolveImageUrl(member.photo) || ''}
+                          alt={member.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
+                          <Users size={24} />
+                        </div>
+                      )}
+                      
+                      {isEditing && (
+                        <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Camera size={14} />
+                          <input 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'teamMemberPhoto', member.id)}
+                          />
+                        </label>
+                      )}
+                      {uploadingField === `teamMemberPhoto-${member.id}` && (
+                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                          <Loader2 size={12} className="animate-spin text-blue-600" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          {isEditing ? (
+                            <>
+                              <input
+                                type="text"
+                                value={member.name}
+                                onChange={(e) => handleTeamMemberChange(member.id, 'name', e.target.value)}
+                                className="w-full mb-2 px-3 py-1 border border-gray-300 rounded text-gray-900 text-sm font-bold"
+                                placeholder="Name"
+                              />
+                            </>
+                          ) : (
+                            <h3 className="font-bold text-gray-900 mb-1">{member.name}</h3>
+                          )}
+                        </div>
+                        {isEditing && (
+                          <button
+                            onClick={() => setTempProfile(prev => ({
+                              ...prev,
+                              teamMembers: prev.teamMembers.filter(m => m.id !== member.id)
+                            }))}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
                       {isEditing ? (
                         <>
-                          <input
-                            type="text"
-                            value={member.name}
-                            onChange={(e) => handleTeamMemberChange(member.id, 'name', e.target.value)}
-                            className="w-full mb-2 px-3 py-1 border border-gray-300 rounded text-gray-900 text-sm"
-                            placeholder="Name"
-                          />
                           <input
                             type="text"
                             value={member.role}
@@ -524,7 +664,6 @@ export default function CompanyProfilePage() {
                         </>
                       ) : (
                         <>
-                          <h3 className="font-bold text-gray-900 mb-1">{member.name}</h3>
                           <p className="text-blue-600 text-sm font-medium mb-1">{member.role}</p>
                           <p className="text-gray-600 text-sm">{member.qualification}</p>
                         </>
@@ -548,7 +687,18 @@ export default function CompanyProfilePage() {
               </div>
               <div className="space-y-6">
                 {tempProfile.projects.map(project => (
-                  <div key={project.id} className="border border-gray-200 rounded-xl p-5">
+                  <div key={project.id} className="border border-gray-200 rounded-xl p-5 relative">
+                    {isEditing && (
+                      <button
+                        onClick={() => setTempProfile(prev => ({
+                          ...prev,
+                          projects: prev.projects.filter(p => p.id !== project.id)
+                        }))}
+                        className="absolute top-4 right-4 text-red-500 hover:text-red-700 bg-white shadow-sm rounded-full p-1 border border-gray-100 z-10"
+                      >
+                        <X size={20} />
+                      </button>
+                    )}
                     {isEditing ? (
                       <>
                         <input
@@ -575,26 +725,76 @@ export default function CompanyProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <div className="text-sm font-medium text-gray-900 mb-2">Before</div>
-                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                          <Image
-                            src={project.beforeImage || 'https://via.placeholder.com/600x400'}
-                            alt="Before"
-                            width={600}
-                            height={400}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
+                          {project.beforeImage ? (
+                            <Image
+                              src={resolveImageUrl(project.beforeImage) || ''}
+                              alt="Before"
+                              width={600}
+                              height={400}
+                              className="w-full h-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
+                              <Award size={32} />
+                            </div>
+                          )}
+                          
+                          {isEditing && (
+                            <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Camera size={24} />
+                              <span className="text-xs font-bold mt-1">UPLOAD BEFORE IMAGE</span>
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'projectBefore', project.id)}
+                              />
+                            </label>
+                          )}
+                          {uploadingField === `projectBefore-${project.id}` && (
+                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                              <Loader2 size={24} className="animate-spin text-blue-600" />
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900 mb-2">After</div>
-                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
-                          <Image
-                            src={project.afterImage || 'https://via.placeholder.com/600x400'}
-                            alt="After"
-                            width={600}
-                            height={400}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
+                          {project.afterImage ? (
+                            <Image
+                              src={resolveImageUrl(project.afterImage) || ''}
+                              alt="After"
+                              width={600}
+                              height={400}
+                              className="w-full h-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                              <Award size={32} />
+                            </div>
+                          )}
+
+                          {isEditing && (
+                            <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Camera size={24} />
+                              <span className="text-xs font-bold mt-1">UPLOAD AFTER IMAGE</span>
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'projectAfter', project.id)}
+                              />
+                            </label>
+                          )}
+                          {uploadingField === `projectAfter-${project.id}` && (
+                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                              <Loader2 size={24} className="animate-spin text-blue-600" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

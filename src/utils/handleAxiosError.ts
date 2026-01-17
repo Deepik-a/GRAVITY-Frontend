@@ -1,11 +1,17 @@
-import { AxiosError } from "axios";
 
 export function extractAxiosError(error: unknown): string {
-  const err = error as AxiosError<{ error?: string; message?: string }>;
-  return (
-    err.response?.data?.error ||
-    err.response?.data?.message ||
-    err.message ||
-    "An unexpected error occurred."
-  );
+  if (typeof error === "string") return error;
+  
+  const err = error as { response?: { data?: { message?: string; error?: string } }; message?: string };
+  const backendMessage = err.response?.data?.message || err.response?.data?.error;
+  
+  if (backendMessage && typeof backendMessage === "string") {
+    return backendMessage;
+  }
+
+  if (err.message && typeof err.message === "string") {
+    return err.message;
+  }
+
+  return "An unexpected error occurred.";
 }

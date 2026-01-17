@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { saveProfile as apiSaveProfile, deleteProfile as apiDeleteProfile, getProfile as apiGetProfile, uploadCompanyImage } from '@/services/CompanyService';
+import Image from 'next/image';
+import { saveProfile as apiSaveProfile, getProfile as apiGetProfile, uploadCompanyImage } from '@/services/CompanyService';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/navigation';
 import Cropper, { ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
+import { resolveImageUrl } from '@/utils/urlHelper';
 
 interface TeamMember {
   id: number;
@@ -124,7 +126,7 @@ export default function CompanyProfileManagement() {
   const [projects, setProjects] = useState<Project[]>([
     { id: 1, title: '', description: '', beforeImage: '', afterImage: '' }
   ]);
-  const [editingMode, setEditingMode] = useState(false);
+
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [fileUploadState, setFileUploadState] = useState<FileUploadState>({});
   const [isFormValid, setIsFormValid] = useState(false);
@@ -404,7 +406,8 @@ export default function CompanyProfileManagement() {
         aspectRatio
       );
 
-    } catch (error) {
+    } catch (err) {
+      console.error("File upload failed:", err);
       setValidationErrors(prev => ({ 
         ...prev, 
         [type]: 'Failed to upload file. Please try again.' 
@@ -772,7 +775,6 @@ export default function CompanyProfileManagement() {
       return;
     }
     setShowPreview(true);
-    setEditingMode(false);
   };
 
   const saveProfile = async (e?: React.FormEvent) => {
@@ -820,9 +822,14 @@ export default function CompanyProfileManagement() {
         if (member.photoFile) {
           photoUrl = await uploadCompanyImage(member.photoFile);
         }
-        // Return clean member object without file object
-        const { photoFile: _, photoPreview: __, ...rest } = member;
-        return { ...rest, photo: photoUrl };
+        // Return clean member object
+        return {
+          id: member.id,
+          name: member.name,
+          qualification: member.qualification,
+          role: member.role,
+          photo: photoUrl
+        };
       }));
 
       // 3. Upload Project Images
@@ -837,9 +844,14 @@ export default function CompanyProfileManagement() {
           afterUrl = await uploadCompanyImage(project.afterImageFile);
         }
 
-        // Return clean project object without file objects
-        const { beforeImageFile: _, afterImageFile: __, beforeImagePreview: ___, afterImagePreview: ____, ...rest } = project;
-        return { ...rest, beforeImage: beforeUrl, afterImage: afterUrl };
+        // Return clean project object
+        return {
+          id: project.id,
+          title: project.title,
+          description: project.description,
+          beforeImage: beforeUrl,
+          afterImage: afterUrl
+        };
       }));
 
       const profileData = {
@@ -887,14 +899,14 @@ export default function CompanyProfileManagement() {
         }));
 
         if (p.teamMembers) {
-          setTeamMembers(p.teamMembers.map((m: Record<string, any>) => ({
+          setTeamMembers(p.teamMembers.map((m: TeamMember) => ({
             ...m,
             photoPreview: m.photo
           })));
         }
 
         if (p.projects) {
-          setProjects(p.projects.map((proj: Record<string, any>) => ({
+          setProjects(p.projects.map((proj: Project) => ({
             ...proj,
             beforeImagePreview: proj.beforeImage,
             afterImagePreview: proj.afterImage
@@ -912,8 +924,7 @@ export default function CompanyProfileManagement() {
         location
       };
       localStorage.setItem("companyProfile", JSON.stringify(storageProfile));
-      
-      setEditingMode(false);
+    
       
       // Redirect to CompanyDashboard
       setTimeout(() => {
@@ -1224,11 +1235,12 @@ export default function CompanyProfileManagement() {
                       {fileUploadState.banner1Preview ? (
                         <div className="relative w-full">
                           <Image 
-                            src={fileUploadState.banner1Preview} 
+                            src={resolveImageUrl(fileUploadState.banner1Preview) || ""} 
                             alt="Banner 1 preview" 
                             width={800} 
                             height={160} 
                             className="w-full h-40 rounded-lg object-cover shadow-md"
+                            unoptimized
                           />
                           <button
                             type="button"
@@ -1289,11 +1301,12 @@ export default function CompanyProfileManagement() {
                       {fileUploadState.banner2Preview ? (
                         <div className="relative w-full">
                           <Image 
-                            src={fileUploadState.banner2Preview} 
+                            src={resolveImageUrl(fileUploadState.banner2Preview) || ""} 
                             alt="Banner 2 preview" 
                             width={800} 
                             height={160} 
                             className="w-full h-40 rounded-lg object-cover shadow-md"
+                            unoptimized
                           />
                           <button
                             type="button"
@@ -2001,11 +2014,12 @@ export default function CompanyProfileManagement() {
                             {project.beforeImagePreview ? (
                               <div className="relative w-full h-full">
                                 <Image 
-                                  src={project.beforeImagePreview} 
+                                  src={resolveImageUrl(project.beforeImagePreview) || ""} 
                                   alt="Before preview" 
                                   width={400} 
                                   height={300} 
                                   className="w-full h-full rounded-md object-cover"
+                                  unoptimized
                                 />
                                 <button
                                   type="button"
@@ -2046,11 +2060,12 @@ export default function CompanyProfileManagement() {
                             {project.afterImagePreview ? (
                               <div className="relative w-full h-full">
                                 <Image 
-                                  src={project.afterImagePreview} 
+                                  src={resolveImageUrl(project.afterImagePreview) || ""} 
                                   alt="After preview" 
                                   width={400} 
                                   height={300} 
                                   className="w-full h-full rounded-md object-cover"
+                                  unoptimized
                                 />
                                 <button
                                   type="button"
@@ -2285,13 +2300,14 @@ export default function CompanyProfileManagement() {
                   {/* Company Header */}
                   <div className="flex flex-col md:flex-row items-center gap-8 bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border border-gray-200">
                     <div className="relative">
-                      {fileUploadState.logoPreview ? (
+                      {fileUploadState.logoPreview && (fileUploadState.logoPreview.startsWith('http') || fileUploadState.logoPreview.startsWith('/')) ? (
                         <Image 
-                          src={fileUploadState.logoPreview} 
+                          src={resolveImageUrl(fileUploadState.logoPreview) || ""} 
                           alt="Logo" 
                           width={128} 
                           height={128} 
                           className="w-32 h-32 rounded-2xl object-cover shadow-lg border-4 border-white"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -2392,7 +2408,7 @@ export default function CompanyProfileManagement() {
                       {teamMembers.map(member => (
                         <div key={member.id} className="text-center">
                           <div className="relative mx-auto mb-4">
-                            {member.photoPreview ? (
+                            {member.photoPreview && (member.photoPreview.startsWith('http') || member.photoPreview.startsWith('/')) ? (
                               <Image 
                                 src={member.photoPreview} 
                                 alt={member.name} 
@@ -2428,7 +2444,7 @@ export default function CompanyProfileManagement() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <div className="text-sm font-medium text-gray-900 mb-2">Before</div>
-                              {project.beforeImagePreview ? (
+                              {project.beforeImagePreview && (project.beforeImagePreview.startsWith('http') || project.beforeImagePreview.startsWith('/')) ? (
                                 <Image 
                                   src={project.beforeImagePreview} 
                                   alt="Before" 
@@ -2444,7 +2460,7 @@ export default function CompanyProfileManagement() {
                             </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900 mb-2">After</div>
-                              {project.afterImagePreview ? (
+                              {project.afterImagePreview && (project.afterImagePreview.startsWith('http') || project.afterImagePreview.startsWith('/')) ? (
                                 <Image 
                                   src={project.afterImagePreview} 
                                   alt="After" 

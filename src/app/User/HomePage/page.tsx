@@ -5,16 +5,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getAllCompanies } from '@/services/UserService'
+import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
 import type { CompanyProfile } from '@/types/AuthTypes'
 import UserNavbar from '@/components/user/UserNavbar'
+import { Heart } from 'lucide-react'
+import { toast } from 'react-toastify'
 
-const resolveImageUrl = (path?: string | null): string | null => {
-  if (!path) return null
-  if (path.startsWith('http')) return path
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
-  return `${base}/${path}`
-}
+import { resolveImageUrl } from "@/utils/urlHelper";
 
 export default function HomePage() {
   const router = useRouter();
@@ -22,12 +19,18 @@ export default function HomePage() {
   const [companies, setCompanies] = useState<CompanyProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [favourites, setFavourites] = useState<string[]>([])
+
+  const [searchCategory, setSearchCategory] = useState("");
+  const [searchService, setSearchService] = useState("");
+  const [searchCity, setSearchCity] = useState("");
 
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
-        const data = await getAllCompanies()
-        setCompanies(data)
+        const response = await getAllCompanies()
+        // The API now returns a paginated object { data: Company[], total: number, ... }
+        setCompanies(response.data || [])
       } catch (err) {
         console.error(err)
         setError((err as Error).message || 'Failed to load companies')
@@ -37,98 +40,130 @@ export default function HomePage() {
     }
 
     fetchCompanies()
+
+    getFavourites()
+      .then(favs => {
+        if (Array.isArray(favs)) {
+          setFavourites(favs.map((f: { _id?: string, id?: string }) => f._id || f.id || ""));
+        }
+      })
+      .catch(() => {});
   }, [])
 
-  return (
-    <div className="bg-gray-50 text-gray-800">
-      <UserNavbar />
-      {/* Hero Section */}
-      <section className="relative">
-        {/* Background with overlay */}
-        <div className="h-[650px] relative overflow-hidden">
-          <Image 
-            src="https://images.unsplash.com/photo-1541913057-2384ccf0882e?q=80&w=2000&auto=format&fit=crop"
-            alt="Construction site at sunset"
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/70"></div>
+  const handleToggleFavourite = async (e: React.MouseEvent, companyId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+        const updatedFavs = await toggleFavourite(companyId);
+        setFavourites(updatedFavs);
+        const isNowFav = updatedFavs.includes(companyId);
+        toast.success(isNowFav ? "Added to favorites" : "Removed from favorites");
+    } catch {
+        toast.error("Please login to manage favorites");
+    }
+  }
 
-          {/* Content */}
-        <div 
-  className="relative z-10 h-full flex items-center"
-  style={{
-    backgroundImage: "url('/assets/construction-site-sunset.jpg')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat"
-  }}
->
-  {/* Optional: Add a semi-transparent overlay for better text readability */}
-  <div className="absolute inset-0 bg-black/50"></div>
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchCategory) params.append("category", searchCategory);
+    if (searchService) params.append("services", searchService);
+    if (searchCity) params.append("query", searchCity);
+    
+    router.push(`/User/CompanyListing?${params.toString()}`);
+  };
+
+    return (
+      <div className="bg-gray-50 text-gray-800">
+        <UserNavbar />
+        {/* Hero Section */}
+        <section className="relative">
+          {/* Background with overlay */}
+          <div className="h-[650px] relative overflow-hidden">
+            <Image 
+              src="https://images.unsplash.com/photo-1541913057-2384ccf0882e?q=80&w=2000&auto=format&fit=crop"
+              alt="Construction site at sunset"
+              fill
+              priority
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-black/70"></div>
+
+            {/* Content */}
+          <div 
+    className="relative z-10 h-full flex items-center"
+    style={{
+      backgroundImage: "url('/assets/construction-site-sunset.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat"
+    }}
+  >
+    {/* Optional: Add a semi-transparent overlay for better text readability */}
+    <div className="absolute inset-0 bg-black/50"></div>
+    
+    <div className="relative z-20 max-w-6xl mx-auto px-6 text-white">
+      {/* Headline */}
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
+        <span className="text-[rgb(210,152,4)]">Redefining</span> 
+        <span className="text-white"> Modern</span> 
+        <span className="text-[rgb(210,152,4)]"> Construction</span>
+      </h1>
   
-  <div className="relative z-20 max-w-6xl mx-auto px-6 text-white">
-    {/* Headline */}
-    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
-      <span className="text-[rgb(210,152,4)]">Redefining</span> 
-      <span className="text-white"> Modern</span> 
-      <span className="text-[rgb(210,152,4)]"> Construction</span>
-    </h1>
-
-    {/* Sub text */}
-    <p className="text-lg sm:text-xl max-w-3xl mb-10 text-gray-200">
-      Blending <span className="text-[rgb(210,152,4)] font-semibold">Cutting-Edge Technology</span> 
-      with <span className="text-white font-semibold">Timeless Craftsmanship</span> 
-      to deliver exceptional construction solutions for homeowners & dreamers.
-    </p>
-
-    {/* Search bar (Transparent + Blur) */}
-    <form 
-      onSubmit={(e) => {
-        e.preventDefault()
-        router.push('/User/Search')
-      }}
-      className="backdrop-blur-md bg-transparent border border-white/20 rounded-2xl p-4 shadow-xl max-w-6xl mx-auto"
-    >
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Category */}
-        <select
-          defaultValue=""
-          className="px-3 py-2 border border-white/20 rounded w-full sm:w-52 bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]"
-        >
-          <option value="" disabled>Choose Category</option>
-          <option>Residential</option>
-          <option>Commercial</option>
-          <option>Villas</option>
-        </select>
-
-        {/* Service */}
-        <select
-          defaultValue=""
-          className="px-3 py-2 border border-white/20 rounded w-full sm:w-60 bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]"
-        >
-          <option value="" disabled>Choose Service</option>
-          <option>Architecture</option>
-          <option>Interior Design</option>
-          <option>Renovation</option>
-        </select>
-
-        {/* City */}
-        <input 
-          className="flex-1 px-3 py-2 border border-white/20 rounded bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]" 
-          placeholder="Enter City or Area (e.g., Bangalore)" 
-        />
-
-        {/* Button */}
-        <button className="bg-[rgb(0,14,41)] border-2 border-[rgb(210,152,4)] text-[rgb(210,152,4)] font-semibold px-6 py-2 rounded-xl hover:bg-[rgb(0,14,41)] hover:text-white transition">
-          Find a Professional
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+      {/* Sub text */}
+      <p className="text-lg sm:text-xl max-w-3xl mb-10 text-gray-200">
+        Blending <span className="text-[rgb(210,152,4)] font-semibold">Cutting-Edge Technology</span> 
+        with <span className="text-white font-semibold">Timeless Craftsmanship</span> 
+        to deliver exceptional construction solutions for homeowners & dreamers.
+      </p>
+  
+      {/* Search bar (Transparent + Blur) */}
+      <form 
+        onSubmit={handleSearch}
+        className="backdrop-blur-md bg-transparent border border-white/20 rounded-2xl p-4 shadow-xl max-w-6xl mx-auto"
+      >
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Category */}
+          <select
+            value={searchCategory}
+            onChange={(e) => setSearchCategory(e.target.value)}
+            className="px-3 py-2 border border-white/20 rounded w-full sm:w-52 bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]"
+          >
+            <option value="" disabled className="text-black">Choose Category</option>
+            <option value="Residential" className="text-black">Residential</option>
+            <option value="Commercial" className="text-black">Commercial</option>
+            <option value="Villas" className="text-black">Villas</option>
+          </select>
+  
+          {/* Service */}
+          <select
+            value={searchService}
+            onChange={(e) => setSearchService(e.target.value)}
+            className="px-3 py-2 border border-white/20 rounded w-full sm:w-60 bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]"
+          >
+            <option value="" disabled className="text-black">Choose Service</option>
+            <option value="Architecture" className="text-black">Architecture</option>
+            <option value="Interior Design" className="text-black">Interior Design</option>
+            <option value="Renovation" className="text-black">Renovation</option>
+          </select>
+  
+          {/* City */}
+          <input 
+            value={searchCity}
+            onChange={(e) => setSearchCity(e.target.value)}
+            className="flex-1 px-3 py-2 border border-white/20 rounded bg-transparent text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[rgb(210,152,4)] focus:border-[rgb(210,152,4)]" 
+            placeholder="Enter City or Area (e.g., Bangalore)" 
+          />
+  
+          {/* Button */}
+          <button type="submit" className="bg-[rgb(0,14,41)] border-2 border-[rgb(210,152,4)] text-[rgb(210,152,4)] font-semibold px-6 py-2 rounded-xl hover:bg-[rgb(0,14,41)] hover:text-white transition">
+            Find a Professional
+          </button>
         </div>
+      </form>
+    </div>
+  </div>
+          </div>
 
         {/* Stats Section (smaller height, closer to image) */}
         <div className="bg-[rgb(0,14,41)] py-6">
@@ -183,6 +218,7 @@ export default function HomePage() {
                 width={112}
                 height={112}
                 className="w-28 h-28 rounded object-cover border-2 border-[rgb(210,152,4)]"
+                unoptimized
               />
               <div>
                 <h3 className="font-bold text-lg text-[rgb(0,14,41)]">Residential</h3>
@@ -196,7 +232,7 @@ export default function HomePage() {
             </ul>
             <div className="mt-6">
               <Link 
-                href="/search" 
+                href="/User/CompanyListing?category=Residential" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
@@ -216,6 +252,7 @@ export default function HomePage() {
                 width={112}
                 height={112}
                 className="w-28 h-28 rounded object-cover border-2 border-[rgb(210,152,4)]"
+                unoptimized
               />
               <div>
                 <h3 className="font-bold text-lg text-[rgb(0,14,41)]">Commercial</h3>
@@ -229,7 +266,7 @@ export default function HomePage() {
             </ul>
             <div className="mt-6">
               <Link 
-                href="/search" 
+                href="/User/CompanyListing?category=Commercial" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
@@ -249,6 +286,7 @@ export default function HomePage() {
                 width={112}
                 height={112}
                 className="w-28 h-28 rounded object-cover border-2 border-[rgb(210,152,4)]"
+                unoptimized
               />
               <div>
                 <h3 className="font-bold text-lg text-[rgb(0,14,41)]">Villas</h3>
@@ -262,7 +300,7 @@ export default function HomePage() {
             </ul>
             <div className="mt-6">
               <Link 
-                href="/search" 
+                href="/User/CompanyListing?category=Villas" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
@@ -282,6 +320,7 @@ export default function HomePage() {
                 width={112}
                 height={112}
                 className="w-28 h-28 rounded object-cover border-2 border-[rgb(210,152,4)]"
+                unoptimized
               />
               <div>
                 <h3 className="font-bold text-lg text-[rgb(0,14,41)]">Apartments</h3>
@@ -295,7 +334,7 @@ export default function HomePage() {
             </ul>
             <div className="mt-6">
               <Link 
-                href="/search" 
+                href="/User/CompanyListing?category=Residential" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
@@ -366,6 +405,16 @@ export default function HomePage() {
                 </svg>
               </div>
             )}
+
+            {/* Like Button */}
+            <button
+              onClick={(e) => handleToggleFavourite(e, company.id)}
+              className="absolute top-4 left-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-10 group/btn"
+            >
+              <Heart 
+                className={`w-5 h-5 transition-colors ${favourites.includes(company.id) ? "fill-red-500 text-red-500" : "text-gray-600 group-hover/btn:text-red-500"}`} 
+              />
+            </button>
             
             {/* Company Logo Overlay */}
           
@@ -441,32 +490,42 @@ export default function HomePage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {company.profile.projects[0].beforeImage && (
-                    <div className="relative h-24 rounded-lg overflow-hidden group">
-                      <Image 
-                        src={resolveImageUrl(company.profile.projects[0].beforeImage) ?? ''} 
-                        alt="Before" 
-                        fill 
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                        <span className="text-xs font-semibold text-white">Before</span>
+                    {company.profile.projects[0].beforeImage && resolveImageUrl(company.profile.projects[0].beforeImage) ? (
+                      <div className="relative h-24 rounded-lg overflow-hidden group">
+                        <Image 
+                          src={resolveImageUrl(company.profile.projects[0].beforeImage)!} 
+                          alt="Before" 
+                          fill 
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                          <span className="text-xs font-semibold text-white">Before</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {company.profile.projects[0].afterImage && (
-                    <div className="relative h-24 rounded-lg overflow-hidden group">
-                      <Image 
-                        src={resolveImageUrl(company.profile.projects[0].afterImage) ?? ''} 
-                        alt="After" 
-                        fill 
-                        className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                        <span className="text-xs font-semibold text-white">After</span>
+                    ) : (
+                      <div className="h-24 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <span className="text-[10px] text-gray-400">No Image</span>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    {company.profile.projects[0].afterImage && resolveImageUrl(company.profile.projects[0].afterImage) ? (
+                      <div className="relative h-24 rounded-lg overflow-hidden group">
+                        <Image 
+                          src={resolveImageUrl(company.profile.projects[0].afterImage)!} 
+                          alt="After" 
+                          fill 
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                          <span className="text-xs font-semibold text-white">After</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-24 rounded-lg bg-gray-100 flex items-center justify-center">
+                        <span className="text-[10px] text-gray-400">No Image</span>
+                      </div>
+                    )}
                 </div>
               </div>
             )}
@@ -655,6 +714,7 @@ export default function HomePage() {
                 width={48}
                 height={48}
                 className="w-12 h-12 rounded-full object-cover border-2 border-[rgb(210,152,4)]"
+                unoptimized
               />
               <div className="font-bold text-[rgb(210,152,4)]">R. Mehta</div>
             </div>

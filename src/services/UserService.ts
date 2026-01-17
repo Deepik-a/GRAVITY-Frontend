@@ -1,23 +1,12 @@
 import api from "./api/useApi";
+import { extractAxiosError } from "@/utils/HandleAxiosError";
 
-const extractErrorMessage = (error: unknown, defaultMessage: string): string => {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const axiosError = error as { response?: { data?: { message?: string } } };
-    return axiosError.response?.data?.message || defaultMessage;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return defaultMessage;
-};
-
-export const getAllCompanies = async () => {
+export const getAllCompanies = async (params: any = {}) => {
   try {
-    const response = await api.get("/user/companies");
+    const response = await api.get("/user/companies", { params });
     return response.data;
   } catch (error) {
-    console.error("❌ Get companies failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to fetch companies"));
+    throw new Error(extractAxiosError(error));
   }
 };
 
@@ -26,8 +15,7 @@ export const getCompanyById = async (companyId: string) => {
     const response = await api.get(`/company/profile/${companyId}`);
     return response.data;
   } catch (error) {
-    console.error("❌ Get company details failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to fetch company details"));
+    throw new Error(extractAxiosError(error));
   }
 };
 
@@ -38,8 +26,7 @@ export const getAvailableSlots = async (companyId: string, date: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get available slots failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to fetch available slots"));
+    throw new Error(extractAxiosError(error));
   }
 };
 
@@ -48,8 +35,7 @@ export const bookSlot = async (bookingData: { companyId: string; date: string; s
     const response = await api.post(`/user/slots/book`, bookingData);
     return response.data;
   } catch (error) {
-    console.error("❌ Book slot failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to book slot"));
+    throw new Error(extractAxiosError(error));
   }
 };
 
@@ -58,7 +44,60 @@ export const getUserBookings = async () => {
     const response = await api.get("/user/bookings");
     return response.data;
   } catch (error) {
-    console.error("❌ Get user bookings failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to fetch your bookings"));
+    throw new Error(extractAxiosError(error));
   }
+};
+
+export const createCheckoutSession = async (bookingId: string) => {
+  try {
+    const response = await api.post("/payments/create-checkout-session", { bookingId });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const getFavourites = async () => {
+  try {
+    const response = await api.get("/user/profile/favourites");
+    return response.data.favourites;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const toggleFavourite = async (companyId: string) => {
+  try {
+    const response = await api.post("/user/profile/favourites", { companyId });
+    return response.data.favourites;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const changePassword = async (data: any) => {
+  try {
+    const response = await api.put("/user/profile/password", data);
+    return response.data;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const submitReview = async (data: { companyId: string; rating: number; comment: string }) => {
+  try {
+    const response = await api.post("/user/reviews", data);
+    return response.data;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const getCompanyReviews = async (companyId: string) => {
+   try {
+     const response = await api.get(`/user/companies/${companyId}/reviews`);
+     return response.data;
+   } catch (error) {
+     throw new Error(extractAxiosError(error));
+   }
 };

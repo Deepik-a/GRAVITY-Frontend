@@ -6,6 +6,9 @@ import Sidebar from '@/components/company/SideBarLayout';
 import SlotManagement from '../SlotManagment/page';
 import CompanyBookings from '../Bookings/page';
 import CompanyProfilePage from '../CompanyProfile/page';
+import CompanySubscriptionPage from '../Subscription/page';
+import CompanyWalletPage from '../Wallet/page';
+import CompanyReviewsPage from '../Reviews/page';
 import { useRouter } from 'next/navigation';
 
 // Register Chart.js components
@@ -13,18 +16,36 @@ Chart.register(...registerables);
 
 const CompanyDashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
-  const [userInfo, setUserInfo] = useState({ name: 'Loading...', type: 'Company Account', initials: '?' });
+  const [userInfo, setUserInfo] = useState({ id: '', name: 'Loading...', type: 'Company Account', initials: '?', isSubscribed: false });
   const router = useRouter();
-
+ 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setUserInfo({
+        id: user.id || '',
         name: user.name || 'Company Name',
         type: 'Company Account',
-        initials: (user.name || 'C').charAt(0).toUpperCase()
+        initials: (user.name || 'C').charAt(0).toUpperCase(),
+        isSubscribed: user.isSubscribed || false
       });
+ 
+      // Fetch latest profile to sync isSubscribed
+      if (user.id) {
+        import('@/services/CompanyService').then(({ getProfile }) => {
+          getProfile(user.id).then(profile => {
+            if (profile) {
+              setUserInfo(prev => ({ ...prev, isSubscribed: !!profile.isSubscribed }));
+              // Update localStorage if changed
+              if (profile.isSubscribed !== user.isSubscribed) {
+                const newUser = { ...user, isSubscribed: !!profile.isSubscribed };
+                localStorage.setItem('user', JSON.stringify(newUser));
+              }
+            }
+          }).catch(err => console.error("Sync profile failed", err));
+        });
+      }
     } else {
       router.push('/Login');
     }
@@ -326,12 +347,19 @@ const CompanyDashboard = () => {
               </div>
               
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 bg-green-100 px-3 py-1 rounded-full">
-                  <div className="w-2 h-2 bg-green-500 rounded-full pulse-glow"></div>
-                  <span className="text-sm font-medium text-green-700">Premium Partner</span>
-                </div>
+                {userInfo.isSubscribed ? (
+                  <div className="flex items-center space-x-2 bg-green-100 px-3 py-1 rounded-full">
+                    <div className="w-2 h-2 bg-green-500 rounded-full pulse-glow"></div>
+                    <span className="text-sm font-medium text-green-700">Premium Partner</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setActiveSection('subscription')}>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-600">Basic Plan (Upgrade)</span>
+                  </div>
+                )}
                 <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold">EP</span>
+                  <span className="text-white font-semibold">{userInfo.initials}</span>
                 </div>
               </div>
             </div>
@@ -459,7 +487,25 @@ const CompanyDashboard = () => {
               </div>
             )}
 
-            {activeSection !== 'overview' && activeSection !== 'Slots' && activeSection !== 'bookings' && activeSection !== 'profile' && (
+            {activeSection === 'subscription' && (
+              <div className="fade-in">
+                <CompanySubscriptionPage />
+              </div>
+            )}
+
+            {activeSection === 'wallet' && (
+              <div className="fade-in">
+                <CompanyWalletPage />
+              </div>
+            )}
+
+            {activeSection === 'reviews' && (
+              <div className="fade-in">
+                <CompanyReviewsPage />
+              </div>
+            )}
+
+            {activeSection !== 'overview' && activeSection !== 'Slots' && activeSection !== 'bookings' && activeSection !== 'profile' && activeSection !== 'subscription' && activeSection !== 'wallet' && activeSection !== 'reviews' && (
               <div className="flex items-center justify-center h-64 bg-white rounded-2xl shadow-lg fade-in">
                 <p className="text-gray-400 text-lg">Section &quot;{activeSection}&quot; is under construction.</p>
               </div>

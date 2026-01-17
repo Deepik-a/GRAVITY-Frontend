@@ -25,6 +25,7 @@ export interface AuthResponse {
     email: string;
     phone: string;
     isProfileFilled?: boolean;
+    isSubscribed?: boolean;
   };
   documentStatus?: "pending" | "verified" | "rejected";
   rejectionReason?: string;
@@ -40,6 +41,7 @@ export interface GoogleAuthResponse {
     token: string;
     role: 'user' | 'company';
     isProfileFilled?: boolean;
+    isSubscribed?: boolean;
   };
   isNewUser: boolean;
  documentStatus?:"pending"|"verified"|"rejected";
@@ -77,6 +79,7 @@ export interface CompanyProfile {
   updatedAt: string;
   isBlocked?: boolean;
   isProfileFilled?: boolean;
+  isSubscribed?: boolean;
   profile?: {
     categories: string[];
     services: string[];

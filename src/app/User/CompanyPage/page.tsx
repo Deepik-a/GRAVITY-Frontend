@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getCompanyById } from '@/services/UserService';
+import { getCompanyById, getFavourites, toggleFavourite } from '@/services/UserService';
 import type { CompanyProfile } from '@/types/AuthTypes';
 import UserNavbar from '@/components/user/UserNavbar';
+import { toast } from 'react-toastify';
+import ReviewsSection from '@/components/ReviewsSection';
 
 type CompanyTab = {
   id: 'overview' | 'projects' | 'team' | 'reviews';
@@ -14,17 +16,14 @@ type CompanyTab = {
   icon: string;
 };
 
-const resolveImageUrl = (path?: string | null): string | null => {
-  if (!path) return null;
-  if (path.startsWith('http')) return path;
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-  return `${base}/${path}`;
-};
+import { resolveImageUrl } from "@/utils/urlHelper";
 export default function CompanyProfilePage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFavourite, setIsFavourite] = useState(false);
+  const [togglingFav, setTogglingFav] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -75,7 +74,35 @@ export default function CompanyProfilePage() {
     };
 
     loadCompany();
+
+    // Check if favourite
+    if (companyId) {
+      getFavourites()
+        .then((favs) => {
+          if (Array.isArray(favs)) {
+            const isFav = favs.some((f: { _id?: string, id?: string }) => (f._id || f.id) === companyId);
+            setIsFavourite(isFav);
+          }
+        })
+        .catch(() => {}); // Not logged in usually
+    }
   }, [companyId]);
+
+  const handleToggleFav = async () => {
+    if (!companyId) return;
+    setTogglingFav(true);
+    try {
+      const updatedFavs = await toggleFavourite(companyId);
+      if (Array.isArray(updatedFavs)) {
+        setIsFavourite(updatedFavs.some((id: string) => id === companyId));
+      }
+      toast.success(isFavourite ? "Removed from favorites" : "Added to favorites");
+    } catch (error) {
+      toast.error("Please login to manage favorites");
+    } finally {
+      setTogglingFav(false);
+    }
+  };
 
   const stats = [
     {
@@ -275,6 +302,7 @@ export default function CompanyProfilePage() {
         className="object-cover"
         priority
         sizes="100vw"
+        unoptimized
       />
       <div className="absolute inset-0 bg-black/30"></div>
     </div>
@@ -334,6 +362,7 @@ export default function CompanyProfilePage() {
                 alt="Banner 2" 
                 fill 
                 className="object-cover transition-transform duration-700 group-hover:scale-110"
+                unoptimized
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-800 to-blue-600 flex items-center justify-center">
@@ -361,6 +390,7 @@ export default function CompanyProfilePage() {
                         width={160}
                         height={160}
                         className="w-full h-full object-cover"
+                        unoptimized
                       />
                     )}
                   </div>
@@ -412,9 +442,13 @@ export default function CompanyProfilePage() {
                 </div>
               </div>
               <div className="flex flex-col gap-3 w-full sm:w-auto">
-                <button className="btn-primary flex items-center justify-center gap-3 text-sm md:text-base">
-                  <i className="fas fa-heart" />
-                  Add to Favorites
+                <button 
+                  onClick={handleToggleFav}
+                  disabled={togglingFav}
+                  className={`${isFavourite ? 'bg-red-50 text-red-600 border-red-100' : 'btn-primary'} flex items-center justify-center gap-3 text-sm md:text-base transition-all active:scale-95`}
+                >
+                  <i className={`${isFavourite ? 'fas fa-heart text-red-500' : 'fas fa-heart'}`} />
+                  {isFavourite ? 'In Favorites' : 'Add to Favorites'}
                 </button>
                 <button className="px-4 py-2 md:px-6 md:py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center gap-3 font-semibold text-sm md:text-base">
                   <i className="fas fa-comment" />
@@ -565,6 +599,7 @@ export default function CompanyProfilePage() {
                                 alt={cat} 
                                 fill 
                                 className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                unoptimized
                               />
                               <div className="absolute top-4 left-4">
                                 <span className="px-4 py-1.5 gradient-bg text-white text-xs font-bold rounded-full shadow-lg">CATEGORY</span>
@@ -623,10 +658,11 @@ export default function CompanyProfilePage() {
                           {project.beforeImage && (
                             <div className="flex-1 relative group/img">
                               <Image
-                                src={resolveImageUrl(project.beforeImage) ?? ''}
+                                src={resolveImageUrl(project.beforeImage) || ''}
                                 alt={`${project.title} before`}
                                 fill
                                 className="object-cover"
+                                unoptimized
                               />
                               <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 text-white text-[10px] font-bold rounded uppercase">Before</div>
                             </div>
@@ -634,10 +670,11 @@ export default function CompanyProfilePage() {
                           {project.afterImage && (
                             <div className="flex-1 relative group/img border-t-2 sm:border-t-0 sm:border-l-2 border-white">
                               <Image
-                                src={resolveImageUrl(project.afterImage) ?? ''}
+                                src={resolveImageUrl(project.afterImage) || ''}
                                 alt={`${project.title} after`}
                                 fill
                                 className="object-cover"
+                                unoptimized
                               />
                               <div className="absolute bottom-2 right-2 px-2 py-1 bg-green-600/80 text-white text-[10px] font-bold rounded uppercase shadow-lg">After</div>
                             </div>
@@ -679,11 +716,12 @@ export default function CompanyProfilePage() {
                           <div className="w-20 h-20 md:w-24 md:h-24 rounded-full mx-auto bg-gradient-to-br from-blue-900 to-blue-700 shadow-xl overflow-hidden">
                             {member.photo && (
                               <Image
-                                src={resolveImageUrl(member.photo) ?? ''}
+                                src={resolveImageUrl(member.photo) || ''}
                                 alt={member.name}
                                 width={96}
                                 height={96}
                                 className="w-full h-full object-cover"
+                                unoptimized
                               />
                             )}
                           </div>
@@ -709,15 +747,10 @@ export default function CompanyProfilePage() {
                 </section>
               )}
 
-              {/* Reviews Tab (placeholder) */}
+              {/* Reviews Tab */}
               {activeTab === 'reviews' && (
                 <section className="mb-12">
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">
-                    Reviews
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Reviews feature coming soon.
-                  </p>
+                   {companyId && <ReviewsSection companyId={companyId} isUser={true} />}
                 </section>
               )}
             </div>

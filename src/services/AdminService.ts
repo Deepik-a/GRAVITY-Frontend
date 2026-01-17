@@ -139,3 +139,30 @@ export const toggleCompanyBlockStatus = async (companyId: string, isBlocked: boo
     throw new Error(extractErrorMessage(error, "Failed to update company block status"));
   }
 };
+
+export const getAllBookings = async () => {
+  try {
+    const response = await api.get("admin/bookings", { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to fetch bookings"));
+  }
+};
+
+export const getRevenue = async () => {
+  try {
+    const response = await api.get("admin/revenue", { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to fetch revenue stats"));
+  }
+};
+
+export const initiatePayout = async (bookingId: string) => {
+  try {
+    const response = await api.post("admin/payout", { bookingId }, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to initiate payout"));
+  }
+};

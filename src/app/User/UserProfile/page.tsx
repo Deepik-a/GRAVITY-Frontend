@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getProfile, updateProfile, uploadProfileImage, deleteProfileField } from "@/services/AuthService";
-import { getUserBookings } from "@/services/UserService";
-import { Profile } from "@/types/AuthTypes";
+import { getUserBookings, getFavourites, changePassword } from "@/services/UserService";
+import { Profile, CompanyProfile } from "@/types/AuthTypes";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 import { toast } from "react-toastify";
 import UserNavbar from "@/components/user/UserNavbar";
@@ -32,7 +32,14 @@ import {
   CheckCircle,
   AlertCircle,
   Check,
+  Lock,
+  Eye,
+  EyeOff,
+  MessageSquare,
+  Video
 } from "lucide-react";
+
+import { resolveImageUrl } from "@/utils/urlHelper";
 
 interface Booking {
   id: string;
@@ -60,6 +67,14 @@ const Dashboard = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [favourites, setFavourites] = useState<CompanyProfile[]>([]);
+  const [loadingFavourites, setLoadingFavourites] = useState(false);
+  
+  // Password Change State
+  const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState({ newPassword: "", confirmPassword: "" });
+  const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false });
   
   // Edit form state
   const [editForm, setEditForm] = useState<Partial<Profile>>({});
@@ -93,7 +108,7 @@ const Dashboard = () => {
           });
           // Set image preview if profile has image
           if (profile.profileImage) {
-            setImagePreview(profile.profileImage);
+            setImagePreview(resolveImageUrl(profile.profileImage));
           }
         })
         .catch((error) => {
@@ -121,6 +136,83 @@ const Dashboard = () => {
         .finally(() => setLoadingBookings(false));
     }
   }, [activeSection]);
+  
+  // Fetch favourites
+  useEffect(() => {
+    if (activeSection === "favourites") {
+      setLoadingFavourites(true);
+      getFavourites()
+        .then(setFavourites)
+        .catch(err => toast.error(extractAxiosError(err)))
+        .finally(() => setLoadingFavourites(false));
+    }
+  }, [activeSection]);
+
+  const validatePassword = (name: string, value: string) => {
+    let error = "";
+    if (name === "newPassword") {
+      if (value.length < 6) {
+        error = "Password must be at least 6 characters";
+      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+        error = "Password must contain uppercase, lowercase, and numbers";
+      }
+    } else if (name === "confirmPassword") {
+      if (value !== passwordForm.newPassword) {
+        error = "Passwords do not match";
+      }
+    }
+    return error;
+  };
+
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({ ...prev, [name]: value }));
+    
+    const error = validatePassword(name, value);
+    setPasswordErrors(prev => ({ ...prev, [name]: error }));
+
+    // If we change newPassword, re-validate confirmPassword
+    if (name === "newPassword" && passwordForm.confirmPassword) {
+      const confirmError = value !== passwordForm.confirmPassword ? "Passwords do not match" : "";
+      setPasswordErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+    }
+  };
+
+  const togglePasswordVisibility = (field: 'old' | 'new' | 'confirm') => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newPassError = validatePassword("newPassword", passwordForm.newPassword);
+    const confirmPassError = validatePassword("confirmPassword", passwordForm.confirmPassword);
+
+    if (newPassError || confirmPassError) {
+      setPasswordErrors({ newPassword: newPassError, confirmPassword: confirmPassError });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      await changePassword({
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword
+      });
+      toast.success("Password changed successfully");
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordErrors({ newPassword: "", confirmPassword: "" });
+    } catch (error) {
+       const message = extractAxiosError(error);
+       if (message.toLowerCase().includes("current password") || message.toLowerCase().includes("old password")) {
+         toast.error("Incorrect current password. Please try again.");
+       } else {
+         toast.error(message);
+       }
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   // Validation rules
   const validateField = (field: string, value: string) => {
@@ -280,7 +372,7 @@ const Dashboard = () => {
       try {
         const uploadedImage = await uploadProfileImage(croppedFile);
         setProfileData(prev => prev ? { ...prev, profileImage: uploadedImage.url } : null);
-        setImagePreview(uploadedImage.url);
+        setImagePreview(resolveImageUrl(uploadedImage.url));
 
         // ✅ Update localStorage so other components reflect changes
         const storedUser = localStorage.getItem("user");
@@ -660,11 +752,12 @@ const Dashboard = () => {
                         <div className="w-16 h-16 rounded-2xl bg-gray-50 flex-shrink-0 flex items-center justify-center overflow-hidden border-2 border-gray-100 group-hover:border-[rgb(210,152,4)] transition-colors">
                           {booking.companyDetails?.logo ? (
                             <Image 
-                              src={booking.companyDetails.logo} 
+                              src={resolveImageUrl(booking.companyDetails.logo) || ""} 
                               alt="Company" 
                               width={64} 
                               height={64} 
                               className="w-full h-full object-cover" 
+                              unoptimized
                             />
                           ) : (
                             <div className="text-[rgb(210,152,4)] font-bold text-xl">
@@ -706,16 +799,108 @@ const Dashboard = () => {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                           <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm">
-                             Reschedule
-                           </button>
-                           {booking.status !== "cancelled" && (
-                             <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-sm">
-                               Cancel
-                             </button>
+                        <div className="flex flex-wrap items-center gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
+                           {booking.status === "confirmed" ? (
+                             <>
+                               <button 
+                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-xs"
+                                 onClick={() => toast.info("Chat feature coming soon!")}
+                               >
+                                 <MessageSquare size={14} /> Chat
+                               </button>
+                               <button 
+                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all text-xs"
+                                 onClick={() => toast.info("Video call feature coming soon!")}
+                               >
+                                 <Video size={14} /> Video Call
+                               </button>
+                               <button 
+                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
+                                 onClick={() => toast.info("Review feature coming soon!")}
+                                >
+                                 <Star size={14} /> Review
+                               </button>
+                             </>
+                           ) : (
+                             <>
+                               {booking.status !== "cancelled" && (
+                                 <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm">
+                                   Reschedule
+                                 </button>
+                               )}
+                               {booking.status !== "cancelled" && (
+                                 <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-sm">
+                                   Cancel
+                                 </button>
+                               )}
+                             </>
                            )}
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === "favourites" && (
+            <div className="animate-fade-in">
+              <h1 className="text-3xl font-bold text-[#081c45] mb-2">My Favourites</h1>
+              <p className="text-gray-600 mb-8">Companies you have liked</p>
+
+              {loadingFavourites ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#081c45]"></div>
+                  <p className="mt-4 text-[#081c45] font-medium">Loading favourites...</p>
+                </div>
+              ) : favourites.length === 0 ? (
+                <div className="bg-white rounded-3xl p-12 text-center shadow-xl border border-gray-100 animate-fade-in">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Heart className="w-10 h-10 text-gray-300" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#081c45] mb-2">No Favourites Yet</h3>
+                  <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                    You haven&apos;t added any companies to your favourites. 
+                  </p>
+                  <Link 
+                    href="/User/HomePage" 
+                    className="inline-flex items-center gap-2 text-[rgb(210,152,4)] font-bold hover:underline"
+                  >
+                     Explore Companies <TrendingUp className="w-4 h-4" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {favourites.map((company, idx) => (
+                    <div 
+                      key={company._id || idx}
+                      className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all group"
+                    >
+                      <div className="relative h-40 bg-gray-200">
+                         {company.profile?.brandIdentity?.logo ? (
+                           <Image
+                             src={resolveImageUrl(company.profile.brandIdentity.logo) || ""}
+                             alt={company.name}
+                             fill
+                             className="object-cover"
+                           />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                             <span className="text-4xl font-bold">{company.name?.charAt(0)}</span>
+                           </div>
+                         )}
+                      </div>
+                      <div className="p-6">
+                        <h3 className="text-lg font-bold text-[#081c45] mb-2 truncate">{company.name}</h3>
+                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{company.profile?.overview || "No description available"}</p>
+                        
+                        <Link 
+                          href={`/User/CompanyPage/${company._id}`}
+                          className="block w-full text-center bg-gradient-to-r from-[#081c45] to-[#1e40af] text-white py-2 rounded-lg hover:opacity-90 transition-opacity"
+                        >
+                          View Profile
+                        </Link>
                       </div>
                     </div>
                   ))}
@@ -931,6 +1116,115 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
+
+              </div>
+              
+              {/* Change Password Section */}
+              <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 mt-6">
+                 <h3 className="text-xl font-semibold text-[#081c45] mb-6 flex items-center gap-2">
+                   <Lock className="w-5 h-5" />
+                   Security and Login
+                 </h3>
+                 
+                  <form onSubmit={handlePasswordChange} className="space-y-4 max-w-lg">
+                    <div>
+                      <label className="text-sm font-semibold text-[#081c45] mb-1 block">Current Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showPasswords.old ? "text" : "password"}
+                          name="oldPassword"
+                          value={passwordForm.oldPassword}
+                          onChange={handlePasswordInputChange}
+                          className="w-full border border-gray-300 rounded-lg p-3 pr-10 text-[#081c45] focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          placeholder="Enter current password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('old')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPasswords.old ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-[#081c45] mb-1 block">New Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showPasswords.new ? "text" : "password"}
+                          name="newPassword"
+                          value={passwordForm.newPassword}
+                          onChange={handlePasswordInputChange}
+                          className={`w-full border rounded-lg p-3 pr-10 text-[#081c45] focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                            passwordErrors.newPassword ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Enter new password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('new')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {passwordErrors.newPassword && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {passwordErrors.newPassword}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-[#081c45] mb-1 block">Confirm New Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showPasswords.confirm ? "text" : "password"}
+                          name="confirmPassword"
+                          value={passwordForm.confirmPassword}
+                          onChange={handlePasswordInputChange}
+                          className={`w-full border rounded-lg p-3 pr-10 text-[#081c45] focus:ring-2 focus:ring-blue-500 outline-none transition-all ${
+                            passwordErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                          placeholder="Confirm new password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility('confirm')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      {passwordErrors.confirmPassword && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {passwordErrors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={passwordLoading || !passwordForm.oldPassword || !passwordForm.newPassword || !!passwordErrors.newPassword || !!passwordErrors.confirmPassword}
+                      className="bg-gradient-to-r from-[#081c45] to-[#1e40af] text-white px-8 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 font-bold flex items-center gap-2 mt-4 shadow-lg active:scale-95 transform"
+                    >
+                      {passwordLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Updating Security...
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          Update Password
+                        </>
+                      )}
+                    </button>
+                  </form>
               </div>
             </div>
           )}
