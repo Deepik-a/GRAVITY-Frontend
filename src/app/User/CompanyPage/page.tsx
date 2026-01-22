@@ -9,6 +9,7 @@ import type { CompanyProfile } from '@/types/AuthTypes';
 import UserNavbar from '@/components/user/UserNavbar';
 import { toast } from 'react-toastify';
 import ReviewsSection from '@/components/ReviewsSection';
+import ChatWindow from '@/components/chat/ChatWindow';
 
 type CompanyTab = {
   id: 'overview' | 'projects' | 'team' | 'reviews';
@@ -24,6 +25,8 @@ export default function CompanyProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [isFavourite, setIsFavourite] = useState(false);
   const [togglingFav, setTogglingFav] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "user" | "company" } | null>(null);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -65,15 +68,26 @@ export default function CompanyProfilePage() {
       try {
         const data = await getCompanyById(companyId);
         setCompany(data);
-      } catch (err) {
-        console.error('Failed to load company', err);
-        setError((err as Error).message || 'Failed to load company details');
+      } catch {
+        console.error('Failed to load company');
+        setError('Failed to load company details');
       } finally {
         setLoading(false);
       }
     };
 
     loadCompany();
+
+    // Load current user
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      // Ensure role is set to 'user' for user-side pages
+      setCurrentUser({
+        ...user,
+        role: user.role || 'user'
+      });
+    }
 
     // Check if favourite
     if (companyId) {
@@ -88,6 +102,14 @@ export default function CompanyProfilePage() {
     }
   }, [companyId]);
 
+  const handleLiveChat = () => {
+    if (!currentUser) {
+      toast.error("Please login to chat with the company");
+      return;
+    }
+    setIsChatOpen(true);
+  };
+
   const handleToggleFav = async () => {
     if (!companyId) return;
     setTogglingFav(true);
@@ -97,7 +119,7 @@ export default function CompanyProfilePage() {
         setIsFavourite(updatedFavs.some((id: string) => id === companyId));
       }
       toast.success(isFavourite ? "Removed from favorites" : "Added to favorites");
-    } catch (error) {
+    } catch {
       toast.error("Please login to manage favorites");
     } finally {
       setTogglingFav(false);
@@ -450,10 +472,15 @@ export default function CompanyProfilePage() {
                   <i className={`${isFavourite ? 'fas fa-heart text-red-500' : 'fas fa-heart'}`} />
                   {isFavourite ? 'In Favorites' : 'Add to Favorites'}
                 </button>
-                <button className="px-4 py-2 md:px-6 md:py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center gap-3 font-semibold text-sm md:text-base">
-                  <i className="fas fa-comment" />
-                  Live Chat
-                </button>
+                {company?.profile?.contactOptions?.chatSupport !== false && (
+                  <button 
+                    onClick={handleLiveChat}
+                    className="px-4 py-2 md:px-6 md:py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center gap-3 font-semibold text-sm md:text-base"
+                  >
+                    <i className="fas fa-comment" />
+                    Live Chat
+                  </button>
+                )}
                 <button 
                   onClick={() => router.push(`/User/BookSlots?companyId=${companyId}`)}
                   className="btn-gold flex items-center justify-center gap-3 text-sm md:text-base cursor-pointer"
@@ -807,6 +834,23 @@ export default function CompanyProfilePage() {
           </div>
         </section>
       </div>
+      
+      {isChatOpen && currentUser && company && (
+        <ChatWindow 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          currentUser={{
+            id: currentUser.id,
+            name: currentUser.name,
+            role: currentUser.role as "user" | "company"
+          }}
+          otherParticipant={{
+            id: companyId || '',
+            name: company.name,
+            role: 'company'
+          }}
+        />
+      )}
     </div>
   );
 }

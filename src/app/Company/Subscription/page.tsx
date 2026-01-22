@@ -146,20 +146,30 @@ export default function CompanySubscriptionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {plans.map((plan) => {
                  const isCurrent = currentSub?.planId === plan._id && isActive;
+                 const currentName = currentPlanDetails?.name?.toLowerCase();
+                 const planName = plan.name.toLowerCase();
+
+                 // Optimization: Highlight "Upgrade Plan" if they are on "Basic Plan"
+                 const isMajorUpgrade = currentName === 'basic plan' && planName === 'upgrade plan';
+                 
                  return (
                     <div 
                         key={plan._id} 
                         className={`bg-white rounded-3xl shadow-xl overflow-hidden border-2 flex flex-col transition-all duration-300 transform hover:-translate-y-2 relative
-                        ${isCurrent ? 'border-green-500 ring-4 ring-green-500/10' : 'border-transparent hover:border-gray-200'}
+                        ${isCurrent ? 'border-green-500 ring-4 ring-green-500/10' : isMajorUpgrade ? 'border-blue-500 scale-105 z-10' : 'border-transparent hover:border-gray-200'}
                         `}
                     >
-                        {isCurrent && (
+                        {isCurrent ? (
                             <div className="absolute top-0 left-0 right-0 bg-green-500 text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest">
                                 Current Plan
                             </div>
-                        )}
+                        ) : isMajorUpgrade ? (
+                            <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest">
+                                Recommended Upgrade
+                            </div>
+                        ) : null}
                         
-                        <div className={`p-8 ${isCurrent ? 'pt-10' : ''}`}>
+                        <div className={`p-8 ${(isCurrent || isMajorUpgrade) ? 'pt-10' : ''}`}>
                             <h3 className="text-2xl font-black mb-2 text-gray-900">{plan.name}</h3>
                             <p className="text-gray-500 font-medium text-sm mb-6">{plan.description}</p>
                             

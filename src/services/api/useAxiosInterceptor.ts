@@ -36,8 +36,22 @@ export const useAxiosInterceptor = () => {
       }
     }
 
-    if (error.response?.status === 403 && error.response?.data?.message === "Your account has been blocked. Please contact admin.") {
-      toast.error("You have been removed from the site, contact admin");
+    const backendMessage = error.response?.data?.message || "";
+    const isBlockedMessage = 
+      backendMessage.toLowerCase().includes("blocked") || 
+      backendMessage.toLowerCase().includes("contact admin");
+
+    if (error.response?.status === 403 && isBlockedMessage) {
+      toast.error(backendMessage || "Your account has been blocked. Please contact admin.");
+      
+      // Clear all auth-related local storage
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("companyProfile");
+      
+      // Redirect to signup
+      router.push("/signup");
     }
 
     return Promise.reject(error);

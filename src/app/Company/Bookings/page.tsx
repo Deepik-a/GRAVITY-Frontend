@@ -2,19 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { getCompanyBookings, confirmBooking } from "@/services/CompanyService";
+import { getCompanyBookings, rescheduleBooking } from "@/services/CompanyService";
+import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
-import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban } from "lucide-react";
+import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
 
 interface Booking {
   id: string;
+  companyId: string;
   date: string;
   startTime: string;
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
   price: number;
   paymentStatus: string;
+  isRescheduled?: boolean;
   userDetails?: {
     name: string;
     email: string;
@@ -26,7 +29,12 @@ export default function CompanyBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "cancelled">("upcoming");
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // Rescheduling state
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [isFetchingSlots, setIsFetchingSlots] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -45,17 +53,40 @@ export default function CompanyBookings() {
     }
   };
 
-  const handleConfirm = async (bookingId: string) => {
-    setProcessingId(bookingId);
+  const handleRescheduleClick = async (booking: Booking) => {
+    if (reschedulingId === booking.id) {
+      setReschedulingId(null);
+      return;
+    }
+
+    setReschedulingId(booking.id);
+    setIsFetchingSlots(true);
     try {
-      await confirmBooking(bookingId);
-      toast.success("Booking confirmed successfully!");
+      // Ensure date is in YYYY-MM-DD format
+      const dateStr = new Date(booking.date).toISOString().split('T')[0];
+      const slots = await getAvailableSlots(booking.companyId, dateStr);
+      setAvailableSlots(slots.slice(0, 5));
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Failed to fetch available slots");
+      setReschedulingId(null);
+    } finally {
+      setIsFetchingSlots(false);
+    }
+  };
+
+  const executeReschedule = async (booking: Booking, newSlot: string) => {
+    setIsRescheduling(true);
+    try {
+      await rescheduleBooking(booking.id, booking.date, newSlot);
+      toast.success("Booking rescheduled successfully!");
+      setReschedulingId(null);
       fetchBookings();
     } catch (error: unknown) {
       const err = error as { message?: string };
-      toast.error(err.message || "Failed to confirm booking");
+      toast.error(err.message || "Rescheduling failed");
     } finally {
-      setProcessingId(null);
+      setIsRescheduling(false);
     }
   };
 
@@ -93,7 +124,7 @@ export default function CompanyBookings() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
           <h2 className="text-3xl font-black text-gray-900 tracking-tight">Consultations</h2>
-          <p className="text-gray-500 font-medium">Manage your client appointments and confirm pending slots</p>
+          <p className="text-gray-500 font-medium">Manage your client appointments and consultation records</p>
         </div>
         
         <div className="flex bg-gray-100 p-1 rounded-2xl">
@@ -150,7 +181,14 @@ export default function CompanyBookings() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <h4 className="font-black text-gray-900 text-2xl group-hover:text-blue-600 transition-colors">{booking.userDetails?.name || "Premium Client"}</h4>
+                    <div className="flex items-center gap-3">
+                      <h4 className="font-black text-gray-900 text-2xl group-hover:text-blue-600 transition-colors">{booking.userDetails?.name || "Premium Client"}</h4>
+                      {booking.isRescheduled && (
+                        <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                          <RefreshCcw size={10} /> Rescheduled
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-bold text-gray-500">
                       <span className="flex items-center gap-2">
                         <Mail size={16} className="text-blue-400" />
@@ -197,22 +235,66 @@ export default function CompanyBookings() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {booking.status === "pending" && activeTab === "upcoming" ? (
+                  {activeTab === "upcoming" && (
                     <button 
-                      onClick={() => handleConfirm(booking.id)}
-                      disabled={processingId === booking.id}
-                      className="flex-1 lg:flex-none px-8 py-4 bg-blue-600 text-white rounded-2xl text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95 disabled:opacity-70 flex items-center justify-center gap-2"
+                      onClick={() => handleRescheduleClick(booking)}
+                      className={`flex-1 lg:flex-none px-6 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 ${reschedulingId === booking.id ? 'bg-amber-600 text-white shadow-amber-100' : 'bg-white text-amber-600 border-2 border-amber-100 hover:bg-amber-50'}`}
                     >
-                      {processingId === booking.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                      Confirm Booking
-                    </button>
-                  ) : (
-                    <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
-                      View Details
+                      <RefreshCcw size={18} className={reschedulingId === booking.id ? 'animate-spin' : ''} />
+                      {reschedulingId === booking.id ? 'Close' : 'Reschedule'}
                     </button>
                   )}
+                  <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
+                    View Details
+                  </button>
                 </div>
               </div>
+
+              {/* Reschedule Slots Panel */}
+              {reschedulingId === booking.id && (
+                <div className="mt-8 pt-8 border-t border-dashed border-gray-100 animate-in slide-in-from-top-4 duration-300">
+                  <div className="bg-gray-50 rounded-[1.5rem] p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                          <Clock size={20} />
+                        </div>
+                        <div>
+                          <h5 className="font-black text-gray-900">Select New Time</h5>
+                          <p className="text-xs text-gray-500 font-bold">Showing first 5 available slots for {new Date(booking.date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      {isFetchingSlots && <Loader2 size={20} className="animate-spin text-amber-600" />}
+                    </div>
+
+                    {!isFetchingSlots && availableSlots.length === 0 && (
+                      <div className="text-center py-4 bg-white rounded-xl border-2 border-dashed border-gray-200">
+                        <p className="text-sm font-bold text-gray-400">No other slots available for this day.</p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-3">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          disabled={isRescheduling}
+                          onClick={() => executeReschedule(booking, slot)}
+                          className="px-6 py-3 bg-white border-2 border-gray-100 rounded-xl text-sm font-black text-gray-700 hover:border-amber-500 hover:text-amber-600 transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+
+                    {isRescheduling && (
+                      <div className="mt-4 flex items-center gap-2 text-amber-600 font-black text-xs animate-pulse">
+                        <Loader2 size={14} className="animate-spin" />
+                        Updating consultation schedule...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

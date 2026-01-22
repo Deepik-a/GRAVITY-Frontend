@@ -420,90 +420,114 @@ export default function SlotManagement() {
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Date Range */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar size={16} /> Start Date *
-              </label>
-              <input
-                type="date"
-                required
-                min={getMinDate()}
-                value={config.startDate}
-                disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, startDate: e.target.value });
-                  if (errors.startDate) setErrors(prev => ({ ...prev, startDate: "" }));
-                }}
-                className={`w-full p-3 rounded-xl border ${errors.startDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
-              />
-              {errors.startDate && (
-                <p className="text-sm text-red-600">{errors.startDate}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Calendar size={16} /> End Date *
-              </label>
-              <input
-                type="date"
-                required
-                min={getMinEndDate()}
-                value={config.endDate}
-                disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, endDate: e.target.value });
-                  if (errors.endDate) setErrors(prev => ({ ...prev, endDate: "" }));
-                }}
-                className={`w-full p-3 rounded-xl border ${errors.endDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
-              />
-              {errors.endDate && (
-                <p className="text-sm text-red-600">{errors.endDate}</p>
-              )}
-            </div>
-          </div>
+        {/* Date Range */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <Calendar size={16} /> Start Date *
+    </label>
+    <div className="relative">
+      <input
+        type="date"
+        required
+        min={getMinDate()}
+        value={config.startDate}
+        disabled={!!editingId}
+        onChange={(e) => {
+          setConfig({ ...config, startDate: e.target.value });
+          if (errors.startDate) setErrors(prev => ({ ...prev, startDate: "" }));
+        }}
+        className={`w-full p-3 rounded-xl border ${errors.startDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+      />
+      {/* Always show calendar icon even when disabled */}
+      <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+        <Calendar size={20} />
+      </div>
+    </div>
+    {errors.startDate && (
+      <p className="text-sm text-red-600">{errors.startDate}</p>
+    )}
+  </div>
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <Calendar size={16} /> End Date *
+    </label>
+    <div className="relative">
+      <input
+        type="date"
+        required
+        min={getMinEndDate()}
+        value={config.endDate}
+        disabled={!!editingId}
+        onChange={(e) => {
+          setConfig({ ...config, endDate: e.target.value });
+          if (errors.endDate) setErrors(prev => ({ ...prev, endDate: "" }));
+        }}
+        className={`w-full p-3 rounded-xl border ${errors.endDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+      />
+      {/* Always show calendar icon even when disabled */}
+      <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+        <Calendar size={20} />
+      </div>
+    </div>
+    {errors.endDate && (
+      <p className="text-sm text-red-600">{errors.endDate}</p>
+    )}
+  </div>
+</div>
 
           {/* Time Range */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Clock size={16} /> Start Time *
-              </label>
-              <input
-                type="time"
-                required
-                value={config.startTime}
-                disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, startTime: e.target.value });
-                  if (errors.startTime) setErrors(prev => ({ ...prev, startTime: "" }));
-                }}
-                className={`w-full p-3 rounded-xl border ${errors.startTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
-              />
-              {errors.startTime && (
-                <p className="text-sm text-red-600">{errors.startTime}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Clock size={16} /> End Time *
-              </label>
-              <input
-                type="time"
-                required
-                value={config.endTime}
-                disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, endTime: e.target.value });
-                  if (errors.endTime) setErrors(prev => ({ ...prev, endTime: "" }));
-                }}
-                className={`w-full p-3 rounded-xl border ${errors.endTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
-              />
-              {errors.endTime && (
-                <p className="text-sm text-red-600">{errors.endTime}</p>
-              )}
-            </div>
-          </div>
+         {/* Time Range */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <Clock size={16} /> Start Time *
+    </label>
+    <div className="relative">
+      <input
+        type="time"
+        required
+        value={config.startTime}
+        disabled={!!editingId}
+        onChange={(e) => {
+          setConfig({ ...config, startTime: e.target.value });
+          if (errors.startTime) setErrors(prev => ({ ...prev, startTime: "" }));
+        }}
+        className={`w-full p-3 rounded-xl border ${errors.startTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+      />
+      <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+        <Clock size={20} />
+      </div>
+    </div>
+    {errors.startTime && (
+      <p className="text-sm text-red-600">{errors.startTime}</p>
+    )}
+  </div>
+  <div className="space-y-2">
+    <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <Clock size={16} /> End Time *
+    </label>
+    <div className="relative">
+      <input
+        type="time"
+        required
+        value={config.endTime}
+        disabled={!!editingId}
+        onChange={(e) => {
+          setConfig({ ...config, endTime: e.target.value });
+          if (errors.endTime) setErrors(prev => ({ ...prev, endTime: "" }));
+        }}
+        className={`w-full p-3 rounded-xl border ${errors.endTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+      />
+      <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+        <Clock size={20} />
+      </div>
+    </div>
+    {errors.endTime && (
+      <p className="text-sm text-red-600">{errors.endTime}</p>
+    )}
+  </div>
+</div>
 
           {/* Duration and Buffer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

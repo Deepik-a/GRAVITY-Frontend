@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getProfile, updateProfile, uploadProfileImage, deleteProfileField } from "@/services/AuthService";
-import { getUserBookings, getFavourites, changePassword } from "@/services/UserService";
+import { getUserBookings, getFavourites, changePassword, completeBooking } from "@/services/UserService";
 import { Profile, CompanyProfile } from "@/types/AuthTypes";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 import { toast } from "react-toastify";
@@ -36,7 +36,8 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
-  Video
+  Video,
+  RefreshCcw
 } from "lucide-react";
 
 import { resolveImageUrl } from "@/utils/urlHelper";
@@ -46,7 +47,10 @@ interface Booking {
   date: string;
   startTime: string;
   endTime: string;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: "pending" | "confirmed" | "cancelled";
+  paymentStatus: "pending" | "paid" | "failed";
+  serviceStatus: "pending" | "completed";
+  isRescheduled?: boolean;
   companyDetails?: {
     name: string;
     logo?: string;
@@ -163,6 +167,14 @@ const Dashboard = () => {
     }
     return error;
   };
+
+  {bookings.map((booking, idx) => {
+  console.log(`Booking ${idx}:`, {
+    status: booking.status,
+    paymentStatus: booking.paymentStatus,
+    serviceStatus: booking.serviceStatus
+  });
+})}
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -494,6 +506,24 @@ const Dashboard = () => {
     }
   };
 
+  const handleMarkAsCompleted = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to mark this service as completed? This will initiate the settlement to the company.")) return;
+
+    try {
+      await completeBooking(bookingId);
+      toast.success("Service marked as completed!");
+      
+      // Refresh bookings
+      setLoadingBookings(true);
+      getUserBookings()
+        .then(setBookings)
+        .catch(err => toast.error(extractAxiosError(err)))
+        .finally(() => setLoadingBookings(false));
+    } catch (error) {
+      toast.error(extractAxiosError(error));
+    }
+  };
+
   // Get initials safely
   const getInitials = (name?: string) => {
     if (!name) return "?";
@@ -562,6 +592,9 @@ const Dashboard = () => {
     },
   ];
 
+  
+
+  
   return (
     <div className="bg-gray-50 min-h-screen">
       <UserNavbar />
@@ -768,15 +801,30 @@ const Dashboard = () => {
 
                         {/* Booking Details */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                               booking.status === "completed" ? "bg-green-100 text-green-700" :
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                booking.status === "cancelled" ? "bg-red-100 text-red-700" :
+                               booking.status === "confirmed" ? "bg-green-100 text-green-700" :
                                "bg-blue-100 text-blue-700"
                              }`}>
                                {booking.status}
                              </span>
-                             <span className="text-sm text-gray-400">ID: #{booking.id?.slice(-6).toUpperCase()}</span>
+                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                               booking.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                             }`}>
+                               {booking.paymentStatus === "paid" ? "Paid" : "Payment Pending"}
+                             </span>
+                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                               booking.serviceStatus === "completed" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
+                             }`}>
+                               Service: {booking.serviceStatus === "completed" ? "Completed" : "In Progress"}
+                             </span>
+                             {booking.isRescheduled && (
+                               <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1">
+                                 <RefreshCcw className="w-2.5 h-2.5" /> Rescheduled
+                               </span>
+                             )}
+                             <span className="text-xs text-gray-400">ID: #{booking.id?.slice(-6).toUpperCase()}</span>
                           </div>
                           <h3 className="text-xl font-black text-[#081c45] mb-1 group-hover:text-[rgb(210,152,4)] transition-colors">
                             {booking.companyDetails?.name || "Premium Company"}
@@ -797,44 +845,59 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </div>
-
                         {/* Actions */}
-                        <div className="flex flex-wrap items-center gap-3 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                           {booking.status === "confirmed" ? (
-                             <>
-                               <button 
-                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-xs"
-                                 onClick={() => toast.info("Chat feature coming soon!")}
-                               >
-                                 <MessageSquare size={14} /> Chat
-                               </button>
-                               <button 
-                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all text-xs"
-                                 onClick={() => toast.info("Video call feature coming soon!")}
-                               >
-                                 <Video size={14} /> Video Call
-                               </button>
-                               <button 
-                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
-                                 onClick={() => toast.info("Review feature coming soon!")}
-                                >
-                                 <Star size={14} /> Review
-                               </button>
-                             </>
-                           ) : (
-                             <>
-                               {booking.status !== "cancelled" && (
-                                 <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm">
-                                   Reschedule
-                                 </button>
-                               )}
-                               {booking.status !== "cancelled" && (
-                                 <button className="flex-1 md:flex-none px-6 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all text-sm">
-                                   Cancel
-                                 </button>
-                               )}
-                             </>
-                           )}
+                        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
+                          {(booking.status === "confirmed" || booking.paymentStatus === "paid") && booking.serviceStatus === "pending" && (
+                            <button
+                              onClick={() => handleMarkAsCompleted(booking.id)}
+                              className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Mark as Completed
+                            </button>
+                          )}
+
+                          {booking.status === "confirmed" && booking.serviceStatus === "pending" && (
+                            <>
+                              <button 
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-xs"
+                                onClick={() => toast.info("Chat feature coming soon!")}
+                              >
+                                <MessageSquare size={14} /> Chat
+                              </button>
+                              <button 
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all text-xs"
+                                onClick={() => toast.info("Video call feature coming soon!")}
+                              >
+                                <Video size={14} /> Video Call
+                              </button>
+                            </>
+                          )}
+
+                          {booking.serviceStatus === "completed" && (
+                             <button 
+                               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
+                               onClick={() => toast.info("Review feature coming soon!")}
+                              >
+                               <Star size={14} /> Review Service
+                             </button>
+                          )}
+
+                          {booking.status !== "cancelled" && booking.serviceStatus === "pending" && (
+                            <button 
+                              className="px-4 py-2 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm"
+                              onClick={() => toast.info("Please contact support to cancel or reschedule.")}
+                            >
+                              Help
+                            </button>
+                          )}
+                          
+                          <Link
+                            href={`/User/CompanyListing`}
+                            className="px-4 py-2 border-2 border-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                          >
+                            View Company
+                          </Link>
                         </div>
                       </div>
                     </div>
@@ -874,7 +937,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {favourites.map((company, idx) => (
                     <div 
-                      key={company._id || idx}
+                      key={company.id || idx}
                       className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all group"
                     >
                       <div className="relative h-40 bg-gray-200">
@@ -896,7 +959,7 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500 mb-4 line-clamp-2">{company.profile?.overview || "No description available"}</p>
                         
                         <Link 
-                          href={`/User/CompanyPage/${company._id}`}
+                          href={`/User/CompanyPage/${company.id}`}
                           className="block w-full text-center bg-gradient-to-r from-[#081c45] to-[#1e40af] text-white py-2 rounded-lg hover:opacity-90 transition-opacity"
                         >
                           View Profile

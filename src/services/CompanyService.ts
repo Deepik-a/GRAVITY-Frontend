@@ -57,6 +57,18 @@ export const getProfile = async (companyId: string) => {
   }
 };
 
+export const getMyProfile = async () => {
+  try {
+    const response = await api.get("/company/me", {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Get my profile failed", error);
+    throw new Error(extractErrorMessage(error, "Get my profile failed"));
+  }
+};
+
 export const saveProfile = async (companyId: string, profileData: Record<string, unknown>) => {
   try {
     const response = await api.put("/company/profile", { companyId, profileData }, {
@@ -131,18 +143,6 @@ export const getCompanyBookings = async () => {
   }
 };
 
-export const confirmBooking = async (bookingId: string) => {
-  try {
-    const response = await api.patch(`/company/bookings/${bookingId}/confirm`, {}, {
-      withCredentials: true,
-    });
-    return response.data;
-  } catch (error) {
-    console.error("❌ Confirm booking failed", error);
-    throw new Error(extractErrorMessage(error, "Confirm booking failed"));
-  }
-};
-
 export const getWallet = async () => {
   try {
     const response = await api.get("/company/wallet", {
@@ -152,5 +152,20 @@ export const getWallet = async () => {
   } catch (error) {
     console.error("❌ Get wallet failed", error);
     throw new Error(extractErrorMessage(error, "Failed to fetch wallet data"));
+  }
+};
+
+export const rescheduleBooking = async (bookingId: string, newDate: string, newStartTime: string) => {
+  try {
+    const response = await api.patch(`/company/bookings/${bookingId}/reschedule`, {
+      newDate,
+      newStartTime
+    }, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Reschedule booking failed", error);
+    throw new Error(extractErrorMessage(error, "Reschedule booking failed"));
   }
 };

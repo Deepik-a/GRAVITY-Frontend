@@ -20,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
     { name: 'Bookings', icon: 'fas fa-calendar-check', route: '/Admin/Bookings' },
     { name: 'Subscriptions', icon: 'fas fa-crown', route: '/Admin/SubscriptionManagement' },
     { name: 'Revenue', icon: 'fas fa-money-bill-wave', route: '/Admin/Revenue' },
+    { name: 'Finance', icon: 'fas fa-wallet', route: '/Admin/Finance' },
     { name: 'Verifications', icon: 'fas fa-id-card', route: '/Admin/Verifications' },
     { name: 'Settings', icon: 'fas fa-cog', route: '/Admin/Settings' },
   ];

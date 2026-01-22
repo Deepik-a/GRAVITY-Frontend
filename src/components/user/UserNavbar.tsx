@@ -9,6 +9,8 @@ import { Profile } from "@/types/AuthTypes";
 import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 
+import { toast } from "react-toastify";
+
 export default function UserNavbar() {
   const router = useRouter();
   const [user, setUser] = useState<Profile | null>(null);
@@ -26,12 +28,27 @@ export default function UserNavbar() {
         } else {
           setUser(null);
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "";
         console.error("Failed to fetch user profile:", err);
-        // If profile fetch fails, we might still have basic info in localStorage
+        
+        // Handle blocked user (Interceptor also handles this, but we cleanup local state here)
+        if (message === "Your account has been blocked. Please contact admin.") {
+          setUser(null);
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          // Interceptor will handle redirect and toast
+          return;
+        }
+
+        // For other errors (like network), try fallback to localStorage
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {
+            setUser(null);
+          }
         }
       }
     };
@@ -55,7 +72,7 @@ export default function UserNavbar() {
       window.removeEventListener("storage", handleUserUpdate);
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -164,16 +181,16 @@ export default function UserNavbar() {
                           {user.name}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {user.email}
+                          {user.role === "company" ? "Company Account" : user.email}
                         </p>
                       </div>
                       <Link
-                        href="/User/UserProfile"
+                        href={user.role === "company" ? "/Company/CompanyDashBoard" : "/User/UserProfile"}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <User size={18} className="text-gray-400" />
-                        My Profile
+                        {user.role === "company" ? "Company Dashboard" : "My Profile"}
                       </Link>
                       <button
                         onClick={handleLogout}

@@ -166,3 +166,26 @@ export const initiatePayout = async (bookingId: string) => {
     throw new Error(extractErrorMessage(error, "Failed to initiate payout"));
   }
 };
+
+export const getTransactions = async (filters: {
+  type?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (filters.type) queryParams.append("type", filters.type);
+    if (filters.status) queryParams.append("status", filters.status);
+    if (filters.startDate) queryParams.append("startDate", filters.startDate);
+    if (filters.endDate) queryParams.append("endDate", filters.endDate);
+
+    const response = await api.get(`admin/transactions?${queryParams.toString()}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to fetch transactions"));
+  }
+};
+

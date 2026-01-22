@@ -9,6 +9,7 @@ import CompanyProfilePage from '../CompanyProfile/page';
 import CompanySubscriptionPage from '../Subscription/page';
 import CompanyWalletPage from '../Wallet/page';
 import CompanyReviewsPage from '../Reviews/page';
+import CompanyMessagesPage from '../Messages/page';
 import { useRouter } from 'next/navigation';
 
 // Register Chart.js components
@@ -33,8 +34,8 @@ const CompanyDashboard = () => {
  
       // Fetch latest profile to sync isSubscribed
       if (user.id) {
-        import('@/services/CompanyService').then(({ getProfile }) => {
-          getProfile(user.id).then(profile => {
+        import('@/services/CompanyService').then(({ getMyProfile }) => {
+          getMyProfile().then(profile => {
             if (profile) {
               setUserInfo(prev => ({ ...prev, isSubscribed: !!profile.isSubscribed }));
               // Update localStorage if changed
@@ -43,7 +44,10 @@ const CompanyDashboard = () => {
                 localStorage.setItem('user', JSON.stringify(newUser));
               }
             }
-          }).catch(err => console.error("Sync profile failed", err));
+          }).catch(err => {
+            console.error("Sync profile failed", err);
+            // If it's a 403 (blocked), the Axios interceptor will handle redirection
+          });
         });
       }
     } else {
@@ -505,7 +509,13 @@ const CompanyDashboard = () => {
               </div>
             )}
 
-            {activeSection !== 'overview' && activeSection !== 'Slots' && activeSection !== 'bookings' && activeSection !== 'profile' && activeSection !== 'subscription' && activeSection !== 'wallet' && activeSection !== 'reviews' && (
+            {activeSection === 'messages' && (
+              <div className="fade-in">
+                <CompanyMessagesPage />
+              </div>
+            )}
+
+            {activeSection !== 'overview' && activeSection !== 'Slots' && activeSection !== 'bookings' && activeSection !== 'profile' && activeSection !== 'subscription' && activeSection !== 'wallet' && activeSection !== 'reviews' && activeSection !== 'messages' && (
               <div className="flex items-center justify-center h-64 bg-white rounded-2xl shadow-lg fade-in">
                 <p className="text-gray-400 text-lg">Section &quot;{activeSection}&quot; is under construction.</p>
               </div>

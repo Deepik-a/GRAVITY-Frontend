@@ -153,13 +153,16 @@ export default function SubscriptionManagementPage() {
             <form onSubmit={handleCreatePlan} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Plan Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Gold Tier"
+                <select
                   value={newPlan.name}
                   onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
-                />
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium bg-white"
+                >
+                  <option value="" disabled>Select a plan name</option>
+                  <option value="basic plan">Basic Plan</option>
+                  <option value="upgrade plan">Upgrade Plan</option>
+                  <option value="premium plan">Premium Plan</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

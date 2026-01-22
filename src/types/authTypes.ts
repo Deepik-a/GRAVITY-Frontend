@@ -57,6 +57,7 @@ export type Profile = {
   bio?: string;           // ✅ lowercase 'bio'
   profileImage?: string;
   isBlocked?: boolean;
+  role?: string;
 };
 
 

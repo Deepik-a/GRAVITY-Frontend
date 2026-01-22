@@ -1,7 +1,7 @@
 import api from "./api/useApi";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 
-export const getAllCompanies = async (params: any = {}) => {
+export const getAllCompanies = async (params: Record<string, unknown> = {}) => {
   try {
     const response = await api.get("/user/companies", { params });
     return response.data;
@@ -57,6 +57,17 @@ export const createCheckoutSession = async (bookingId: string) => {
   }
 };
 
+export const verifyPaymentSession = async (sessionId: string) => {
+  try {
+    const response = await api.get("/payments/verify-session", {
+      params: { sessionId }
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractAxiosError(error));
+  }
+};
+
 export const getFavourites = async () => {
   try {
     const response = await api.get("/user/profile/favourites");
@@ -75,7 +86,7 @@ export const toggleFavourite = async (companyId: string) => {
   }
 };
 
-export const changePassword = async (data: any) => {
+export const changePassword = async (data: Record<string, unknown>) => {
   try {
     const response = await api.put("/user/profile/password", data);
     return response.data;
@@ -101,3 +112,12 @@ export const getCompanyReviews = async (companyId: string) => {
      throw new Error(extractAxiosError(error));
    }
 };
+ 
+ export const completeBooking = async (bookingId: string) => {
+   try {
+     const response = await api.patch(`/user/bookings/${bookingId}/complete`);
+     return response.data;
+   } catch (error) {
+     throw new Error(extractAxiosError(error));
+   }
+ };

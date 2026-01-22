@@ -118,6 +118,7 @@ export const getProfile = async (): Promise<Profile> => {
       id: p.id,
       name: p.name,
       email: p.email,
+      role: p.role,
       phone: p.phone || "",
       location: p.location || "",
       bio: p.bio || "",
@@ -138,6 +139,7 @@ export const updateProfile = async (data: Partial<Profile>): Promise<Profile> =>
      return {
       id: p.id,
       name: p.name,
+      role: p.role,
       email: p.email,
       phone: p.phone || "",
       location: p.location || "",
