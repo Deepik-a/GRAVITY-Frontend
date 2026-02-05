@@ -37,28 +37,31 @@ const UserManagementPage: React.FC = () => {
   }, []);
 
   /* ---------------- Initial load ---------------- */
-const fetchUsers = useCallback(async () => {
-  setLoading(true);
-  try {
-    const users = await getUsers();   // ✅ no args
-
-    setUsers(users);
-    setTotalItems(users.length);      // fallback
-    setTotalPages(1);                 // no pagination
-  } catch {
-    toast.error('Failed to load users');
-  } finally {
-    setLoading(false);
-  }
-}, []);
-
-
-  useEffect(() => {
-    if (mounted) fetchUsers();
-  }, [mounted, fetchUsers]);
+useEffect(() => {
+  if (!mounted) return;
+  
+  // Direct call ചെയ്യുക
+  const loadInitialUsers = async () => {
+    setLoading(true);
+    try {
+      const users = await getUsers();
+      console.log(users,"users from backend")
+      setUsers(users);
+      setTotalItems(users.length);
+      setTotalPages(1);
+    } catch {
+      toast.error('Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  loadInitialUsers();
+}, [mounted]); // ✅ fetchUsers dependency ഇല്ല
 
   /* ---------------- Debounce ---------------- */
   useEffect(() => {
+    console.log(" debouncing runn");
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     debounceTimer.current = setTimeout(() => {
@@ -71,51 +74,54 @@ const fetchUsers = useCallback(async () => {
   }, [searchQuery]);
 
   /* ---------------- Search API ---------------- */
-  useEffect(() => {
-    if (!mounted) return;
-
-    const runSearch = async () => {
-      setLoading(true);
-      try {
-        if (!debouncedSearch) {
-          await fetchUsers();
-          return;
-        }
-
-        const res = await searchUsers(
-          debouncedSearch,
-          currentPage,
-          itemsPerPage
-        );
-
-        setUsers(res.users);
-        setTotalItems(res.total);
-        setTotalPages(res.totalPages);
-      } catch {
-        toast.error('Search failed');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    runSearch();
-  }, [debouncedSearch, currentPage, mounted, fetchUsers]);
-
-  /* ---------------- Block / Unblock ---------------- */
-  const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
+useEffect(() => {
+  if (!mounted || !debouncedSearch.trim()) return;
+console.log("Running in background search useEffect");
+  const runSearch = async () => {
+    console.log('🔍 Search useEffect triggered - debouncedSearch:', debouncedSearch);
+    setLoading(true);
     try {
-      await toggleUserBlockStatus(userId, !currentStatus);
-      setUsers(prev =>
-        prev.map(u =>
-          u.id === userId ? { ...u, isBlocked: !currentStatus } : u
-        )
-      );
-      toast.success(`User ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
-    } catch (err: unknown) {
-      const message = (err as Error).message || 'Failed to update user status';
-      toast.error(message);
+      if (!debouncedSearch) {
+        const users = await getUsers();
+        setUsers(users);
+        setTotalItems(users.length);
+        setTotalPages(1);
+        return;
+      }
+
+      const res = await searchUsers(debouncedSearch, currentPage, itemsPerPage);
+      setUsers(res.users);
+      setTotalItems(res.total);
+      setTotalPages(res.totalPages);
+    } catch {
+      toast.error('Search failed');
+    } finally {
+      setLoading(false);
     }
   };
+
+  runSearch();
+}, [debouncedSearch, currentPage, mounted]);
+
+  /* ---------------- Block / Unblock ---------------- */
+const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
+  try {
+    await toggleUserBlockStatus(userId, !currentStatus);
+    setUsers(prev => {
+      const updated = prev.map(u =>
+        u.id === userId ? { ...u, isBlocked: !currentStatus } : u
+      );
+      console.log('✅ User status updated in UI',updated );
+      return updated;
+    });
+    
+    toast.success(`User ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
+  } catch (err: unknown) {
+    console.error('❌ Error:', err);
+    const message = (err as Error).message || 'Failed to update user status';
+    toast.error(message);
+  }
+};
 
   /* ---------------- Columns ---------------- */
   const columns = [
@@ -146,16 +152,11 @@ const fetchUsers = useCallback(async () => {
       )
     },
     {
-      header: 'Bio & Location',
+      header: 'Location',
       render: (user: Profile) => (
-        <div className="max-w-[200px]">
-          <p className="text-xs text-gray-600 italic line-clamp-2">
-            {user.bio || 'No bio provided'}
-          </p>
-          <div className="flex items-center text-xs text-gray-500 mt-1">
-            <MapPin size={12} className="mr-1 text-red-400" />
-            {user.location || 'N/A'}
-          </div>
+        <div className="flex items-center text-xs">
+          <MapPin size={12} className="mr-1 text-red-400" />
+          <span className="font-bold">{user.location || 'N/A'}</span>
         </div>
       )
     },
@@ -190,7 +191,28 @@ const fetchUsers = useCallback(async () => {
           {user.isBlocked ? 'Unblock' : 'Block'}
         </button>
       )
-    }
+    },
+    {
+  header: 'Bookings',
+  render: (user: Profile) => (
+    <div className="max-w-[200px]">
+      <p className="text-lg font-bold text-gray-900">
+        {user.bookingCount ?? 0}
+      </p>
+    </div>
+  )
+},
+{
+      header: 'Bio',
+      render: (user: Profile) => (
+        <div className="max-w-[200px]">
+          <p className="text-xs text-gray-600 italic line-clamp-2">
+            {user.bio || 'No bio provided'}
+          </p>
+        </div>
+      )
+    },
+    
   ];
 
   if (!mounted) {

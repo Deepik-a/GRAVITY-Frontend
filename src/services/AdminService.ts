@@ -14,6 +14,7 @@ export const getUsers = async (): Promise<Profile[]> => {
       withCredentials: true,
     });
 
+    console.log("API Response:", response.data);
     // Map API response to Profile[]
     return response.data.users.map((p) => ({
       id: p.id, // fallback if backend uses userId
@@ -23,7 +24,11 @@ export const getUsers = async (): Promise<Profile[]> => {
       location: p.location || "",
       bio: p.bio || "",
       profileImage: p.profileImage || "",
+      isBlocked: p.isBlocked || false,
+      role: p.role || "user",
+      bookingCount: p.bookingCount || 0,
     }));
+    
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to fetch users"));
   }

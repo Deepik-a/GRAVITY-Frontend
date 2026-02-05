@@ -5,8 +5,25 @@ import { getWallet } from "@/services/CompanyService";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+interface WalletTransaction {
+    id: string;
+    type: string;
+    amount: number;
+    status: string;
+    description: string;
+    bookingId?: string;
+    commissionAmount?: number;
+    commissionRate?: number;
+    createdAt: string;
+}
+
+interface WalletData {
+    balance: number;
+    transactions: WalletTransaction[];
+}
+
 export default function WalletPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<WalletData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -14,8 +31,9 @@ export default function WalletPage() {
             try {
                 const res = await getWallet();
                 setData(res);
-            } catch (err: any) {
-                toast.error(err.message || "Failed to load wallet");
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Failed to load wallet";
+                toast.error(message);
             } finally {
                 setLoading(false);
             }
@@ -44,29 +62,59 @@ export default function WalletPage() {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amounts (₹)</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {data?.transactions?.length === 0 && (
                                 <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">No transactions found.</td></tr>
                             )}
-                            {data?.transactions?.map((t: any) => (
-                                <tr key={t.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{t.type ? t.type.replace('_', ' ') : '-'}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                                        {t.type === 'company_payout' ? '+' : ''}₹{t.amount?.toFixed(2)}
+                            {data?.transactions?.map((t: WalletTransaction) => (
+                                <tr key={t.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${t.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {t.status}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
+                                            t.type === 'company_payout' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {t.type ? t.type.replace('_', ' ') : '-'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {t.bookingId && <span title={t.bookingId}>Booking: {t.bookingId.slice(-6)}</span>}
+                                    <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                                        <p className="truncate">{t.description}</p>
+                                        {t.bookingId && <p className="text-[10px] text-gray-400 font-mono">ID: #{t.bookingId.slice(-8)}</p>}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div className="flex flex-col gap-1">
+                                            {t.type === 'company_payout' ? (
+                                                <>
+                                                    <div className="flex justify-between gap-4 text-xs">
+                                                        <span className="text-gray-400">Total Charged:</span>
+                                                        <span className="font-semibold text-gray-600">₹{(t.amount + (t.commissionAmount || 0)).toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-4 text-xs text-red-400">
+                                                        <span className="italic">Platform Fee ({t.commissionRate || 10}%):</span>
+                                                        <span>- ₹{(t.commissionAmount || 0).toFixed(2)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between gap-4 pt-1 border-t border-gray-100 font-bold text-green-600">
+                                                        <span>To Wallet:</span>
+                                                        <span>₹{t.amount?.toFixed(2)}</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <span className="font-bold">₹{t.amount?.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span className={`px-2 inline-flex text-[10px] leading-5 font-black uppercase rounded-full ${
+                                            t.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                        }`}>
+                                            {t.status.replace('_', ' ')}
+                                        </span>
                                     </td>
                                 </tr>
                             ))}

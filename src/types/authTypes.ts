@@ -58,6 +58,7 @@ export type Profile = {
   profileImage?: string;
   isBlocked?: boolean;
   role?: string;
+  bookingCount?:number;
 };
 
 

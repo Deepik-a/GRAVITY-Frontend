@@ -2,17 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { getTransactions } from "@/services/AdminService";
+import { getTransactions, initiatePayout } from "@/services/AdminService";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Transaction {
   id: string;
-  type: "booking_payment" | "subscription_payment" | "admin_commission" | "company_payout";
+  type: "booking_payment" | "subscription_payment" | "admin_commission" | "company_payout" | "subscription_payment";
   amount: number;
-  status: "pending" | "completed" | "failed";
+  status: "pending" | "completed" | "failed" | "pending_transfer";
   description: string;
   commissionRate?: number;
   commissionAmount?: number;
   netAmount?: number;
+  bookingId?: string;
   userDetails?: {
     name: string;
     email: string;
@@ -34,6 +37,7 @@ interface TransactionData {
 const FinancePage = () => {
   const [data, setData] = useState<TransactionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [payoutLoading, setPayoutLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: "",
     status: "",
@@ -60,6 +64,21 @@ const FinancePage = () => {
     fetchTransactions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleInitiatePayout = async (bookingId: string) => {
+    if (!confirm("Are you sure you want to confirm this payout to the company wallet?")) return;
+    
+    setPayoutLoading(bookingId);
+    try {
+      await initiatePayout(bookingId);
+      toast.success("Payout initiated successfully!");
+      fetchTransactions();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initiate payout");
+    } finally {
+      setPayoutLoading(null);
+    }
+  };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -98,6 +117,7 @@ const FinancePage = () => {
     const colors: Record<string, string> = {
       completed: "bg-green-100 text-green-800",
       pending: "bg-yellow-100 text-yellow-800",
+      pending_transfer: "bg-indigo-100 text-indigo-800 border border-indigo-200",
       failed: "bg-red-100 text-red-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
@@ -113,23 +133,24 @@ const FinancePage = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      <ToastContainer position="top-right" autoClose={3000} />
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Finance Dashboard</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-500">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Total Revenue</h3>
           <p className="text-3xl font-bold text-blue-600">
             ₹{data?.totalRevenue.toLocaleString() || 0}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-green-500">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Total Commissions</h3>
           <p className="text-3xl font-bold text-green-600">
             ₹{data?.totalCommissions.toLocaleString() || 0}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-purple-500">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Total Transactions</h3>
           <p className="text-3xl font-bold text-purple-600">
             {data?.transactions.length || 0}
@@ -142,7 +163,7 @@ const FinancePage = () => {
         <h3 className="text-lg font-semibold mb-4 text-gray-800">Revenue by Type</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {data?.revenueByType.map((item) => (
-            <div key={item.type} className="border rounded-lg p-4">
+            <div key={item.type} className="border rounded-lg p-4 bg-gray-50">
               <p className="text-sm text-gray-600 mb-1">{getTypeLabel(item.type)}</p>
               <p className="text-2xl font-bold text-gray-800">
                 ₹{item.total.toLocaleString()}
@@ -181,7 +202,8 @@ const FinancePage = () => {
             >
               <option value="">All Status</option>
               <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
+              <option value="pending">Pending Checkout</option>
+              <option value="pending_transfer">Ready for Payout</option>
               <option value="failed">Failed</option>
             </select>
           </div>
@@ -235,75 +257,107 @@ const FinancePage = () => {
                   Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
+                  Details
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   User/Company
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Commission
+                  Amounts (₹)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {data?.transactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                     {format(new Date(transaction.createdAt), "MMM dd, yyyy HH:mm")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(
+                      className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${getTypeColor(
                         transaction.type
                       )}`}
                     >
                       {getTypeLabel(transaction.type)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {transaction.description}
+                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                    <p className="font-medium truncate" title={transaction.description}>{transaction.description}</p>
+                    {transaction.bookingId && (
+                      <p className="text-xs text-blue-500 font-mono">Booking: #{transaction.bookingId.slice(-8)}</p>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-gray-900 border-x border-gray-50">
                     {transaction.userDetails && (
                       <div>
-                        <p className="font-medium">{transaction.userDetails.name}</p>
+                        <p className="font-semibold text-gray-800">{transaction.userDetails.name}</p>
                         <p className="text-gray-500 text-xs">{transaction.userDetails.email}</p>
                       </div>
                     )}
                     {transaction.companyDetails && (
                       <div>
-                        <p className="font-medium">{transaction.companyDetails.name}</p>
-                        <p className="text-gray-500 text-xs">{transaction.companyDetails.email}</p>
+                        <p className="font-semibold text-indigo-700">{transaction.companyDetails.name}</p>
+                        <p className="text-gray-400 text-xs italic">{transaction.companyDetails.email}</p>
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    ₹{transaction.amount.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {transaction.commissionAmount ? (
-                      <div>
-                        <p className="font-medium">₹{transaction.commissionAmount.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">({transaction.commissionRate}%)</p>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="space-y-1">
+                      <div className="flex justify-between gap-4">
+                        <span className="text-gray-500">Gross:</span>
+                        <span className="font-bold">₹{transaction.amount.toLocaleString()}</span>
                       </div>
-                    ) : (
-                      "-"
-                    )}
+                      {transaction.commissionAmount !== undefined && (
+                        <div className="flex justify-between gap-4 text-red-500 text-xs">
+                          <span>Comm ({transaction.commissionRate}%):</span>
+                          <span>- ₹{transaction.commissionAmount.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {transaction.netAmount !== undefined && (
+                        <div className="flex justify-between gap-4 pt-1 border-t border-gray-100 text-green-600 font-black">
+                          <span>Net:</span>
+                          <span>₹{transaction.netAmount.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                      className={`px-3 py-1 text-[10px] font-black uppercase rounded-full ${getStatusColor(
                         transaction.status
-                      )}`}
+                      )} shadow-sm`}
                     >
-                      {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                      {transaction.status.replace('_', ' ')}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {transaction.type === "company_payout" && transaction.status === "pending_transfer" && transaction.bookingId && (
+                      <button
+                        onClick={() => handleInitiatePayout(transaction.bookingId!)}
+                        disabled={payoutLoading === transaction.bookingId}
+                        className={`px-4 py-2 rounded-lg text-white font-bold text-xs transition-all ${
+                          payoutLoading === transaction.bookingId 
+                            ? "bg-gray-400 cursor-not-allowed" 
+                            : "bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-indigo-200 active:scale-95"
+                        }`}
+                      >
+                        {payoutLoading === transaction.bookingId ? (
+                          <span className="flex items-center gap-1">
+                            <span className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+                            Processing...
+                          </span>
+                        ) : (
+                          "Confirm Transfer"
+                        )}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -311,8 +365,10 @@ const FinancePage = () => {
           </table>
         </div>
         {data?.transactions.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            No transactions found
+          <div className="text-center py-20 text-gray-500 bg-gray-50/50">
+            <div className="text-4xl mb-4 group-hover:animate-bounce">🔍</div>
+            <p className="text-lg font-medium">No transactions found matching your criteria</p>
+            <button onClick={handleResetFilters} className="mt-4 text-blue-600 hover:underline">Clear all filters</button>
           </div>
         )}
       </div>

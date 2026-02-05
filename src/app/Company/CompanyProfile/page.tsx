@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Phone, MapPin, Building, Users, Award, Calendar, Edit, Save, X, CheckCircle, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { getProfile as apiGetProfile, saveProfile as apiSaveProfile, uploadCompanyImage } from '@/services/CompanyService';
@@ -49,7 +49,6 @@ interface CompanyProfile {
     profilePicture?: string;
   };
 }
-
 
 const defaultCompanyProfile: CompanyProfile = {
   id: '1',
@@ -138,11 +137,17 @@ export default function CompanyProfilePage() {
   const [tempProfile, setTempProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [imageVersion, setImageVersion] = useState(0); // Use a simple counter instead of Date.now()
+  const [isClient, setIsClient] = useState(false); // Track client-side rendering
 
   // Category and service options
   const categoryOptions = ['Residential', 'Commercial', 'Villas', 'Industrial', 'Hospitality'];
   const serviceOptions = ['Architecture', 'Renovation', 'Interior Design', 'Construction', 'Project Management', 'Consultation'];
   const companySizeOptions = ['1-10 employees', '11-50 employees', '51-200 employees', '200+ employees'];
+
+  useEffect(() => {
+    setIsClient(true); // Set to true when component mounts on client
+  }, []);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -158,7 +163,7 @@ export default function CompanyProfilePage() {
         const companyId = user.id || user._id;
 
         const data = await apiGetProfile(companyId);
-        
+        console.log("Fetched Company Profile Data:", data);
         if (data && data.profile) {
           const mappedProfile: CompanyProfile = {
             id: companyId,
@@ -192,6 +197,20 @@ export default function CompanyProfilePage() {
 
     fetchProfileData();
   }, []);
+
+  // Helper function to add cache busting to image URLs - only on client side
+  const getImageUrlWithCacheBust = (url?: string): string => {
+    if (!url) return '';
+    const resolvedUrl = resolveImageUrl(url);
+    
+    // Only add cache busting parameter on client side
+    if (isClient && imageVersion > 0) {
+      const separator = resolvedUrl.includes('?') ? '&' : '?';
+      return `${resolvedUrl}${separator}v=${imageVersion}`;
+    }
+    
+    return resolvedUrl;
+  };
 
   const handleEditClick = () => {
     setTempProfile(profile);
@@ -229,6 +248,7 @@ export default function CompanyProfilePage() {
       await apiSaveProfile(companyId, profileData);
       setProfile(tempProfile);
       setIsEditing(false);
+      setImageVersion(prev => prev + 1); // Increment counter instead of using Date.now()
       toast.success('Profile updated successfully!');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to update profile";
@@ -264,6 +284,9 @@ export default function CompanyProfilePage() {
           projects: prev.projects.map(p => p.id === id ? { ...p, [projectField]: imageUrl } : p)
         }));
       }
+      
+      // Force image refresh on next render
+      setImageVersion(prev => prev + 1);
       
       toast.success("Image uploaded successfully!");
     } catch (err) {
@@ -364,18 +387,42 @@ export default function CompanyProfilePage() {
     </div>
   );
 
+  // Don't render images during SSR to avoid hydration mismatch
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-64 bg-gray-300 rounded-lg mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
+                <div className="h-64 bg-gray-200 rounded-lg"></div>
+                <div className="h-48 bg-gray-200 rounded-lg"></div>
+              </div>
+              <div className="space-y-8">
+                <div className="h-64 bg-gray-200 rounded-lg"></div>
+                <div className="h-32 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Banner */}
       <div className="relative h-64 bg-slate-900 group">
         {tempProfile.brandIdentity.banner1 ? (
-            <Image 
-              src={resolveImageUrl(tempProfile.brandIdentity.banner1) || ''} 
-              alt="Banner" 
-              fill 
-              className="object-cover opacity-60"
-              unoptimized
-            />
+          <Image 
+            src={getImageUrlWithCacheBust(tempProfile.brandIdentity.banner1)}
+            alt="Banner" 
+            fill 
+            className="object-cover opacity-60"
+            unoptimized
+            key={`banner1-${imageVersion}`}
+          />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700"></div>
         )}
@@ -403,17 +450,19 @@ export default function CompanyProfilePage() {
         <div className="relative container mx-auto px-4 h-full flex items-center z-10">
           <div className="flex items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden group relative">
-              {tempProfile.brandIdentity.logo ? (
+              {tempProfile.brandIdentity.profilePicture ? (
                 <Image 
-                  src={resolveImageUrl(tempProfile.brandIdentity.logo) || ''} 
-                  alt="Logo" 
+                  src={getImageUrlWithCacheBust(tempProfile.brandIdentity.profilePicture)}
+                  alt="Profile Picture" 
                   width={96} 
                   height={96} 
-                  className="w-full h-full object-contain" 
+                  unoptimized
+                  className="w-full h-full object-cover"
+                  key={`profile-${imageVersion}`}
                 />
               ) : (
                 <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-500">
-                  <Building size={32} />
+                  <Users size={32} />
                 </div>
               )}
               
@@ -425,11 +474,11 @@ export default function CompanyProfilePage() {
                     type="file" 
                     className="hidden" 
                     accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.logo')}
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.profilePicture')}
                   />
                 </label>
               )}
-              {uploadingField === 'brandIdentity.logo' && (
+              {uploadingField === 'brandIdentity.profilePicture' && (
                 <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
                   <Loader2 size={16} className="animate-spin text-blue-600" />
                 </div>
@@ -454,6 +503,107 @@ export default function CompanyProfilePage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8 -mt-12 relative z-10">
+        {/* Logo and Banner 2 Section */}
+        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+          {/* Logo Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:w-1/3">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Building size={20} />
+              Company Logo
+            </h2>
+            <div className="flex flex-col items-center">
+              <div className="w-40 h-40 rounded-lg bg-gray-100 overflow-hidden relative group mb-4">
+                {tempProfile.brandIdentity.logo ? (
+                  <Image
+                    src={getImageUrlWithCacheBust(tempProfile.brandIdentity.logo)}
+                    alt="Company Logo"
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-contain"
+                    unoptimized
+                    key={`logo-${imageVersion}`}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-500">
+                    <Building size={64} />
+                  </div>
+                )}
+                
+                {isEditing && (
+                  <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={24} />
+                    <span className="text-xs font-bold mt-1">CHANGE LOGO</span>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.logo')}
+                    />
+                  </label>
+                )}
+                {uploadingField === 'brandIdentity.logo' && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                    <Loader2 size={20} className="animate-spin text-blue-600" />
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 text-center">
+                {isEditing ? "Upload your company logo" : "Company logo displayed here"}
+              </p>
+            </div>
+          </div>
+
+          {/* Secondary Banner Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:w-2/3">
+            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Camera size={20} />
+              Secondary Banner
+            </h2>
+            <div className="h-48 rounded-lg bg-gray-100 overflow-hidden relative group">
+              {tempProfile.brandIdentity.banner2 ? (
+                <Image
+                  src={getImageUrlWithCacheBust(tempProfile.brandIdentity.banner2)}
+                  alt="Secondary Banner"
+                  width={800}
+                  height={192}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                  key={`banner2-${imageVersion}`}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white">
+                  <div className="text-center">
+                    <Camera size={48} className="mx-auto mb-2" />
+                    <p className="font-medium">Secondary Banner</p>
+                    {isEditing && <p className="text-sm mt-1">Click to upload banner image</p>}
+                  </div>
+                </div>
+              )}
+              
+              {isEditing && (
+                <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera size={32} />
+                  <span className="font-bold mt-2">CHANGE SECONDARY BANNER</span>
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0], 'brandIdentity.banner2')}
+                  />
+                </label>
+              )}
+              {uploadingField === 'brandIdentity.banner2' && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <Loader2 size={32} className="animate-spin text-blue-600" />
+                </div>
+              )}
+            </div>
+            <p className="text-sm text-gray-600 mt-4">
+              {isEditing ? "Upload a secondary banner image for your profile" : "Secondary banner image for your company profile"}
+            </p>
+          </div>
+        </div>
+
         {/* Header Actions */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
           <div className="flex flex-wrap gap-2">
@@ -582,16 +732,17 @@ export default function CompanyProfilePage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {tempProfile.teamMembers.map(member => (
-                  <div key={member.id} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg">
+                  <div key={`${member.id}-${member.photo || 'no-photo'}-${imageVersion}`} className="flex items-start gap-4 p-4 border border-gray-200 rounded-lg">
                     <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 relative group">
                       {member.photo ? (
                         <Image
-                          src={resolveImageUrl(member.photo) || ''}
+                          src={getImageUrlWithCacheBust(member.photo)}
                           alt={member.name}
                           width={64}
                           height={64}
                           className="w-full h-full object-cover"
                           unoptimized
+                          key={`team-${member.id}-${imageVersion}`}
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -687,7 +838,7 @@ export default function CompanyProfilePage() {
               </div>
               <div className="space-y-6">
                 {tempProfile.projects.map(project => (
-                  <div key={project.id} className="border border-gray-200 rounded-xl p-5 relative">
+                  <div key={`${project.id}-${imageVersion}`} className="border border-gray-200 rounded-xl p-5 relative">
                     {isEditing && (
                       <button
                         onClick={() => setTempProfile(prev => ({
@@ -728,12 +879,13 @@ export default function CompanyProfilePage() {
                         <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
                           {project.beforeImage ? (
                             <Image
-                              src={resolveImageUrl(project.beforeImage) || ''}
+                              src={getImageUrlWithCacheBust(project.beforeImage)}
                               alt="Before"
                               width={600}
                               height={400}
                               className="w-full h-full object-cover"
                               unoptimized
+                              key={`before-${project.id}-${imageVersion}`}
                             />
                           ) : (
                             <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -765,12 +917,13 @@ export default function CompanyProfilePage() {
                         <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
                           {project.afterImage ? (
                             <Image
-                              src={resolveImageUrl(project.afterImage) || ''}
+                              src={getImageUrlWithCacheBust(project.afterImage)}
                               alt="After"
                               width={600}
                               height={400}
                               className="w-full h-full object-cover"
                               unoptimized
+                              key={`after-${project.id}-${imageVersion}`}
                             />
                           ) : (
                             <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-500">

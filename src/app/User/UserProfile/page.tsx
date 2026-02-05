@@ -506,6 +506,17 @@ const Dashboard = () => {
     }
   };
 
+  const isBookingPast = (date: string, endTime: string) => {
+    try {
+      const bookingEndTime = new Date(date);
+      const [hours, minutes] = endTime.split(':').map(Number);
+      bookingEndTime.setHours(hours, minutes, 0, 0);
+      return new Date() > bookingEndTime;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleMarkAsCompleted = async (bookingId: string) => {
     if (!confirm("Are you sure you want to mark this service as completed? This will initiate the settlement to the company.")) return;
 
@@ -520,7 +531,8 @@ const Dashboard = () => {
         .catch(err => toast.error(extractAxiosError(err)))
         .finally(() => setLoadingBookings(false));
     } catch (error) {
-      toast.error(extractAxiosError(error));
+      const message = extractAxiosError(error);
+      toast.error(message);
     }
   };
 
@@ -845,12 +857,13 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </div>
-                        {/* Actions */}
                         <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                          {(booking.status === "confirmed" || booking.paymentStatus === "paid") && booking.serviceStatus === "pending" && (
+                          {(booking.status === "confirmed" || booking.paymentStatus === "paid") && 
+                           booking.serviceStatus === "pending" && 
+                           isBookingPast(booking.date, booking.endTime) && (
                             <button
                               onClick={() => handleMarkAsCompleted(booking.id)}
-                              className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2"
+                              className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg hover:shadow-green-200 animate-pulse"
                             >
                               <CheckCircle className="w-4 h-4" />
                               Mark as Completed

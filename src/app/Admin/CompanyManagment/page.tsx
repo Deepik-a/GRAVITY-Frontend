@@ -63,6 +63,7 @@ useEffect(() => {
         itemsPerPage,
         filterStatus
       );
+      console.log(res,"Fetched Companies:");
       setCompanies(res.companies);
       setTotalItems(res.total);
       setTotalPages(res.totalPages);

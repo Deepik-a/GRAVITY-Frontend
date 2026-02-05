@@ -956,6 +956,7 @@ export default function CompanyProfileManagement() {
   const FieldValidationStatus = ({ isValid }: { isValid: boolean, fieldName: string }) => {
     if (!isValid) return null;
     
+
     return (
       <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500">
         <i className="fas fa-check-circle"></i>
@@ -978,8 +979,22 @@ export default function CompanyProfileManagement() {
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+return (
+  <>
+    {/* Video Background */}
+    <video
+      autoPlay
+      muted
+      loop
+      playsInline
+      className="fixed inset-0 w-full h-full object-cover -z-50"
+    >
+      <source src="/assets/CompanyProfileDetail.mp4" type="video/mp4" />
+    </video>
+    
+    
+
+    <div className="min-h-screen relative">
       {/* Image Cropper Modal */}
       {cropState.isOpen && (
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1093,11 +1108,11 @@ export default function CompanyProfileManagement() {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
-        <div className="mb-10">
+        <div className="mb-10 bg-white rounded-xl p-5 shadow-sm border border-gray-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
             <div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-2">
-                Company Profile <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700">Management</span>
+                Company Profile <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#081C45] to-[#1E40AF]">Management</span>
               </h1>
               <p className="text-gray-600 max-w-3xl">
                 Complete your company profile to showcase your expertise, team, and projects to potential clients.
@@ -1120,11 +1135,11 @@ export default function CompanyProfileManagement() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 mb-8">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-700">Profile Completion</span>
-              <span className="text-sm font-bold text-blue-600">{isFormValid ? '100%' : '...'}</span>
+              <span className="text-sm font-bold text-[#1E40AF]">{isFormValid ? '100%' : '...'}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
-                className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-[#EAB308] to-[#FACC15] h-2 rounded-full transition-all duration-500"
                 style={{ width: isFormValid ? '100%' : '60%' }}
               ></div>
             </div>
@@ -1135,7 +1150,6 @@ export default function CompanyProfileManagement() {
             </p>
           </div>
         </div>
-
         {/* Form Sections */}
         <div className="space-y-8">
           {/* Brand Identity Section */}
@@ -2226,7 +2240,7 @@ export default function CompanyProfileManagement() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="relative overflow-hidden rounded-2xl group">
               <Image 
-                src="https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=600" 
+                src="/assets/images_2.jpeg" 
                 alt="Modern Architecture" 
                 width={600} 
                 height={400} 
@@ -2239,7 +2253,7 @@ export default function CompanyProfileManagement() {
             
             <div className="relative overflow-hidden rounded-2xl group">
               <Image 
-                src="https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=600" 
+                src="/assets/images_3.webp" 
                 alt="Interior Design" 
                 width={600} 
                 height={400} 
@@ -2252,7 +2266,7 @@ export default function CompanyProfileManagement() {
             
             <div className="relative overflow-hidden rounded-2xl group">
               <Image 
-                src="https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=600" 
+                src="/assets/pexels-photo-1396132.jpeg" 
                 alt="Construction" 
                 width={600} 
                 height={400} 
@@ -2505,5 +2519,6 @@ export default function CompanyProfileManagement() {
         </div>
       )}
     </div>
-  );
+  </>
+);
 }

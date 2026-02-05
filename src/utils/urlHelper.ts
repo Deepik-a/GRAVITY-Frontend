@@ -1,3 +1,6 @@
+
+//This allows you to store just the file path in your database and convert it to a usable URL when needed in the frontend.
+
 export const resolveImageUrl = (path?: string | null): string | null => {
   if (!path) return null;
   

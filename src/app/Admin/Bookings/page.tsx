@@ -40,6 +40,7 @@ export default function AdminBookingsPage() {
     setLoading(true);
     try {
       const data = await getAllBookings();
+   //debugger;and now check in frontend console
       setBookings(data);
     } catch (error: unknown) {
       const err = error as { message?: string };
