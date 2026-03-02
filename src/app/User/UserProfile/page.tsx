@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getProfile, updateProfile, uploadProfileImage, deleteProfileField } from "@/services/AuthService";
@@ -8,6 +8,10 @@ import { Profile, CompanyProfile } from "@/types/AuthTypes";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 import { toast } from "react-toastify";
 import UserNavbar from "@/components/user/UserNavbar";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
+import VideoCall from "@/components/video/VideoCall";
+import { isToday } from "@/utils/dateUtils";
+import io from "socket.io-client";
 import {
   LayoutDashboard,
   Calendar,
@@ -55,6 +59,7 @@ interface Booking {
     name: string;
     logo?: string;
   };
+  companyId: string;
 }
 
 import AvatarEditor from 'react-avatar-editor';
@@ -74,6 +79,34 @@ const Dashboard = () => {
   const [favourites, setFavourites] = useState<CompanyProfile[]>([]);
   const [loadingFavourites, setLoadingFavourites] = useState(false);
   
+  // Video Call State
+  const [videoCallData, setVideoCallData] = useState<{
+    targetId: string;
+    targetName: string;
+    isIncoming: boolean;
+    offer?: any;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!profileData) return;
+    
+    const socket = io("http://localhost:5000");
+    socket.emit("join", { userId: profileData.id, type: "user" });
+
+    socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: any }) => {
+      setVideoCallData({
+        targetId: data.callerId,
+        targetName: data.callerName,
+        isIncoming: true,
+        offer: data.offer,
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [profileData]);
+
   // Password Change State
   const [passwordForm, setPasswordForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -93,42 +126,33 @@ const Dashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AvatarEditor>(null);
 
-  // Fetch profile from backend
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchProfile = () => {
-      getProfile()
-        .then((profile) => {
-          if (!mounted) return;
-          setProfileData(profile);
-          // Initialize edit form with current data
-          setEditForm({
-            name: profile.name,
-            email: profile.email,
-            phone: profile.phone || "",
-            location: profile.location || "",
-            bio: profile.bio || "",
-          });
-          // Set image preview if profile has image
-          if (profile.profileImage) {
-            setImagePreview(resolveImageUrl(profile.profileImage));
-          }
-        })
-        .catch((error) => {
-          const message = extractAxiosError(error);
-          console.error("❌ Profile Fetch Error:", message);
-          toast.error(message);
-        })
-        .finally(() => mounted && setLoading(false));
-    };
-
-    fetchProfile();
-
-    return () => {
-      mounted = false;
-    };
+  // optimized: useCallback for fetching profile
+  const fetchProfileData = useCallback(() => {
+    getProfile()
+      .then((profile) => {
+        setProfileData(profile);
+        setEditForm({
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone || "",
+          location: profile.location || "",
+          bio: profile.bio || "",
+        });
+        if (profile.profileImage) {
+          setImagePreview(resolveImageUrl(profile.profileImage));
+        }
+      })
+      .catch((error) => {
+        const message = extractAxiosError(error);
+        console.error("❌ Profile Fetch Error:", message);
+        toast.error(message);
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, [fetchProfileData]);
 
   // Fetch bookings when consultations section is active
   useEffect(() => {
@@ -185,7 +209,7 @@ const Dashboard = () => {
 
     // If we change newPassword, re-validate confirmPassword
     if (name === "newPassword" && passwordForm.confirmPassword) {
-      const confirmError = value !== passwordForm.confirmPassword ? "Passwords do not match" : "";
+      const confirmError = value !== passwordForm.newPassword ? "Passwords do not match" : "";
       setPasswordErrors(prev => ({ ...prev, confirmPassword: confirmError }));
     }
   };
@@ -512,7 +536,7 @@ const Dashboard = () => {
       const [hours, minutes] = endTime.split(':').map(Number);
       bookingEndTime.setHours(hours, minutes, 0, 0);
       return new Date() > bookingEndTime;
-    } catch (e) {
+    } catch {
       return false;
     }
   };
@@ -551,9 +575,8 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <p className="text-[#081c45] text-lg font-semibold animate-pulse">
-          Loading your dashboard...
-        </p>
+        {/* spinners added */}
+        <LoadingSpinner size={48} text="Loading your dashboard..." />
       </div>
     );
   }
@@ -765,9 +788,9 @@ const Dashboard = () => {
               </div>
 
               {loadingBookings ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#081c45]"></div>
-                  <p className="mt-4 text-[#081c45] font-medium">Fetching your bookings...</p>
+                <div className="py-20">
+                  {/* spinners added */}
+                  <LoadingSpinner size={40} text="Fetching your bookings..." />
                 </div>
               ) : bookings.length === 0 ? (
                 <div className="bg-white rounded-3xl p-12 text-center shadow-xl border border-gray-100 animate-fade-in">
@@ -878,9 +901,24 @@ const Dashboard = () => {
                               >
                                 <MessageSquare size={14} /> Chat
                               </button>
+                              
                               <button 
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all text-xs"
-                                onClick={() => toast.info("Video call feature coming soon!")}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs ${
+                                  isToday(booking.date) 
+                                    ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200" 
+                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                }`}
+                                onClick={() => {
+                                  if (isToday(booking.date)) {
+                                    setVideoCallData({
+                                      targetId: booking.companyId!,
+                                      targetName: booking.companyDetails?.name || "Company",
+                                      isIncoming: false
+                                    });
+                                  } else {
+                                    toast.info("Video call is only available on the day of the appointment.");
+                                  }
+                                }}
                               >
                                 <Video size={14} /> Video Call
                               </button>
@@ -1162,7 +1200,7 @@ const Dashboard = () => {
 
                 <div className="space-y-4">
                   {[
-                    { label: "Full Name", value: profileData.name, icon: User, field: "name" },
+                    { label: "Full Name", field: "name", icon: User, required: true },
                     { label: "Email", value: profileData.email, icon: Mail, field: "email" },
                     { label: "Phone", value: profileData.phone, icon: Phone, field: "phone" },
                     { label: "Location", value: profileData.location, icon: MapPin, field: "location" },
@@ -1463,6 +1501,18 @@ const Dashboard = () => {
         .animate-fade-in { animation: fade-in 0.5s ease-out; }
         .animate-modal-in { animation: modal-in 0.3s ease-out; }
       `}</style>
+      {videoCallData && profileData && (
+        <VideoCall
+          currentUserId={profileData.id}
+          currentUserType="user"
+          currentUserName={profileData.name}
+          targetUserId={videoCallData.targetId}
+          targetUserType="company"
+          onClose={() => setVideoCallData(null)}
+          isIncoming={videoCallData.isIncoming}
+          incomingOffer={videoCallData.offer}
+        />
+      )}
     </div>
   );
 };

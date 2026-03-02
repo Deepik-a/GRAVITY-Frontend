@@ -50,7 +50,7 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
   const fetchConversation = useCallback(async () => {
     try {
       setIsLoading(true);
-      const conversations = await chatService.getConversations(currentUser.id);
+      const conversations = await chatService.getConversations(currentUser.id, currentUser.role);
       const conversation = conversations.find((c: Conversation) => 
         c.participants.some((p: { participantId: string }) => p.participantId === otherParticipant.id)
       );
@@ -78,7 +78,19 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
       // Listen for incoming messages
       socket?.on("new_message", (message: Message) => {
         setMessages((prev) => {
-          if (prev.find(m => m.id === message.id)) return prev;
+          // If message is already from us, check if it's already there (via optimistic temp ID)
+          if (message.senderId === currentUser.id) {
+             const existingIdx = prev.findIndex(m => m.id === message.id || (m.id.startsWith('temp-') && m.content === message.content));
+             if (existingIdx !== -1) {
+                // If it's already there but with temp ID, update it with real ID and data
+                const updated = [...prev];
+                updated[existingIdx] = message;
+                return updated;
+             }
+          } else {
+             // If message is from someone else, only add if not already there
+             if (prev.find(m => m.id === message.id)) return prev;
+          }
           
           // If we receive a message from the other participant while chat is open, mark it as read
           if (message.senderId === otherParticipant.id) {

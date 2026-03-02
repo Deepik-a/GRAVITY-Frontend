@@ -3,13 +3,15 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, LogOut, ChevronDown, Bell, Menu, X } from "lucide-react";
+import { User, LogOut, ChevronDown, Menu, X } from "lucide-react";
 import { getProfile } from "@/services/AuthService";
 import { Profile } from "@/types/AuthTypes";
 import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 
 import { toast } from "react-toastify";
+
+import NotificationBell from "../notifications/NotificationBell";
 
 export default function UserNavbar() {
   const router = useRouter();
@@ -136,14 +138,7 @@ export default function UserNavbar() {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-4">
-                <button
-                  className={`p-2 rounded-full hover:bg-gray-100 transition-colors relative ${
-                    scrolled ? "text-gray-600" : "text-white"
-                  }`}
-                >
-                  <Bell size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                </button>
+                <NotificationBell currentUser={{ id: user.id, role: user.role as any }} scrolled={scrolled} />
 
                 <div className="relative">
                   <button

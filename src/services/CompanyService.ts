@@ -169,3 +169,15 @@ export const rescheduleBooking = async (bookingId: string, newDate: string, newS
     throw new Error(extractErrorMessage(error, "Reschedule booking failed"));
   }
 };
+
+export const getDashboardStats = async () => {
+  try {
+    const response = await api.get("/company/dashboard/stats", {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Get dashboard stats failed", error);
+    throw new Error(extractErrorMessage(error, "Get dashboard stats failed"));
+  }
+};

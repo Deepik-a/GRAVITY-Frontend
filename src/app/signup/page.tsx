@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [hydrated, setHydrated] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [googleAuthLoading, setGoogleAuthLoading] = useState(false); // spinners added
      const [role, setRole] = useState<'user' | 'company' | null>(null);
 
   useEffect(() => {
@@ -204,7 +205,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 // ✅ Login submit handler (role added)
 const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
-
+  if (loading) return;
+  setLoading(true); // spinners added
 
 
   try {
@@ -284,6 +286,8 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const err = error as Error;
     console.error(`Login Error: ${err.message}`);
     toast.warning(err.message || "Login failed!");
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -316,6 +320,9 @@ const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
     toast.warning("Please select a role to sign up.");
     return;
   }
+
+  if (googleAuthLoading) return;
+  setGoogleAuthLoading(true); // spinners added
 
   try {
     console.log(`🚀 Google ${isSignup ? "Signup" : "Login"} for role:`, role);
@@ -407,10 +414,8 @@ console.log(res,"res from signup")
       // Fallback for unknown roles
       router.push("/");
     }
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error(`❌ Google ${isSignup ? "Signup" : "Login"} Error:`, err.message);
-    toast.error(err.message || `Google ${isSignup ? "signup" : "login"} failed!`);
+  } finally {
+    setGoogleAuthLoading(false); // spinners added
   }
 };
 
@@ -517,7 +522,7 @@ console.log(res,"res from signup")
                   {/* Google Sign Up Button */}
 {/* Google Sign In */}
 <div className="flex justify-center">
-  <div className="w-full"> {/* Full width container */}
+  <div className="w-full relative"> {/* Full width container */}
     <GoogleLogin
       onSuccess={handleGoogleAuth}
       onError={() => toast.error("Google Login Failed")}
@@ -525,6 +530,11 @@ console.log(res,"res from signup")
       size="large"
       width="100%"
     />
+    {googleAuthLoading && (
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
+      </div>
+    )}
   </div>
 </div>
 
@@ -710,12 +720,19 @@ console.log(res,"res from signup")
                     <form onSubmit={handleLoginSubmit} className="space-y-6">
                       {/* Google Sign In */}
                       <div className="flex justify-center">
-                        <GoogleLogin
-                          onSuccess={handleGoogleAuth}
-                          onError={() => toast.error("Google Login Failed")}
-                          shape="rectangular"
-                          size="large"
-                        />
+                        <div className="w-full relative">
+                          <GoogleLogin
+                            onSuccess={handleGoogleAuth}
+                            onError={() => toast.error("Google Login Failed")}
+                            shape="rectangular"
+                            size="large"
+                          />
+                          {googleAuthLoading && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Divider */}
@@ -782,9 +799,17 @@ console.log(res,"res from signup")
                       {/* Submit Button */}
                       <button
                         type="submit"
-                        className="w-full py-4 bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                        disabled={loading}
+                        className="w-full py-4 bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2"
                       >
-                        SIGN IN
+                        {loading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            <span>SIGNING IN...</span>
+                          </>
+                        ) : (
+                          "SIGN IN"
+                        )}
                       </button>
 
                       {/* Sign Up Link */}

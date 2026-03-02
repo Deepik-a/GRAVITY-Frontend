@@ -4,6 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import AuthLayout from "../../../components/auth/AuthLayout";
 import { uploadCompanyDocuments } from "@/services/CompanyService";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
 
 interface DocumentState {
   file: File | null;
@@ -14,7 +15,6 @@ interface DocumentState {
 export default function DocumentUploadPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email");
 
   const [documents, setDocuments] = useState<{
     rera: DocumentState;
@@ -259,9 +259,17 @@ return;
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base"
+                className="w-full py-3 bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base flex items-center justify-center gap-2"
               >
-                {isLoading ? "Uploading..." : "Submit Documents"}
+                {isLoading ? (
+                  /* spinners added */
+                  <>
+                    <LoadingSpinner size={20} className="text-white" />
+                    <span>Uploading Documents...</span>
+                  </>
+                ) : (
+                  "Submit Documents"
+                )}
               </button>
             </div>
           </form>

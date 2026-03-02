@@ -157,6 +157,7 @@ export default function SubscriptionManagementPage() {
                   value={newPlan.name}
                   onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium bg-white"
+                  suppressHydrationWarning={true}
                 >
                   <option value="" disabled>Select a plan name</option>
                   <option value="basic plan">Basic Plan</option>
@@ -174,6 +175,7 @@ export default function SubscriptionManagementPage() {
                     value={newPlan.price}
                     onChange={(e) => setNewPlan({ ...newPlan, price: Number(e.target.value) })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                    suppressHydrationWarning={true}
                   />
                 </div>
                 <div>
@@ -182,6 +184,7 @@ export default function SubscriptionManagementPage() {
                     value={newPlan.duration}
                     onChange={(e) => setNewPlan({ ...newPlan, duration: e.target.value as "monthly" | "yearly" })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium bg-white"
+                    suppressHydrationWarning={true}
                   >
                     <option value="monthly">Monthly</option>
                     <option value="yearly">Yearly</option>
@@ -196,6 +199,7 @@ export default function SubscriptionManagementPage() {
                   value={newPlan.description}
                   onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium h-24 resize-none"
+                  suppressHydrationWarning={true}
                 />
               </div>
 
@@ -209,6 +213,7 @@ export default function SubscriptionManagementPage() {
                     onChange={(e) => setNewFeature(e.target.value)}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
+                    suppressHydrationWarning={true}
                   />
                   <button
                     type="button"

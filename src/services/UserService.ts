@@ -21,11 +21,25 @@ export const getCompanyById = async (companyId: string) => {
 
 export const getAvailableSlots = async (companyId: string, date: string) => {
   try {
-    const response = await api.get(`/user/slots/available`, {
+    const response = await api.get("/user/slots/available", {
       params: { companyId, date },
+      withCredentials: true,
     });
     return response.data;
   } catch (error) {
+    console.error("❌ Get available slots failed", error);
+    throw new Error(extractAxiosError(error));
+  }
+};
+
+export const getSlotConfig = async (companyId: string) => {
+  try {
+    const response = await api.get(`/user/companies/${companyId}/slots/config`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Get slot config failed", error);
     throw new Error(extractAxiosError(error));
   }
 };

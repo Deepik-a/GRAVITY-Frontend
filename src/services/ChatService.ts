@@ -31,8 +31,10 @@ class ChatService {
     return this.socket;
   }
 
-  async getConversations(participantId: string) {
-    const response = await api.get(`/chat/conversations/${participantId}`);
+  async getConversations(participantId: string, type: 'user' | 'company' = 'user') {
+    const response = await api.get(`/chat/conversations/${participantId}`, {
+      params: { type }
+    });
     return response.data;
   }
 

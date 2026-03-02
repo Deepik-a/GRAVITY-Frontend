@@ -5,8 +5,11 @@ import Image from "next/image";
 import { getCompanyBookings, rescheduleBooking } from "@/services/CompanyService";
 import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
-import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw } from "lucide-react";
+import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw, Video } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
+import { isToday } from "@/utils/dateUtils";
+import io from "socket.io-client";
+import VideoCall from "@/components/video/VideoCall";
 
 interface Booking {
   id: string;
@@ -18,6 +21,7 @@ interface Booking {
   price: number;
   paymentStatus: string;
   isRescheduled?: boolean;
+  userId: string;
   userDetails?: {
     name: string;
     email: string;
@@ -35,6 +39,39 @@ export default function CompanyBookings() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
+
+  // Video Call State
+  const [currentCompany, setCurrentCompany] = useState<{ id: string, name: string } | null>(null);
+  const [videoCallData, setVideoCallData] = useState<{
+    targetId: string;
+    targetName: string;
+    isIncoming: boolean;
+    offer?: any;
+  } | null>(null);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentCompany({ id: user.id, name: user.name });
+      
+      const socket = io("http://localhost:5000");
+      socket.emit("join", { userId: user.id, type: "company" });
+
+      socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: any }) => {
+        setVideoCallData({
+          targetId: data.callerId,
+          targetName: data.callerName,
+          isIncoming: true,
+          offer: data.offer,
+        });
+      });
+
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, []);
 
   useEffect(() => {
     fetchBookings();
@@ -234,20 +271,35 @@ export default function CompanyBookings() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  {activeTab === "upcoming" && (
-                    <button 
-                      onClick={() => handleRescheduleClick(booking)}
-                      className={`flex-1 lg:flex-none px-6 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 ${reschedulingId === booking.id ? 'bg-amber-600 text-white shadow-amber-100' : 'bg-white text-amber-600 border-2 border-amber-100 hover:bg-amber-50'}`}
-                    >
-                      <RefreshCcw size={18} className={reschedulingId === booking.id ? 'animate-spin' : ''} />
-                      {reschedulingId === booking.id ? 'Close' : 'Reschedule'}
+                  <div className="flex items-center gap-3">
+                    {activeTab === "upcoming" && (
+                      <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        {isToday(booking.date) && booking.status === "confirmed" && (
+                          <button 
+                            onClick={() => setVideoCallData({
+                              targetId: booking.userId,
+                              targetName: booking.userDetails?.name || "Client",
+                              isIncoming: false
+                            })}
+                            className="flex-1 lg:flex-none px-6 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 animate-pulse"
+                          >
+                            <Video size={18} />
+                            Start Call
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleRescheduleClick(booking)}
+                          className={`flex-1 lg:flex-none px-6 py-4 rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2 ${reschedulingId === booking.id ? 'bg-amber-600 text-white shadow-amber-100' : 'bg-white text-amber-600 border-2 border-amber-100 hover:bg-amber-50'}`}
+                        >
+                          <RefreshCcw size={18} className={reschedulingId === booking.id ? 'animate-spin' : ''} />
+                          {reschedulingId === booking.id ? 'Close' : 'Reschedule'}
+                        </button>
+                      </div>
+                    )}
+                    <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
+                      View Details
                     </button>
-                  )}
-                  <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
-                    View Details
-                  </button>
-                </div>
+                  </div>
               </div>
 
               {/* Reschedule Slots Panel */}
@@ -299,7 +351,19 @@ export default function CompanyBookings() {
           ))}
         </div>
       )}
+
+      {videoCallData && currentCompany && (
+        <VideoCall
+          currentUserId={currentCompany.id}
+          currentUserType="company"
+          currentUserName={currentCompany.name}
+          targetUserId={videoCallData.targetId}
+          targetUserType="user"
+          onClose={() => setVideoCallData(null)}
+          isIncoming={videoCallData.isIncoming}
+          incomingOffer={videoCallData.offer}
+        />
+      )}
     </div>
   );
 }
-

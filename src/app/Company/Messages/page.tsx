@@ -46,7 +46,7 @@ export default function CompanyMessages() {
   const fetchConversations = useCallback(async (userId: string) => {
     try {
       setIsConversationsLoading(true);
-      const data = await chatService.getConversations(userId);
+      const data = await chatService.getConversations(userId, 'company');
       const enriched = data.map((c: Conversation) => ({
         ...c,
         otherParticipantName: c.otherParticipantName || "User",
@@ -111,7 +111,18 @@ export default function CompanyMessages() {
         const currentConv = selectedConversationRef.current;
         if (currentConv && message.conversationId === currentConv.id) {
           setMessages((prev) => {
-            if (prev.find(m => m.id === message.id)) return prev;
+            // Check if it's our own message (via temp ID or real ID match)
+            if (currentUser && message.senderId === currentUser.id) {
+               const existingIdx = prev.findIndex(m => m.id === message.id || (m.id.startsWith('temp-') && m.content === message.content));
+               if (existingIdx !== -1) {
+                  const updated = [...prev];
+                  updated[existingIdx] = message;
+                  return updated;
+               }
+            } else {
+               // From someone else
+               if (prev.find(m => m.id === message.id)) return prev;
+            }
             return [...prev, message];
           });
           scrollToBottom();
@@ -119,7 +130,7 @@ export default function CompanyMessages() {
         fetchConversations(user.id);
       });
     }
-  }, [fetchConversations]);
+  }, [fetchConversations, currentUser]);
 
   useEffect(() => {
     if (selectedConversation) {

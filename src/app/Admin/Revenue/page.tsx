@@ -104,6 +104,7 @@ export default function RevenuePage() {
                                   onClick={() => handlePayout(booking.id)}
                                   disabled={!isEligible(booking.date)}
                                   className={`px-3 py-1 rounded text-white text-xs font-medium transition ${isEligible(booking.date) ? 'bg-indigo-600 hover:bg-indigo-700 shadow-sm' : 'bg-gray-400 cursor-not-allowed'}`}
+                                  suppressHydrationWarning={true}
                                 >
                                   {isEligible(booking.date) ? "Confirm Payment" : `Wait (${Math.max(0, Math.ceil((new Date(new Date(booking.date).setDate(new Date(booking.date).getDate() + 2)).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))} days)`}
                                 </button>

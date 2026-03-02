@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { getUsers, toggleUserBlockStatus, searchUsers } from '../../../services/AdminService';
 import { Profile } from '../../../types/AuthTypes';
@@ -236,6 +236,7 @@ const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
+              suppressHydrationWarning={true}
             />
           </div>
         </div>

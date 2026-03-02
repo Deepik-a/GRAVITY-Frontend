@@ -283,22 +283,30 @@ export default function SlotManagement() {
     return config.startDate || getMinDate();
   };
 
+  const hasActiveRule = configs.length > 0 && new Date(configs[0].endDate) >= new Date(new Date().setHours(0,0,0,0));
+
   return (
-  <div className="max-w-6xl mx-auto p-6 space-y-8">
-  {/* Header */}
-  <div className="flex justify-between items-center">
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800">Slot Management</h1>
-      <p className="text-gray-600 mt-1">Configure and manage your consultation slots</p>
-    </div>
-    <button
-      onClick={openCreateModal}
-      className="px-6 py-3 bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white rounded-xl font-semibold hover:opacity-90 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-    >
-      <Plus size={20} />
-      Create New Rule
-    </button>
-  </div>
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Slot Management</h1>
+          <p className="text-gray-600 mt-1">Configure and manage your consultation slots</p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          disabled={hasActiveRule}
+          className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2 ${
+            hasActiveRule 
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none" 
+              : "bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white hover:opacity-90 hover:shadow-xl"
+          }`}
+          title={hasActiveRule ? "A rule is already active. You can create a new one after the current rule expires." : "Create a new slot rule"}
+        >
+          <Plus size={20} />
+          Create New Rule
+        </button>
+      </div>
 
   {/* Alert */}
   <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-400 p-4 rounded-r-lg flex items-start gap-3">

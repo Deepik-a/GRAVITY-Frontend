@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react'
-import { resolveImageUrl } from '@/utils/urlHelper'
 import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Heart } from 'lucide-react'
 import { toast } from 'react-toastify'
+import { CompanyCard } from '@/components/user/CompanyCard' // optimized
+import { CompanyCardSkeleton } from '@/components/ui/Skeleton' // spinners added
 
 interface Company {
   id: string;
@@ -89,7 +88,8 @@ export default function Home() {
       });
   }, [])
   
-  const handleToggleFavourite = async (e: React.MouseEvent, companyId: string) => {
+  // optimized: useCallback to prevent unnecessary function recreation
+  const handleToggleFavourite = useCallback(async (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -100,7 +100,7 @@ export default function Home() {
     } catch {
         toast.error("Please login to manage favorites");
     }
-  }
+  }, []);
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true)
@@ -134,21 +134,22 @@ export default function Home() {
     fetchCompanies()
   }, [fetchCompanies])
 
-  const handleCategoryChange = (category: string) => {
+  // optimized: useCallback for handlers
+  const handleCategoryChange = useCallback((category: string) => {
     setSelectedCategories(prev => 
       prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
     )
     setPage(1)
-  }
+  }, []);
 
-  const handleServiceChange = (service: string) => {
+  const handleServiceChange = useCallback((service: string) => {
     setSelectedServices(prev => 
       prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
     )
     setPage(1)
-  }
+  }, []);
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     if (value === 'rating') {
       setSortBy('rating')
@@ -167,7 +168,18 @@ export default function Home() {
       setSortOrder('desc')
     }
     setPage(1)
-  }
+  }, []);
+
+  const handleResetFilters = useCallback(() => {
+    setSelectedCategories([])
+    setSelectedServices([])
+    setExperienceLevel(0)
+    setCompanySize('All')
+    setMinPrice('')
+    setMaxPrice('')
+    setSearchQuery('')
+    setPage(1)
+  }, []);
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -248,11 +260,10 @@ export default function Home() {
                 <div className="animate-fadeIn">
                   <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Project Category</label>
                   <div className="space-y-2">
-                    {['Residential', 'Commercial', 'Villas'].map((category, index) => (
+                    {['Residential', 'Commercial', 'Villas'].map((category) => (
                       <label 
                         key={category} 
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50/80 cursor-pointer transition-all duration-300 hover:translate-x-1 animate-fadeInUp"
-                        style={{ animationDelay: `${index * 100}ms` }}
                       >
                         <div className="relative">
                           <input 
@@ -276,7 +287,7 @@ export default function Home() {
                 <div className="animate-fadeIn">
                   <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Specialized Services</label>
                   <div className="space-y-2 h-48 overflow-y-auto pr-2 custom-scrollbar">
-                    {['Architecture', 'Interior Design', 'Renovation'].map((service, index) => (
+                    {['Architecture', 'Interior Design', 'Renovation'].map((service) => (
                       <label 
                         key={service} 
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50/80 cursor-pointer transition-all duration-300 hover:translate-x-1"
@@ -381,16 +392,7 @@ export default function Home() {
                 </div>
 
                 <button 
-                  onClick={() => {
-                    setSelectedCategories([])
-                    setSelectedServices([])
-                    setExperienceLevel(0)
-                    setCompanySize('All')
-                    setMinPrice('')
-                    setMaxPrice('')
-                    setSearchQuery('')
-                    setPage(1)
-                  }}
+                  onClick={handleResetFilters}
                   className="w-full px-6 py-3 border-2 border-[#0F1E50] bg-transparent text-[#0F1E50] font-bold rounded-xl hover:bg-[#0F1E50] hover:text-white shadow-md hover:shadow-lg transform transition-all duration-300 hover:scale-105 animate-fadeInUp"
                 >
                   <span className="flex items-center justify-center gap-2">
@@ -435,8 +437,9 @@ export default function Home() {
             {/* Company Cards Grid */}
             {loading ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="glass-effect rounded-2xl h-[450px] animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200"></div>
+                {/* spinners added: Using Skeletons for premium loading feel */}
+                {[...Array(6)].map((_, i) => (
+                  <CompanyCardSkeleton key={i} />
                 ))}
               </div>
             ) : total === 0 ? (
@@ -454,99 +457,13 @@ export default function Home() {
             ) : (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {companies.map((company, index) => (
-                  <div 
-                    key={company.id} 
-                    className="glass-effect rounded-2xl overflow-hidden card-hover flex flex-col animate-fadeInUp"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div 
-                      className="relative h-48 bg-cover bg-center transition-all duration-700 hover:scale-110"
-                      style={{ backgroundImage: `url('${resolveImageUrl(company.profile?.brandIdentity?.banner1) || '/assets/apart3.jpg'}')` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                      
-                      {/* Like Button */}
-                      <button
-                        onClick={(e) => handleToggleFavourite(e, company.id)}
-                        className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-10 group/btn"
-                      >
-                        <Heart 
-                          className={`w-5 h-5 transition-colors ${favourites.includes(company.id) ? "fill-red-500 text-red-500" : "text-gray-600 group-hover/btn:text-red-500"}`} 
-                        />
-                      </button>
-
-                      <div className="absolute top-4 left-4 animate-bounce">
-                        <span className="px-3 py-1 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-gray-900 text-xs font-bold rounded-full shadow-lg">
-                          {company.profile?.establishedYear ? `${new Date().getFullYear() - company.profile.establishedYear}+ Years` : 'Verified'}
-                        </span>
-                      </div>
-                      <div className="absolute bottom-4 left-4">
-                        <div className="flex items-center gap-2 text-white drop-shadow-lg">
-                          <span className="text-2xl animate-pulse">⭐</span>
-                          <span className="font-bold text-lg">4.8</span>
-                          <span className="text-sm opacity-90">(Verified Professional)</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-6 flex-1 flex flex-col bg-white">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 line-clamp-1 hover:text-[#0F1E50] transition-colors duration-300">
-                            {company.profile?.companyName || company.name}
-                          </h3>
-                          <p className="text-[#FFD700] font-semibold text-sm line-clamp-1 mt-1">
-                            {company.profile?.categories.join(' • ')}
-                          </p>
-                        </div>
-                        <div className="text-right ml-4">
-                          <div className="text-2xl font-bold text-[#0F1E50]">₹{company.profile?.consultationFee}</div>
-                          <div className="text-xs text-gray-600 uppercase tracking-wider font-medium">Fee</div>
-                        </div>
-                      </div>
-                      <p className="text-gray-700 mb-4 line-clamp-2 text-sm flex-1">
-                        {company.profile?.overview || 'Leading construction and design firm providing exceptional quality services for residential and commercial projects.'}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-5">
-                        {company.profile?.services.slice(0, 3).map((service: string) => (
-                          <span 
-                            key={service} 
-                            className="px-3 py-1 bg-gradient-to-r from-[#0F1E50]/10 to-[#1A3A8F]/10 text-[#0F1E50] text-xs font-semibold rounded-full border border-[#0F1E50]/20 transition-all duration-300 hover:scale-105 hover:bg-[#0F1E50] hover:text-white"
-                          >
-                            {service}
-                          </span>
-                        ))}
-                        {company.profile?.services && company.profile.services.length > 3 && (
-                          <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
-                            +{company.profile.services.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Link 
-                          href={`/User/CompanyDetail/${company.id}`}
-                          className="px-4 py-3 border-2 border-[#0F1E50] bg-transparent text-[#0F1E50] text-center font-bold rounded-xl hover:bg-[#0F1E50] hover:text-white shadow-md hover:shadow-lg transform transition-all duration-300 hover:scale-105 group"
-                        >
-                          <span className="flex items-center justify-center gap-2">
-                            View Portfolio
-                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                            </svg>
-                          </span>
-                        </Link>
-                        <Link
-                          href={`/User/SlotSelection/${company.id}`}
-                          className="px-4 py-3 bg-gradient-to-r from-[#0F1E50] via-[#1A3A8F] to-[#0F1E50] text-white text-center font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#FFD700]/30 transform transition-all duration-300 hover:scale-105 hover:from-[#1A3A8F] hover:via-[#0F1E50] hover:to-[#1A3A8F] group"
-                        >
-                          <span className="flex items-center justify-center gap-2">
-                            Book Now
-                            <svg className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                            </svg>
-                          </span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
+                  <CompanyCard 
+                    key={company.id}
+                    company={company}
+                    index={index}
+                    isFavourite={favourites.includes(company.id)}
+                    onToggleFavourite={handleToggleFavourite}
+                  />
                 ))}
               </div>
             )}

@@ -234,6 +234,7 @@ useEffect(() => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base"
+            suppressHydrationWarning={true}
           />
         </div>
 
@@ -243,6 +244,7 @@ useEffect(() => {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as "all" | "pending" | "verified" | "rejected")}
             className="border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-bold text-sm"
+            suppressHydrationWarning={true}
           >
             <option value="all">Filter: All Status</option>
             <option value="pending">Status: Pending</option>
@@ -323,6 +325,7 @@ useEffect(() => {
               onChange={(e) => setRejectReason(e.target.value)}
               className="w-full border border-gray-300 rounded-xl p-4 h-40 focus:ring-2 focus:ring-red-500 outline-none resize-none text-base shadow-inner bg-gray-50"
               placeholder="e.g., Business license has expired..."
+              suppressHydrationWarning={true}
             />
             <div className="flex justify-end gap-3 mt-8">
               <button onClick={() => setShowRejectModal(false)} className="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 font-bold text-gray-700">Cancel</button>

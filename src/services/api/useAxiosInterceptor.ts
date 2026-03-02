@@ -10,7 +10,17 @@ export const useAxiosInterceptor = () => {
     // Request interceptor: no need to manually attach tokens
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
-        // Cookies (accessToken, refreshToken) are automatically sent by the browser
+        // Detect current role from URL to assist backend role differentiation
+        if (typeof window !== "undefined") {
+          const path = window.location.pathname.toLowerCase();
+          if (path.startsWith("/admin")) {
+            config.headers["X-Role"] = "admin";
+          } else if (path.startsWith("/company")) {
+            config.headers["X-Role"] = "company";
+          } else if (path.startsWith("/user")) {
+            config.headers["X-Role"] = "user";
+          }
+        }
         return config;
       },
       (error) => Promise.reject(error)

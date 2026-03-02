@@ -184,6 +184,7 @@ const FinancePage = () => {
               value={filters.type}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              suppressHydrationWarning={true}
             >
               <option value="">All Types</option>
               <option value="booking_payment">Booking Payment</option>
@@ -199,6 +200,7 @@ const FinancePage = () => {
               value={filters.status}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              suppressHydrationWarning={true}
             >
               <option value="">All Status</option>
               <option value="completed">Completed</option>
@@ -215,6 +217,7 @@ const FinancePage = () => {
               value={filters.startDate}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              suppressHydrationWarning={true}
             />
           </div>
           <div>
@@ -225,6 +228,7 @@ const FinancePage = () => {
               value={filters.endDate}
               onChange={handleFilterChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              suppressHydrationWarning={true}
             />
           </div>
         </div>

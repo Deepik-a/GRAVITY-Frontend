@@ -33,6 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
       <button 
         onClick={toggleSidebar}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#1E40AF] text-white rounded-lg shadow-lg focus:outline-none"
+        suppressHydrationWarning={true}
       >
         <i className={`fas ${isOpen ? 'fa-times' : 'fa-bars'} text-xl`}></i>
       </button>

@@ -8,10 +8,11 @@ import { useEffect, useState } from 'react'
 import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
 import type { CompanyProfile } from '@/types/AuthTypes'
 import UserNavbar from '@/components/user/UserNavbar'
-import { Heart } from 'lucide-react'
 import { toast } from 'react-toastify'
 
-import { resolveImageUrl } from "@/utils/urlHelper";
+import { CompanyCard, type Company } from '@/components/user/CompanyCard' // optimized
+import { CompanyCardSkeleton } from '@/components/ui/Skeleton' // spinners added
+import { useCallback } from 'react'
 
 export default function HomePage() {
   const router = useRouter();
@@ -50,7 +51,8 @@ export default function HomePage() {
       .catch(() => {});
   }, [])
 
-  const handleToggleFavourite = async (e: React.MouseEvent, companyId: string) => {
+  // optimized: useCallback to prevent unnecessary function recreation
+  const handleToggleFavourite = useCallback(async (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -61,7 +63,7 @@ export default function HomePage() {
     } catch {
         toast.error("Please login to manage favorites");
     }
-  }
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -353,8 +355,11 @@ export default function HomePage() {
     </p>
   )}
   {loading && (
-    <div className="flex justify-center items-center h-40">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[rgb(210,152,4)]"></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+      {/* spinners added: Using Skeletons for premium loading feel */}
+      {[...Array(3)].map((_, i) => (
+        <CompanyCardSkeleton key={i} />
+      ))}
     </div>
   )}
   {!loading && !error && companies.length === 0 && (
@@ -370,194 +375,15 @@ export default function HomePage() {
     </div>
   )}
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
-    {companies.map((company) => {
-      // Try to get banner image from brandIdentity (banner1 -> profilePicture -> logo)
-      const banner1 = company.profile?.brandIdentity?.banner1;
-      const profilePicture = company.profile?.brandIdentity?.profilePicture;
-      const logo = company.profile?.brandIdentity?.logo;
-      
-      const bannerUrl =
-        (banner1 && resolveImageUrl(banner1)) ||
-        (profilePicture && resolveImageUrl(profilePicture)) ||
-        (logo && resolveImageUrl(logo)) ||
-        null;
-
-      return (
-        <div
-          key={company.id}
-          className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col border border-gray-100"
-        >
-          {/* Banner Image Section */}
-          <div className="relative h-48 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-            {bannerUrl ? (
-              <Image
-                src={bannerUrl}
-                alt={`${company.name} banner`}
-                fill
-                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                unoptimized
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
-
-            {/* Like Button */}
-            <button
-              onClick={(e) => handleToggleFavourite(e, company.id)}
-              className="absolute top-4 left-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 z-10 group/btn"
-            >
-              <Heart 
-                className={`w-5 h-5 transition-colors ${favourites.includes(company.id) ? "fill-red-500 text-red-500" : "text-gray-600 group-hover/btn:text-red-500"}`} 
-              />
-            </button>
-            
-            {/* Company Logo Overlay */}
-          
-            
-            {/* Location Badge */}
-            <div className="absolute top-4 right-4">
-              <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                <svg className="w-3 h-3 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-xs font-medium text-gray-700">
-                  {company.location || 'Location'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Company Info Section */}
-          <div className="p-6 flex flex-col flex-grow">
-            <div className="mb-4">
-              <h3 className="font-bold text-xl text-gray-900 mb-1 line-clamp-1">
-                {company.name}
-              </h3>
-              <div className="flex flex-wrap gap-1">
-                {company.profile?.categories?.slice(0, 3).map((category, index) => (
-                  <span
-                    key={index}
-                    className="inline-block px-2 py-1 text-xs font-medium bg-[rgb(210,152,4,0.1)] text-[rgb(210,152,4)] rounded-full"
-                  >
-                    {category}
-                  </span>
-                ))}
-                {(company.profile?.categories?.length ?? 0) > 3 && (
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
-                    +{(company.profile?.categories?.length ?? 0) - 3} more
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="mb-6 grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className="text-2xl font-bold text-[rgb(0,14,41)]">
-                  {company.profile?.projectsCompleted ?? 0}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Projects</div>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className="text-2xl font-bold text-[rgb(0,14,41)]">
-                  {company.profile?.happyCustomers ?? 0}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Customers</div>
-              </div>
-              <div className="text-center p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className="text-2xl font-bold text-[rgb(0,14,41)]">
-                  {company.profile?.establishedYear ?? 'N/A'}
-                </div>
-                <div className="text-xs text-gray-500 mt-1">Since</div>
-              </div>
-            </div>
-
-            {/* Latest Project Preview */}
-            {company.profile?.projects && company.profile.projects.length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-gray-700">Latest Project</p>
-                  <span className="text-xs text-gray-400">
-                    {company.profile.projects[0].date 
-                      ? new Date(company.profile.projects[0].date).getFullYear()
-                      : 'Recent'
-                    }
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                    {company.profile.projects[0].beforeImage && resolveImageUrl(company.profile.projects[0].beforeImage) ? (
-                      <div className="relative h-24 rounded-lg overflow-hidden group">
-                        <Image 
-                          src={resolveImageUrl(company.profile.projects[0].beforeImage)!} 
-                          alt="Before" 
-                          fill 
-                          className="object-cover"
-                          unoptimized
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                          <span className="text-xs font-semibold text-white">Before</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-24 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <span className="text-[10px] text-gray-400">No Image</span>
-                      </div>
-                    )}
-                    {company.profile.projects[0].afterImage && resolveImageUrl(company.profile.projects[0].afterImage) ? (
-                      <div className="relative h-24 rounded-lg overflow-hidden group">
-                        <Image 
-                          src={resolveImageUrl(company.profile.projects[0].afterImage)!} 
-                          alt="After" 
-                          fill 
-                          className="object-cover"
-                          unoptimized
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                          <span className="text-xs font-semibold text-white">After</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-24 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <span className="text-[10px] text-gray-400">No Image</span>
-                      </div>
-                    )}
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 mt-auto">
-              <button
-                onClick={() => router.push(`/User/CompanyPage?id=${company.id}`)}
-                className="flex-1 px-4 py-3 text-sm font-medium text-[rgb(0,14,41)] bg-transparent border border-[rgb(0,14,41)] rounded-xl hover:bg-[rgb(0,14,41)] hover:text-white transition-colors duration-200 flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                View Details
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/User/BookSlots?companyId=${company.id}`);
-                }}
-                className="flex-1 px-4 py-3 text-sm font-medium text-white bg-[rgb(210,152,4)] rounded-xl hover:bg-[rgb(180,132,4)] hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Book Now
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    })}
+    {companies.map((company, index) => (
+      <CompanyCard 
+        key={company.id}
+        company={company as unknown as Company} // optimized: proper casting
+        index={index}
+        isFavourite={favourites.includes(company.id)}
+        onToggleFavourite={handleToggleFavourite}
+      />
+    ))}
   </div>
 </section>
 

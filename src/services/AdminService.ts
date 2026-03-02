@@ -194,3 +194,12 @@ export const getTransactions = async (filters: {
   }
 };
 
+export const getDashboardStats = async () => {
+  try {
+    const response = await api.get("admin/dashboard-stats", { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to fetch dashboard stats"));
+  }
+};
+
