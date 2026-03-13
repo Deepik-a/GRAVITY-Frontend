@@ -5,7 +5,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 
 const GravityLandingPage = () => {
-  const [activeText, setActiveText] = useState('HomeOwners');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [userType, setUserType] = useState<'user' | 'company' | null>(null);
@@ -63,18 +62,7 @@ const GravityLandingPage = () => {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // Text animation effect
-  useEffect(() => {
-    const texts = ['HomeOwners', 'HomeDreamers'];
-    let currentIndex = 0;
-    
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % texts.length;
-      setActiveText(texts[currentIndex]);
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, []);
+
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -83,9 +71,7 @@ const GravityLandingPage = () => {
     }
   };
 
-  const handleProfileClick = () => {
-    router.push('/UserProfile');
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#000E29] to-[#081C45] text-white">
@@ -105,6 +91,7 @@ const GravityLandingPage = () => {
             100% { opacity: 1; transform: translateX(0); }
           }
         `}</style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
       </Head>
 
       {/* Navigation */}
@@ -276,119 +263,7 @@ const GravityLandingPage = () => {
         )}
       </nav>
 
-      {/* About Section */}
-      <section id="about" className="bg-white w-full min-h-screen py-16 px-4 md:py-20 md:px-6 font-sans flex items-center mt-16 lg:mt-20">
-        <div className="max-w-7xl mx-auto w-full">
-          <div className="flex flex-col lg:flex-row items-stretch gap-8 lg:gap-12">
-            
-            {/* LEFT SIDE - Text and Stats */}
-            <div className="flex-1 min-w-[320px] flex flex-col justify-between">
-              <div>
-                {/* Trust Badge */}
-                <div className="inline-flex items-center gap-2 bg-[rgba(210,152,4,0.1)] px-4 py-2 rounded-full border-l-4 border-[rgb(210,152,4)] mb-6 w-fit">
-                  <i className="fas fa-hard-hat text-[rgb(210,152,4)]"></i>
-                  <span className="text-[rgb(0,14,41)] font-semibold text-sm">SINCE 2018 · TRUSTED NETWORK</span>
-                </div>
 
-                {/* Main Heading with GRA/VITY split and Arial Black */}
-                <h2 className="text-4xl md:text-6xl font-black mb-4 leading-tight" style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}>
-                  <span className="bg-gradient-to-r from-[#020D2E] via-[#132b79] to-[#0f2fa8] bg-clip-text text-transparent">GRA</span>
-                  <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">VITY</span>
-                  –<br />
-                  Connecting<br />
-                  <span className="inline-block min-w-[240px]">
-                    <span 
-                      className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent font-black"
-                      ref={typedTextRef}
-                    >
-                      HomeOwner
-                    </span>
-                  </span>
-                  <br />
-                  with Trusted<br />
-                  Builders & Experts
-                </h2>
-                
-                <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-8 max-w-xl">
-                  The future of home construction is here. Connect with verified builders, get transparent pricing, and build your dream home with confidence.
-                </p>
-              </div>
-
-              {/* Stats Grid - Train animation */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
-                {/* Box 1 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0s'}}>
-                  <i className="fas fa-building text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">50,000+</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Trusted Companies</div>
-                </div>
-                
-                {/* Box 2 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.1s'}}>
-                  <i className="fas fa-star text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">99.8%</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Customer Sat.</div>
-                </div>
-                
-                {/* Box 3 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.2s'}}>
-                  <i className="fas fa-hard-hat text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">150k+</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Projects Done</div>
-                </div>
-                
-                {/* Box 4 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.3s'}}>
-                  <i className="fas fa-headset text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">24/7</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Support</div>
-                </div>
-                
-                {/* Box 5 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.4s'}}>
-                  <i className="fas fa-face-smile text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">187k+</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Happy Customers</div>
-                </div>
-                
-                {/* Box 6 */}
-                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.5s'}}>
-                  <i className="fas fa-trowel text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">8,200+</div>
-                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Expert Builders</div>
-                </div>
-              </div>
-
-              {/* Micro Trust */}
-              <div className="flex items-center gap-3 mt-6 text-[rgb(0,14,41)]">
-                <i className="fas fa-circle-check text-[rgb(210,152,4)]"></i>
-                <span className="text-sm">ISO certified partners · fully insured</span>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE - Image */}
-            <div className="flex-1 min-w-[320px] flex items-stretch">
-              <div className="w-full rounded-3xl overflow-hidden shadow-2xl border-2 border-[rgba(210,152,4,0.2)] hover:scale-[1.01] transition-transform duration-700 group relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-[500px] md:min-h-[600px] flex items-center justify-center">
-                <img 
-                  src="/assets/LandingPage.jpg"
-                  alt="Modern apartment building construction"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                  style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
-                  loading="eager"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Font Awesome */}
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    </div>
 
 
       {/* About Section */}
@@ -612,7 +487,7 @@ const GravityLandingPage = () => {
 </h2>
         {/* Body text */}
   <p className="fu d3" style={{ color:"rgba(255,255,255,0.72)", lineHeight:1.82, fontSize:"0.93rem", marginBottom:"16px" }}>
-  GRAVITY is where dreams take shape and foundations are built on trust. We bridge the gap between homeowners with vision and builders with expertise, creating a seamless journey from blueprint to reality. Whether you're planning your first home or your forever home, we connect you with verified construction partners who share your passion for perfection.
+  GRAVITY is where dreams take shape and foundations are built on trust. We bridge the gap between homeowners with vision and builders with expertise, creating a seamless journey from blueprint to reality. Whether you&apos;re planning your first home or your forever home, we connect you with verified construction partners who share your passion for perfection.
 </p>
 
 <p className="fu d4" style={{ color:"rgba(255,255,255,0.72)", lineHeight:1.82, fontSize:"0.93rem", marginBottom:"16px" }}>
@@ -620,11 +495,11 @@ const GravityLandingPage = () => {
 </p>
 
 <p className="fu d5" style={{ color:"rgba(255,255,255,0.72)", lineHeight:1.82, fontSize:"0.93rem", marginBottom:"16px" }}>
-  Your home is more than walls and beams — it's where memories will be made, families will grow, and your unique story will unfold. We treat every project with the care and attention it deserves, matching you with builders who understand that they're not just constructing buildings, they're crafting the backdrop for your life's most precious moments.
+  Your home is more than walls and beams — it&apos;s where memories will be made, families will grow, and your unique story will unfold. We treat every project with the care and attention it deserves, matching you with builders who understand that they&apos;re not just constructing buildings, they&apos;re crafting the backdrop for your life&apos;s most precious moments.
 </p>
 
 <p className="fu d6" style={{ color:"rgba(255,255,255,0.72)", lineHeight:1.82, fontSize:"0.93rem" }}>
-  Join thousands of homeowners who've found clarity in their construction journey through GRAVITY. From foundation to finishing touches, we're with you every step of the way — ensuring that when you finally step through your front door, you're stepping into a home built exactly as you dreamed, with trust and transparency at its core.
+  Join thousands of homeowners who&apos;ve found clarity in their construction journey through GRAVITY. From foundation to finishing touches, we&apos;re with you every step of the way — ensuring that when you finally step through your front door, you&apos;re stepping into a home built exactly as you dreamed, with trust and transparency at its core.
 </p>
 
 <p className="fu d7" style={{
@@ -939,7 +814,7 @@ const GravityLandingPage = () => {
         {
           icon: '🎯',
           title: 'Customer First',
-          description: 'Your satisfaction is our priority. We\'re committed to making your dream home a reality.',
+          description: 'Your satisfaction is our priority. We&apos;re committed to making your dream home a reality.',
           delay: 'animation-delay-500'
         },
         {
@@ -1034,11 +909,11 @@ const GravityLandingPage = () => {
         
         <div className="space-y-2">
           <p className="text-gray-200 text-sm leading-relaxed">
-            To become the world's most trusted platform for construction and home building, where every dream home becomes a reality through innovation, transparency, and excellence in execution.
+            To become the world&apos;s most trusted platform for construction and home building, where every dream home becomes a reality through innovation, transparency, and excellence in execution.
           </p>
           
           <p className="text-gray-200 text-sm leading-relaxed italic border-l-4 border-[#D29804] pl-3">
-            "Creating spaces that inspire, communities that thrive, and relationships that last."
+            &quot;Creating spaces that inspire, communities that thrive, and relationships that last.&quot;
           </p>
           
           <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1214,7 +1089,7 @@ const GravityLandingPage = () => {
         <span className="trc-shimmer"> Top Rated Companies</span>
       </h2>
 
-      <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto " style={{ color: "rgba(0, 0, 0, )" }}>
+      <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto " style={{ color: "rgba(255, 255, 255, 0.7)" }}>
         Meet our highest-rated construction partners who consistently deliver
         exceptional quality and exceed client expectations.
       </p>
