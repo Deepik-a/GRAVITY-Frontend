@@ -903,21 +903,13 @@ const Dashboard = () => {
                               </button>
                               
                               <button 
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs ${
-                                  isToday(booking.date) 
-                                    ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200" 
-                                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                }`}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
                                 onClick={() => {
-                                  if (isToday(booking.date)) {
-                                    setVideoCallData({
-                                      targetId: booking.companyId!,
-                                      targetName: booking.companyDetails?.name || "Company",
-                                      isIncoming: false
-                                    });
-                                  } else {
-                                    toast.info("Video call is only available on the day of the appointment.");
-                                  }
+                                  setVideoCallData({
+                                    targetId: booking.companyId!,
+                                    targetName: booking.companyDetails?.name || "Company",
+                                    isIncoming: false
+                                  });
                                 }}
                               >
                                 <Video size={14} /> Video Call

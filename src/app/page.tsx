@@ -1,51 +1,67 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 
 const GravityLandingPage = () => {
   const [activeText, setActiveText] = useState('HomeOwners');
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [userType, setUserType] = useState<'user' | 'company' | null>(null);
   const router = useRouter();
   
-   const handleSelect = (type: 'user' | 'company') => {
+  const typedTextRef = useRef<HTMLSpanElement>(null);
+
+  const handleSelect = (type: 'user' | 'company') => {
     setUserType(type);
-    // Navigate to sign-up page with type as query param
     router.push(`/signup?userType=${type}`);
   };
-  // Mock data for top rated companies
-  const topCompanies = [
-    {
-      id: 1,
-      name: 'Elite Builders Inc.',
-      rating: 4.9,
-      projects: 1200,
-      image: '/api/placeholder/300/200'
-    },
-    {
-      id: 2,
-      name: 'Dream Home Constructors',
-      rating: 4.8,
-      projects: 950,
-      image: '/api/placeholder/300/200'
-    },
-    {
-      id: 3,
-      name: 'Premium Structures Ltd.',
-      rating: 4.9,
-      projects: 1500,
-      image: '/api/placeholder/300/200'
-    },
-    {
-      id: 4,
-      name: 'Quality Build Group',
-      rating: 4.7,
-      projects: 800,
-      image: '/api/placeholder/300/200'
+
+  // Typing animation effect
+  useEffect(() => {
+    const words = ['HomeOwner', 'HomeDreamers'];
+    const typedTextElement = typedTextRef.current;
+    
+    if (!typedTextElement) return;
+    
+    let wordIndex = 0;
+    let charIndex = words[0].length;
+    let isDeleting = false;
+    let timeoutId: NodeJS.Timeout;
+    
+    typedTextElement.textContent = words[0];
+    
+    function typeEffect() {
+      const currentWord = words[wordIndex];
+      
+      if (isDeleting) {
+        typedTextElement.textContent = currentWord.substring(0, charIndex - 1);
+        charIndex--;
+      } else {
+        typedTextElement.textContent = currentWord.substring(0, charIndex + 1);
+        charIndex++;
+      }
+      
+      if (!isDeleting && charIndex === currentWord.length) {
+        isDeleting = true;
+        timeoutId = setTimeout(typeEffect, 1500);
+        return;
+      }
+      
+      if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        wordIndex = (wordIndex + 1) % words.length;
+      }
+      
+      const speed = isDeleting ? 40 : 60;
+      timeoutId = setTimeout(typeEffect, speed);
     }
-  ];
+    
+    timeoutId = setTimeout(typeEffect, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   // Text animation effect
   useEffect(() => {
@@ -73,257 +89,306 @@ const GravityLandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#000E29] to-[#081C45] text-white">
+      {/* Add keyframe animations to head */}
       <Head>
-        <title>GRAVITY - Connecting HomeOwners with Trusted Builders & Experts</title>
-        <meta name="description" content="The future of home construction is here. Connect with verified builders, get transparent pricing, and build your dream home with confidence." />
+        <style>{`
+          @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes trainArrival {
+            0% { opacity: 0; transform: translateX(-30px); }
+            100% { opacity: 1; transform: translateX(0); }
+          }
+        `}</style>
       </Head>
-      {JSON.stringify(userType)}
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-[#000E29]/90 backdrop-blur-sm z-50 border-b border-[#D29804]/20">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
-              GRAVITY
-            </div>
-            <div className="hidden md:flex space-x-8">
-              <button onClick={() => scrollToSection('about')} className="hover:text-[#EEB21B] transition-colors">About</button>
-              <button onClick={() => scrollToSection('why')} className="hover:text-[#EEB21B] transition-colors">Why Choose Us</button>
-              <button onClick={() => scrollToSection('companies')} className="hover:text-[#EEB21B] transition-colors">Top Companies</button>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Profile Icon */}
-              <button 
-                onClick={handleProfileClick}
-                className="p-2 rounded-full hover:bg-white/10 transition-colors group"
-                aria-label="User Profile"
+      <nav 
+        className="fixed top-0 w-full bg-white z-50 border-b border-gray-100 shadow-sm"
+        style={{
+          animation: "slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+        }}
+      >
+        <style>{`
+          .nav-link {
+            position: relative;
+            color: #020D2E;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+          }
+          .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(to right, #D29804, #EEB21B);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+          }
+          .nav-link:hover { color: #0F2FA8; }
+          .nav-link:hover::after { width: 100%; }
+          .logo-img {
+            transition: transform 0.3s ease;
+          }
+          .logo-img:hover { transform: scale(1.08); }
+          .cta-btn {
+            background: linear-gradient(to right, #D29804, #EEB21B);
+            color: #000E29;
+            font-weight: 700;
+            border-radius: 9999px;
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+          }
+          .cta-btn:hover {
+            box-shadow: 0 6px 24px rgba(210,152,4,0.35);
+            transform: translateY(-1px);
+          }
+          .cta-btn:active { transform: scale(0.97); }
+          .mobile-menu {
+            animation: fadeIn 0.25s ease forwards;
+          }
+          .hamburger-line {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: #020D2E;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+          }
+          .stat-train {
+            animation: trainArrival 0.4s forwards;
+          }
+        `}</style>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-18 lg:h-20">
+
+            {/* Logo */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 logo-img">
+                <img
+                  src="/assets/Logo.png"
+                  alt="Gravity Logo"
+                  style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                />
+              </div>
+              <span
+                style={{
+                  fontSize: "clamp(1.5rem, 3vw, 2.1rem)",
+                  fontWeight: 900,
+                  letterSpacing: "0.04em",
+                  lineHeight: 1,
+                  fontStretch: "condensed",
+                }}
               >
-                <svg 
-                  className="w-6 h-6 text-gray-300 group-hover:text-[#EEB21B] transition-colors" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+                <span
+                  style={{
+                    background: "linear-gradient(to right, #020D2E, #0F2FA8)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
-                  />
-                </svg>
-              </button>
-              
-              <button 
+                  GRA
+                </span>
+                <span
+                  style={{
+                    background: "linear-gradient(to right, #B07A00, #D4930A)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  VITY
+                </span>
+              </span>
+            </div>
+
+            {/* Desktop Nav Links */}
+            <div className="hidden md:flex items-center space-x-6 lg:space-x-10">
+              <button onClick={() => scrollToSection('about')} className="nav-link">About</button>
+              <button onClick={() => scrollToSection('why')} className="nav-link">Why Choose Us</button>
+              <button onClick={() => scrollToSection('companies')} className="nav-link">Top Companies</button>
+            </div>
+
+            {/* Desktop CTA */}
+            <div className="hidden md:flex items-center">
+              <button
                 onClick={() => setShowModal(true)}
-                className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] text-[#000E29] px-6 py-2 rounded-full font-semibold hover:shadow-lg hover:shadow-[#D29804]/30 transition-all"
+                className="cta-btn px-5 py-2 lg:px-7 lg:py-2.5 text-sm lg:text-base"
               >
-                Find a Builder
-              </button>
-              <button className="border border-[#D29804] text-[#D29804] px-6 py-2 rounded-full font-semibold hover:bg-[#D29804] hover:text-[#000E29] transition-all">
-                Join as Company
+                Choose Who You Are?
               </button>
             </div>
+
+            {/* Mobile Hamburger */}
+            <button
+              onClick={() => setMobileOpen(prev => !prev)}
+              className="md:hidden flex flex-col justify-center items-center gap-1.5 p-2 rounded-md hover:bg-gray-50 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileOpen && (
+          <div className="mobile-menu md:hidden bg-white border-t border-gray-100 shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+              <button
+                onClick={() => { scrollToSection('about'); setMobileOpen(false); }}
+                className="nav-link text-left py-3 px-2 border-b border-gray-50 text-base"
+              >
+                About
+              </button>
+              <button
+                onClick={() => { scrollToSection('why'); setMobileOpen(false); }}
+                className="nav-link text-left py-3 px-2 border-b border-gray-50 text-base"
+              >
+                Why Choose Us
+              </button>
+              <button
+                onClick={() => { scrollToSection('companies'); setMobileOpen(false); }}
+                className="nav-link text-left py-3 px-2 border-b border-gray-50 text-base"
+              >
+                Top Companies
+              </button>
+              <div className="pt-3">
+                <button
+                  onClick={() => { setShowModal(true); setMobileOpen(false); }}
+                  className="cta-btn w-full py-3 text-base"
+                >
+                  Choose Who You Are?
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
-      {/* Rest of the component remains the same */}
-      {/* Hero Section */}
-<section id="about" className="bg-white w-full min-h-screen py-16 px-4 md:py-20 md:px-6 font-sans flex items-center">
-  <div className="max-w-7xl mx-auto w-full">
-    <div className="flex flex-col lg:flex-row items-stretch gap-8 lg:gap-12">
-      
-      {/* LEFT SIDE - Text and Stats */}
-      <div className="flex-1 min-w-[320px] flex flex-col justify-between">
-        <div>
-          {/* Trust Badge */}
-          <div className="inline-flex items-center gap-2 bg-[rgba(210,152,4,0.1)] px-4 py-2 rounded-full border-l-4 border-[rgb(210,152,4)] mb-6 w-fit">
-            <i className="fas fa-hard-hat text-[rgb(210,152,4)]"></i>
-            <span className="text-[rgb(0,14,41)] font-semibold text-sm">SINCE 2018 · TRUSTED NETWORK</span>
-          </div>
+      {/* About Section */}
+      <section id="about" className="bg-white w-full min-h-screen py-16 px-4 md:py-20 md:px-6 font-sans flex items-center mt-16 lg:mt-20">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="flex flex-col lg:flex-row items-stretch gap-8 lg:gap-12">
+            
+            {/* LEFT SIDE - Text and Stats */}
+            <div className="flex-1 min-w-[320px] flex flex-col justify-between">
+              <div>
+                {/* Trust Badge */}
+                <div className="inline-flex items-center gap-2 bg-[rgba(210,152,4,0.1)] px-4 py-2 rounded-full border-l-4 border-[rgb(210,152,4)] mb-6 w-fit">
+                  <i className="fas fa-hard-hat text-[rgb(210,152,4)]"></i>
+                  <span className="text-[rgb(0,14,41)] font-semibold text-sm">SINCE 2018 · TRUSTED NETWORK</span>
+                </div>
 
-          {/* Main Heading with Animation */}
-          <h2 className="text-4xl md:text-6xl font-bold text-[rgb(0,14,41)] mb-4 leading-tight">
-            GRAVITY –<br />
-            Connecting<br />
-            <span className="inline-block min-w-[280px] typed-wrapper">
-              <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent typed-text">HomeOwner</span>
-            </span>
-            <br />
-            with Trusted<br />
-            Builders & Experts
-          </h2>
-          
-          <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-8 max-w-xl">
-            The future of home construction is here. Connect with verified builders, get transparent pricing, and build your dream home with confidence.
-          </p>
-        </div>
+                {/* Main Heading with GRA/VITY split and Arial Black */}
+                <h2 className="text-4xl md:text-6xl font-black mb-4 leading-tight" style={{ fontFamily: "'Arial Black', 'Arial Bold', Gadget, sans-serif" }}>
+                  <span className="bg-gradient-to-r from-[#020D2E] via-[#132b79] to-[#0f2fa8] bg-clip-text text-transparent">GRA</span>
+                  <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">VITY</span>
+                  –<br />
+                  Connecting<br />
+                  <span className="inline-block min-w-[240px]">
+                    <span 
+                      className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent font-black"
+                      ref={typedTextRef}
+                    >
+                      HomeOwner
+                    </span>
+                  </span>
+                  <br />
+                  with Trusted<br />
+                  Builders & Experts
+                </h2>
+                
+                <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-8 max-w-xl">
+                  The future of home construction is here. Connect with verified builders, get transparent pricing, and build your dream home with confidence.
+                </p>
+              </div>
 
-        {/* Stats Grid - Train animation */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
-          {/* Box 1 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-building text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">50,000+</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Trusted Companies</div>
-          </div>
-          
-          {/* Box 2 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-star text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">99.8%</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Customer Sat.</div>
-          </div>
-          
-          {/* Box 3 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-hard-hat text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">150k+</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Projects Done</div>
-          </div>
-          
-          {/* Box 4 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-headset text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">24/7</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Support</div>
-          </div>
-          
-          {/* Box 5 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-face-smile text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">187k+</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Happy Customers</div>
-          </div>
-          
-          {/* Box 6 */}
-          <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
-            <i className="fas fa-trowel text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
-            <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">8,200+</div>
-            <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Expert Builders</div>
-          </div>
-        </div>
+              {/* Stats Grid - Train animation */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
+                {/* Box 1 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0s'}}>
+                  <i className="fas fa-building text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">50,000+</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Trusted Companies</div>
+                </div>
+                
+                {/* Box 2 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.1s'}}>
+                  <i className="fas fa-star text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">99.8%</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Customer Sat.</div>
+                </div>
+                
+                {/* Box 3 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.2s'}}>
+                  <i className="fas fa-hard-hat text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">150k+</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Projects Done</div>
+                </div>
+                
+                {/* Box 4 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.3s'}}>
+                  <i className="fas fa-headset text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">24/7</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Support</div>
+                </div>
+                
+                {/* Box 5 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.4s'}}>
+                  <i className="fas fa-face-smile text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">187k+</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Happy Customers</div>
+                </div>
+                
+                {/* Box 6 */}
+                <div className="stat-train opacity-0 bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1" style={{animationDelay: '0.5s'}}>
+                  <i className="fas fa-trowel text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+                  <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">8,200+</div>
+                  <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">Expert Builders</div>
+                </div>
+              </div>
 
-        {/* Micro Trust */}
-        <div className="flex items-center gap-3 mt-6 text-[rgb(0,14,41)]">
-          <i className="fas fa-circle-check text-[rgb(210,152,4)]"></i>
-          <span className="text-sm">ISO certified partners · fully insured</span>
-        </div>
-      </div>
+              {/* Micro Trust */}
+              <div className="flex items-center gap-3 mt-6 text-[rgb(0,14,41)]">
+                <i className="fas fa-circle-check text-[rgb(210,152,4)]"></i>
+                <span className="text-sm">ISO certified partners · fully insured</span>
+              </div>
+            </div>
 
-      {/* RIGHT SIDE - Image from public/assets */}
-      <div className="flex-1 min-w-[320px] flex items-stretch">
-        <div className="w-full rounded-3xl overflow-hidden shadow-2xl border-2 border-[rgba(210,152,4,0.2)] hover:scale-[1.01] transition-transform duration-700 group relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-[500px] md:min-h-[600px] flex items-center justify-center">
-          <img 
-            src="/assets/LandingPage.jpg "
-            alt="Modern apartment building construction"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-            style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
-            loading="eager"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
-            }}
-          />
+            {/* RIGHT SIDE - Image */}
+            <div className="flex-1 min-w-[320px] flex items-stretch">
+              <div className="w-full rounded-3xl overflow-hidden shadow-2xl border-2 border-[rgba(210,152,4,0.2)] hover:scale-[1.01] transition-transform duration-700 group relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-[500px] md:min-h-[600px] flex items-center justify-center">
+                <img 
+                  src="/assets/LandingPage.jpg"
+                  alt="Modern apartment building construction"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                  style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Font Awesome */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     </div>
-  </div>
-
-  {/* Typing Animation Script */}
-  <script dangerouslySetInnerHTML={{
-    __html: `
-      (function() {
-        if (typeof window !== 'undefined') {
-          function initTyping() {
-            const words = ['HomeOwner', 'HomeDreamers'];
-            const typedTextElement = document.querySelector('.typed-text');
-            
-            if (!typedTextElement) return;
-            
-            let wordIndex = 0;
-            let charIndex = words[0].length;
-            let isDeleting = false;
-            
-            typedTextElement.textContent = words[0];
-            
-            function typeEffect() {
-              const currentWord = words[wordIndex];
-              
-              if (isDeleting) {
-                typedTextElement.textContent = currentWord.substring(0, charIndex - 1);
-                charIndex--;
-              } else {
-                typedTextElement.textContent = currentWord.substring(0, charIndex + 1);
-                charIndex++;
-              }
-              
-              if (!isDeleting && charIndex === currentWord.length) {
-                isDeleting = true;
-                setTimeout(typeEffect, 1500);
-                return;
-              }
-              
-              if (isDeleting && charIndex === 0) {
-                isDeleting = false;
-                wordIndex = (wordIndex + 1) % words.length;
-              }
-              
-              const speed = isDeleting ? 40 : 60;
-              setTimeout(typeEffect, speed);
-            }
-            
-            setTimeout(typeEffect, 1000);
-          }
-          
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initTyping);
-          } else {
-            initTyping();
-          }
-        }
-      })();
-    `
-  }} />
-
-  {/* Animations */}
-  <style>{`
-    .stat-train {
-      opacity: 0;
-      animation: trainArrival 0.4s forwards;
-    }
-    
-    .stat-train:nth-child(1) { animation-delay: 0.1s; }
-    .stat-train:nth-child(2) { animation-delay: 0.2s; }
-    .stat-train:nth-child(3) { animation-delay: 0.3s; }
-    .stat-train:nth-child(4) { animation-delay: 0.4s; }
-    .stat-train:nth-child(5) { animation-delay: 0.5s; }
-    .stat-train:nth-child(6) { animation-delay: 0.6s; }
-    
-    @keyframes trainArrival {
-      0% {
-        opacity: 0;
-        transform: translateX(-30px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-    
-    .typed-wrapper {
-      min-width: 280px;
-      display: inline-block;
-    }
-    
-    .typed-text {
-      display: inline-block;
-    }
-  `}</style>
-
-  {/* Font Awesome */}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-</section>
 
 
       {/* About Section */}
@@ -1389,9 +1454,9 @@ const GravityLandingPage = () => {
           <span className="text-white text-2xl font-extrabold tracking-widest">
             GRA
             <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
-              V
+              VI
             </span>
-            ITY
+            TY
           </span>
         </div>
 

@@ -274,7 +274,7 @@ export default function CompanyBookings() {
                   <div className="flex items-center gap-3">
                     {activeTab === "upcoming" && (
                       <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                        {isToday(booking.date) && booking.status === "confirmed" && (
+                        {booking.status === "confirmed" && (
                           <button 
                             onClick={() => setVideoCallData({
                               targetId: booking.userId,
