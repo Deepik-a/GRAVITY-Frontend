@@ -6,7 +6,6 @@ import { getSubscriptionPlans, createSubscriptionCheckout } from "@/services/Sub
 import { getProfile } from "@/services/CompanyService";
 import { toast } from "react-toastify";
 import { Check, ShieldCheck, CreditCard, Calendar, Star } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface CurrentSubscription {
   planId?: string;
@@ -45,8 +44,7 @@ export default function CompanySubscriptionPage() {
       setPlans(plansData);
 
       // Extract subscription info from profile
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const profile = profileData as any;
+      const profile = profileData as { subscription: CurrentSubscription; id: string; _id: string };
       const sub = profile.subscription; 
       if (sub) {
         setCurrentSub(sub);
@@ -199,7 +197,7 @@ export default function CompanySubscriptionPage() {
                         </div>
               
                         <div className="bg-gray-50 p-8 flex-1 border-t border-gray-100">
-                             <p className="font-bold text-gray-400 text-xs uppercase tracking-wider mb-4">What's Included</p>
+                             <p className="font-bold text-gray-400 text-xs uppercase tracking-wider mb-4">What&apos;s Included</p>
                             <ul className="space-y-4">
                                 {plan.features.map((feature, i) => (
                                     <li key={i} className="flex items-start gap-3">

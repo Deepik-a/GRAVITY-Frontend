@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { toast } from "react-toastify";
 import { getAvailableSlots, bookSlot, getCompanyById, getSlotConfig } from "@/services/UserService";
 import { Clock, Calendar, CheckCircle2, Building2, Timer, CreditCard, AlertCircle, ChevronRight, Share2, Heart, Star, MapPin, Phone, Info } from "lucide-react";
@@ -17,15 +17,23 @@ interface SlotConfig {
   exceptionalDays: { date: string; reason: string }[];
 }
 
-export default function UserBookSlots() {
+interface CompanyDetails {
+  name: string;
+  profile?: {
+    consultationFee?: number;
+    address?: string;
+  };
+  contactEmail?: string;
+}
+
+function BookSlotsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlCompanyId = searchParams.get("companyId") || "";
 
   const [companyId, setCompanyId] = useState(urlCompanyId);
   const [companyName, setCompanyName] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [companyDetails, setCompanyDetails] = useState<any | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [consultationFee, setConsultationFee] = useState(0);
   const [sessionHours, setSessionHours] = useState(1);
   const [selectedDate, setSelectedDate] = useState("");
@@ -153,11 +161,11 @@ export default function UserBookSlots() {
                   <div className="flex flex-wrap items-center gap-6 pt-2">
                     <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                       <MapPin size={16} className="text-blue-500" />
-                      <span>{(companyDetails as any)?.profile?.address || "Global Online"}</span>
+                      <span>{companyDetails?.profile?.address || "Global Online"}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                       <Phone size={16} className="text-blue-500" />
-                      <span>{(companyDetails as any)?.contactEmail || "Contact available after booking"}</span>
+                      <span>{companyDetails?.contactEmail || "Contact available after booking"}</span>
                     </div>
                   </div>
                 </div>
@@ -378,3 +386,16 @@ export default function UserBookSlots() {
     </div>
   );
 }
+
+export default function UserBookSlots() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size={48} className="text-blue-900" />
+      </div>
+    }>
+      <BookSlotsContent />
+    </Suspense>
+  );
+}
+

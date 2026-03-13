@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import AuthLayout from "../../../components/auth/AuthLayout";
@@ -12,7 +12,7 @@ interface DocumentState {
   name: string;
 }
 
-export default function DocumentUploadPage() {
+function DocumentUploadContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -276,5 +276,17 @@ return;
         </div>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function DocumentUploadPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size={48} className="text-blue-900" />
+      </div>
+    }>
+      <DocumentUploadContent />
+    </Suspense>
   );
 }

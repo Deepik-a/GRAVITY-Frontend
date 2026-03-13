@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'react-toastify'
@@ -25,7 +25,7 @@ interface Company {
   };
 }
 
-export default function Home() {
+function CompanyListingContent() {
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [companies, setCompanies] = useState<Company[]>([])
@@ -648,4 +648,19 @@ export default function Home() {
       `}</style>
     </div>
   )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#0F1E50]"></div>
+          <p className="text-[#0F1E50] font-bold animate-pulse">Loading Premium Professionals...</p>
+        </div>
+      </div>
+    }>
+      <CompanyListingContent />
+    </Suspense>
+  );
 }

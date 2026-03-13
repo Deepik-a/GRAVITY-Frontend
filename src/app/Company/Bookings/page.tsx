@@ -7,7 +7,6 @@ import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
 import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw, Video } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
-import { isToday } from "@/utils/dateUtils";
 import io from "socket.io-client";
 import VideoCall from "@/components/video/VideoCall";
 
@@ -46,7 +45,7 @@ export default function CompanyBookings() {
     targetId: string;
     targetName: string;
     isIncoming: boolean;
-    offer?: any;
+    offer?: RTCSessionDescriptionInit;
   } | null>(null);
 
   useEffect(() => {
@@ -58,7 +57,7 @@ export default function CompanyBookings() {
       const socket = io("http://localhost:5000");
       socket.emit("join", { userId: user.id, type: "company" });
 
-      socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: any }) => {
+      socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
         setVideoCallData({
           targetId: data.callerId,
           targetName: data.callerName,

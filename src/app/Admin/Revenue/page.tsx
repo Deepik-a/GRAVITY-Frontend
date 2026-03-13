@@ -6,7 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function RevenuePage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{ totalRevenue: number; totalCompanyShare: number; bookings: { id: string; date: string; price: number; adminCommission?: number; payoutStatus: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -14,8 +14,9 @@ export default function RevenuePage() {
       setLoading(true);
       const res = await getRevenue();
       setData(res);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load revenue data");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to load revenue data");
     } finally {
       setLoading(false);
     }
@@ -30,8 +31,9 @@ export default function RevenuePage() {
        await initiatePayout(bookingId);
        toast.success("Payout initiated successfully");
        fetchData(); // Refresh data
-    } catch (err: any) {
-        toast.error(err.message || "Payout failed");
+    } catch (err: unknown) {
+        const error = err as Error;
+        toast.error(error.message || "Payout failed");
     }
   };
 
@@ -83,7 +85,7 @@ export default function RevenuePage() {
                   {data?.bookings?.length === 0 && (
                     <tr><td colSpan={7} className="px-6 py-4 text-center text-gray-500">No paid bookings found.</td></tr>
                   )}
-                  {data?.bookings?.map((booking: any) => {
+                  {data?.bookings?.map((booking: { id: string; date: string; price: number; adminCommission?: number; payoutStatus: string }) => {
                      const adminComm = booking.adminCommission || (booking.price * 0.1);
                      const companyShare = booking.price - adminComm;
                      return (

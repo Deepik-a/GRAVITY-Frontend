@@ -24,7 +24,7 @@ interface SlotConfig {
 export default function SlotManagement() {
   const [loading, setLoading] = useState(false);
   const [configs, setConfigs] = useState<SlotConfig[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [, setBookings] = useState<{ date: string }[]>([]);
   const [bookingCounts, setBookingCounts] = useState<Record<string, number>>({});
   const [showModal, setShowModal] = useState(false);
   const [config, setConfig] = useState<SlotConfig>({
@@ -65,7 +65,7 @@ export default function SlotManagement() {
       
       // Calculate counts
       const counts: Record<string, number> = {};
-      data.forEach((b: any) => {
+      (data as { date: string }[]).forEach((b: { date: string }) => {
         const dateStr = new Date(b.date).toISOString().split('T')[0];
         counts[dateStr] = (counts[dateStr] || 0) + 1;
       });
@@ -223,7 +223,7 @@ export default function SlotManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this rule?")) return;
     
     setLoading(true);
@@ -315,7 +315,7 @@ export default function SlotManagement() {
       <p className="text-sm text-yellow-800 font-medium">Editing Policy</p>
       <p className="text-xs text-yellow-700">
         When editing an existing rule, only exceptional days (holidays) can be modified. 
-        Editing is disabled if any day in the rule's range has more than 5 bookings.
+        Editing is disabled if any day in the rule&apos;s range has more than 5 bookings.
       </p>
     </div>
   </div>
@@ -383,7 +383,7 @@ export default function SlotManagement() {
                   Edit
                 </button>
                 <button
-                  onClick={() => config.id && handleDelete(config.id)}
+                  onClick={() => handleDelete()}
                   className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} />

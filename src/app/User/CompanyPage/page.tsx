@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -18,7 +18,7 @@ type CompanyTab = {
 };
 
 import { resolveImageUrl } from "@/utils/urlHelper";
-export default function CompanyProfilePage() {
+function CompanyProfileContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -852,5 +852,17 @@ export default function CompanyProfilePage() {
         />
       )}
     </div>
+  );
+}
+
+export default function CompanyProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-900"></div>
+      </div>
+    }>
+      <CompanyProfileContent />
+    </Suspense>
   );
 }

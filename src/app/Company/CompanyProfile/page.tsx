@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Building, Users, Award, Calendar, Edit, Save, X, CheckCircle, Star, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { getProfile as apiGetProfile, saveProfile as apiSaveProfile, uploadCompanyImage } from '@/services/CompanyService';
@@ -202,6 +202,7 @@ export default function CompanyProfilePage() {
   const getImageUrlWithCacheBust = (url?: string): string => {
     if (!url) return '';
     const resolvedUrl = resolveImageUrl(url);
+    if (!resolvedUrl) return '';
     
     // Only add cache busting parameter on client side
     if (isClient && imageVersion > 0) {

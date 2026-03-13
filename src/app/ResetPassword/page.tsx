@@ -1,15 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { resetPassword } from "../../services/AuthService";
 import { toast } from "react-toastify";
 import AuthLayout from "../../components/auth/AuthLayout";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
-   const otp = searchParams.get("otp") || ""; // ✅ Comes from previous step
+   // const otp = searchParams.get("otp") || ""; // ✅ Comes from previous step
 
   const [formData, setFormData] = useState({
     password: "",
@@ -196,5 +196,17 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E40AF]"></div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

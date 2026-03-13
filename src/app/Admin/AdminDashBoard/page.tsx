@@ -65,9 +65,10 @@ export default function AdminDashboard() {
       const statsData = await getDashboardStats();
       setData(statsData);
       setError(null);
-    } catch (err: any) {
-      console.error('Error fetching dashboard stats:', err);
-      setError(err.message || 'Failed to load dashboard data');
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('Error fetching dashboard stats:', error);
+      setError(error.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }

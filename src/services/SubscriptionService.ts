@@ -7,7 +7,7 @@ const SUBSCRIPTIONS = "/subscriptions";
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (error && typeof error === "object") {
-    const err = error as AxiosError<any>;
+    const err = error as AxiosError<{ message?: string; error?: string }>;
     const backendError = err.response?.data?.message || err.response?.data?.error;
     if (typeof backendError === "string") return backendError;
   }

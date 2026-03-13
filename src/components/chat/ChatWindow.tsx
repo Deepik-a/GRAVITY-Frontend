@@ -69,7 +69,7 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser.id, otherParticipant.id]);
+  }, [currentUser.id, currentUser.role, otherParticipant.id]);
 
   useEffect(() => {
     if (isOpen && currentUser.id) {
