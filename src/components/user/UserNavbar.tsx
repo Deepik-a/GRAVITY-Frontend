@@ -9,8 +9,6 @@ import { Profile } from "@/types/AuthTypes";
 import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 
-import { toast } from "react-toastify";
-
 import NotificationBell from "../notifications/NotificationBell";
 
 export default function UserNavbar() {
@@ -138,7 +136,7 @@ export default function UserNavbar() {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-4">
-                <NotificationBell currentUser={{ id: user.id, role: user.role as any }} scrolled={scrolled} />
+                <NotificationBell currentUser={{ id: user.id, role: user.role as "user" | "company" }} scrolled={scrolled} />
 
                 <div className="relative">
                   <button

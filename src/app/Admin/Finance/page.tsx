@@ -73,7 +73,8 @@ const FinancePage = () => {
       await initiatePayout(bookingId);
       toast.success("Payout initiated successfully!");
       fetchTransactions();
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       toast.error(error.message || "Failed to initiate payout");
     } finally {
       setPayoutLoading(null);

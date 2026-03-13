@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const GravityLandingPage = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -21,7 +22,6 @@ const GravityLandingPage = () => {
   useEffect(() => {
     const words = ['HomeOwner', 'HomeDreamers'];
     const typedTextElement = typedTextRef.current;
-    
     if (!typedTextElement) return;
     
     let wordIndex = 0;
@@ -29,9 +29,15 @@ const GravityLandingPage = () => {
     let isDeleting = false;
     let timeoutId: NodeJS.Timeout;
     
-    typedTextElement.textContent = words[0];
+    // Explicitly check before assignment
+    if (typedTextElement) {
+      typedTextElement.textContent = words[0];
+    }
     
     function typeEffect() {
+      // Re-check for closure safety
+      if (!typedTextElement) return;
+      
       const currentWord = words[wordIndex];
       
       if (isDeleting) {
@@ -159,11 +165,12 @@ const GravityLandingPage = () => {
 
             {/* Logo */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 logo-img">
-                <img
+              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 flex-shrink-0 logo-img relative">
+                <Image
                   src="/assets/Logo.png"
                   alt="Gravity Logo"
-                  style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                  fill
+                  className="object-contain"
                 />
               </div>
               <span
@@ -370,11 +377,15 @@ const GravityLandingPage = () => {
     position:"absolute", 
     inset:0, 
     zIndex:0,
-    backgroundImage: "url('/assets/Screenshot 2026-02-27 134840.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat"
-  }}/>
+  }}>
+    <Image
+      src="/assets/Screenshot 2026-02-27 134840.png"
+      alt="Background"
+      fill
+      className="object-cover object-center"
+      priority
+    />
+  </div>
 
 {/* ════════════════════════════════════════════════════════
     LAYER 1 — animated hexagon grid (5 polygons only, spread left to middle)
@@ -571,10 +582,11 @@ const GravityLandingPage = () => {
     zIndex:8,
     boxShadow:"0 20px 80px rgba(0,0,0,0.7)",
   }}>
-    <img
+    <Image
       src="/assets/f.jpg"
       alt="Construction"
-      style={{ width:"100%", height:"100%", objectFit:"cover" }}
+      fill
+      className="object-cover"
     />
   </div>
 
@@ -600,88 +612,88 @@ const GravityLandingPage = () => {
 
     {/* θ=0° */}
     <div className="orbit-icon-close" style={{ left:"240px", top:"-80px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/big_house.jpg" alt="Residential" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/big_house.jpg" alt="Residential" fill className="object-cover" />
         <div className="orbit-label-close">Residential</div>
       </div>
     </div>
 
     {/* θ=45° */}
     <div className="orbit-icon-close" style={{ left:"466px", top:"13px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/modern-business-buildings-financial-district.jpg" alt="Industrial" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/modern-business-buildings-financial-district.jpg" alt="Industrial" fill className="object-cover" />
         <div className="orbit-label-close">Industrial</div>
       </div>
     </div>
 
     {/* θ=90° */}
     <div className="orbit-icon-close" style={{ left:"560px", top:"240px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/images_2.jpeg" alt="Commercial" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/images_2.jpeg" alt="Commercial" fill className="object-cover" />
         <div className="orbit-label-close">Commercial</div>
       </div>
     </div>
 
     {/* θ=135° */}
     <div className="orbit-icon-close" style={{ left:"466px", top:"466px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/small_apartments.jpg" alt="Apartments" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/small_apartments.jpg" alt="Apartments" fill className="object-cover" />
         <div className="orbit-label-close">Apartments</div>
       </div>
     </div>
 
     {/* θ=180° */}
     <div className="orbit-icon-close" style={{ left:"240px", top:"560px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/m.jpg" alt="Villas" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/m.jpg" alt="Villas" fill className="object-cover" />
         <div className="orbit-label-close">Villas</div>
       </div>
     </div>
 
     {/* θ=225° */}
     <div className="orbit-icon-close" style={{ left:"13px", top:"466px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/office.jpg" alt="Interiors" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/office.jpg" alt="Interiors" fill className="object-cover" />
         <div className="orbit-label-close">Interiors</div>
       </div>
     </div>
 
     {/* θ=270° */}
     <div className="orbit-icon-close" style={{ left:"-80px", top:"240px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/high-building-construction-city.jpg" alt="Renovation" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/high-building-construction-city.jpg" alt="Renovation" fill className="object-cover" />
         <div className="orbit-label-close">Renovation</div>
       </div>
     </div>
 
     {/* θ=315° */}
     <div className="orbit-icon-close" style={{ left:"13px", top:"13px" }}>
-      <div className="orbit-img-wrap-close"
+      <div className="orbit-img-wrap-close relative"
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <img src="/assets/pexels-photo-1396132.jpeg" alt="Landscaping" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+        <Image src="/assets/pexels-photo-1396132.jpeg" alt="Landscaping" fill className="object-cover" />
         <div className="orbit-label-close">Landscaping</div>
       </div>
     </div>
@@ -863,20 +875,15 @@ const GravityLandingPage = () => {
       {/* Mission & Vision Section */}
 <section id="vision-mission" className="py-8 px-6 relative overflow-hidden min-h-[450px] flex items-center">
   {/* Background Image */}
-  <div className="absolute inset-0 w-full h-full">
-    <img 
+  <div className="absolute inset-0 w-full h-full relative">
+    <Image 
       src="/assets/H.png"
       alt="Construction background"
-      className="absolute inset-0 w-full h-full object-cover"
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        objectPosition: 'center'
-      }}
+      fill
+      className="object-cover"
     />
     {/* Dark overlay for better readability */}
-    <div className="absolute inset-0 bg-black/60"></div>
+    <div className="absolute inset-0 bg-black/60 z-10"></div>
   </div>
 
   {/* Content */}
@@ -1101,7 +1108,7 @@ const GravityLandingPage = () => {
       {/* ── Card 1 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "0ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/small_apartments.jpg" alt="Elite Constructors" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/small_apartments.jpg" alt="Elite Constructors" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "0ms" }}>🏆 Top Rated 2024</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 5</div>
@@ -1135,7 +1142,7 @@ const GravityLandingPage = () => {
       {/* ── Card 2 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "110ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/big_house.jpg" alt="Metropolitan Builders" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/big_house.jpg" alt="Metropolitan Builders" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "110ms" }}>🏆 Eco Champion</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 4.9</div>
@@ -1169,7 +1176,7 @@ const GravityLandingPage = () => {
       {/* ── Card 3 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "220ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/AlternativeSignUpImage.jpg" alt="Prestige Developments" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/AlternativeSignUpImage.jpg" alt="Prestige Developments" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "220ms" }}>🏆 Luxury Specialist</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 4.9</div>
@@ -1203,7 +1210,7 @@ const GravityLandingPage = () => {
       {/* ── Card 4 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "330ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/office.jpg" alt="Urban Innovators" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/office.jpg" alt="Urban Innovators" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "330ms" }}>🏆 Innovation Leader</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 4.5</div>
@@ -1237,7 +1244,7 @@ const GravityLandingPage = () => {
       {/* ── Card 5 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "440ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/modern-business-buildings-financial-district.jpg" alt="Apex Structures" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/modern-business-buildings-financial-district.jpg" alt="Apex Structures" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "440ms" }}>🏆 Rising Star</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 4.8</div>
@@ -1271,7 +1278,7 @@ const GravityLandingPage = () => {
       {/* ── Card 6 ── */}
       <div className="trc-card flex flex-col rounded-2xl overflow-hidden" style={{ animationDelay: "550ms", border: "1px solid rgba(255,255,255,0.08)", background: "linear-gradient(160deg,#000E29 0%,#081C45 100%)", boxShadow: "0 4px 24px -6px rgba(0,14,41,0.7)", transition: "transform 0.35s cubic-bezier(.22,.68,0,1.2),box-shadow 0.35s ease,border-color 0.3s ease" }}>
         <div className="relative overflow-hidden flex-shrink-0" style={{ height: "clamp(130px,16vw,158px)" }}>
-          <img src="/assets/apart2.jpg" alt="Skyline Builders" className="trc-img w-full h-full object-cover" />
+          <Image src="/assets/apart2.jpg" alt="Skyline Builders" fill className="trc-img object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top,rgba(0,14,41,0.82) 0%,transparent 55%)" }} />
           <div className="trc-badge absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-lg" style={{ background: "linear-gradient(135deg,#D29804,#EEB21B)", color: "#000E29", animationDelay: "550ms" }}>🏆 Green Builder</div>
           <div className="absolute top-2.5 right-2.5 flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold shadow-lg" style={{ background: "linear-gradient(135deg,#EEB21B,#D29804)", color: "#000E29" }}>★ 4.7</div>

@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import UserNavbar from "@/components/user/UserNavbar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
 import VideoCall from "@/components/video/VideoCall";
-import { isToday } from "@/utils/dateUtils";
 import io from "socket.io-client";
 import {
   LayoutDashboard,
@@ -84,7 +83,7 @@ const Dashboard = () => {
     targetId: string;
     targetName: string;
     isIncoming: boolean;
-    offer?: any;
+    offer?: RTCSessionDescriptionInit;
   } | null>(null);
 
   useEffect(() => {
@@ -93,7 +92,7 @@ const Dashboard = () => {
     const socket = io("http://localhost:5000");
     socket.emit("join", { userId: profileData.id, type: "user" });
 
-    socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: any }) => {
+    socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
       setVideoCallData({
         targetId: data.callerId,
         targetName: data.callerName,

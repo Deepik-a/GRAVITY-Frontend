@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Check, CheckCheck, Clock, CreditCard, Calendar, RefreshCcw, AlertCircle, Info, X } from "lucide-react";
+import { Bell, Check, CheckCheck, CreditCard, Calendar, RefreshCcw, AlertCircle, Info, X } from "lucide-react";
 import notificationService, { INotification } from "@/services/NotificationService";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";

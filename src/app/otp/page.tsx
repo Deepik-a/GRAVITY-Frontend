@@ -1,11 +1,11 @@
 "use client";
-import { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from "react";
+import { useState, useRef, KeyboardEvent, ChangeEvent, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { verifyOtp, resendOtp } from "../../services/AuthService";
 import { toast } from "react-toastify";
 import AuthLayout from "../../components/auth/AuthLayout";
 
-export default function OtpPage() {
+function OtpContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
@@ -281,3 +281,16 @@ const handleSubmit = async (e: React.FormEvent) => {
     </AuthLayout>
   );
 }
+
+export default function OtpPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E40AF]"></div>
+      </div>
+    }>
+      <OtpContent />
+    </Suspense>
+  );
+}
+

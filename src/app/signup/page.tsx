@@ -2,7 +2,7 @@
 import { signupUser, loginUser, googleLogin } from "@/services/AuthService";
 import { getProfile as apiGetProfile } from "@/services/CompanyService";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { toast } from "react-toastify";
 import {
   validateName,
@@ -15,7 +15,7 @@ import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { SignupData } from "@/types/AuthTypes";
 
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -832,5 +832,17 @@ console.log(res,"res from signup")
         </div>
       </div> 
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1E40AF]"></div>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

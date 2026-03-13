@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ArrowRight, Calendar, ExternalLink, Loader2 } from "lucide-react";
 import { verifyPaymentSession } from "@/services/UserService";
 import { toast } from "react-toastify";
 
-export default function PaymentSuccess() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [verifying, setVerifying] = useState(true);
@@ -102,3 +102,16 @@ export default function PaymentSuccess() {
     </div>
   );
 }
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+         <Loader2 size={64} className="text-blue-500 animate-spin" />
+       </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
+  );
+}
+

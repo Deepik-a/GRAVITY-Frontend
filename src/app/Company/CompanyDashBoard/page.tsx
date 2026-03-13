@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement, Filler } from 'chart.js';
-import { Bar, Line, Doughnut } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import Sidebar from '@/components/company/SideBarLayout';
 import SlotManagement from '../SlotManagment/page';
 import CompanyBookings from '../Bookings/page';
@@ -43,9 +43,7 @@ interface IDashboardStats {
 export default function DashboardPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
-  const [activeBookingTab, setActiveBookingTab] = useState('upcoming');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [financePeriod, setFinancePeriod] = useState('6M');
   const [userInfo, setUserInfo] = useState({ 
     id: '', 
     name: 'Elite Properties Ltd.', 
@@ -54,7 +52,6 @@ export default function DashboardPage() {
     isSubscribed: false 
   });
   const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // Fetch user info on mount
   useEffect(() => {
@@ -73,13 +70,11 @@ export default function DashboardPage() {
       import('@/services/CompanyService').then(({ getDashboardStats, getMyProfile }) => {
         getDashboardStats().then(stats => {
           setDashboardStats(stats);
-          setLoading(false);
           if (stats.isSubscribed !== undefined) {
             setUserInfo(prev => ({ ...prev, isSubscribed: stats.isSubscribed }));
           }
         }).catch(err => {
           console.error("Fetch dashboard stats failed", err);
-          setLoading(false);
         });
 
         // Sync profile for isSubscribed if not already updated by stats
@@ -133,27 +128,6 @@ export default function DashboardPage() {
     ]
   };
 
-  const financeChartData = {
-    labels: financePeriod === '6M' 
-      ? ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      : financePeriod === '1Y'
-      ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      : ['2021', '2022', '2023', '2024'],
-    datasets: [
-      {
-        label: 'Revenue',
-        data: financePeriod === '6M' 
-          ? [65000, 72000, 68000, 85000, 78000, 92000]
-          : financePeriod === '1Y'
-          ? [45000, 52000, 48000, 58000, 62000, 68000, 72000, 78000, 82000, 88000, 92000, 98000]
-          : [450000, 620000, 850000, 1100000],
-        borderColor: 'rgb(30, 64, 175)',
-        backgroundColor: 'rgba(30, 64, 175, 0.1)',
-        tension: 0.4,
-        fill: true,
-      }
-    ]
-  };
 
   const chartOptions = {
     responsive: true,
