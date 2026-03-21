@@ -1,27 +1,44 @@
 import api from "./api/useApi";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
+import { CompanyProfile } from "@/types/AuthTypes";
+import { Booking } from "@/types/BookingTypes";
+import { API_ROUTES } from "@/shared/constants/routes";
 
-export const getAllCompanies = async (params: Record<string, unknown> = {}) => {
+export interface Slot {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
+}
+
+export interface SlotConfig {
+  id: string;
+  companyId: string;
+  slots: Slot[];
+}
+
+export const getAllCompanies = async (params: Record<string, unknown> = {}): Promise<{ companies: CompanyProfile[]; total: number }> => {
   try {
-    const response = await api.get("/user/companies", { params });
+    const response = await api.get<{ companies: CompanyProfile[]; total: number }>(API_ROUTES.USER.COMPANIES, { params });
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
   }
 };
 
-export const getCompanyById = async (companyId: string) => {
+export const getCompanyById = async (companyId: string): Promise<CompanyProfile> => {
   try {
-    const response = await api.get(`/company/profile/${companyId}`);
+    const response = await api.get<CompanyProfile>(`${API_ROUTES.USER.COMPANIES}/${companyId}/profile`);
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
   }
 };
 
-export const getAvailableSlots = async (companyId: string, date: string) => {
+export const getAvailableSlots = async (companyId: string, date: string): Promise<Slot[]> => {
   try {
-    const response = await api.get("/user/slots/available", {
+    const response = await api.get<Slot[]>(API_ROUTES.USER.SLOTS_AVAILABLE, {
       params: { companyId, date },
       withCredentials: true,
     });
@@ -32,9 +49,9 @@ export const getAvailableSlots = async (companyId: string, date: string) => {
   }
 };
 
-export const getSlotConfig = async (companyId: string) => {
+export const getSlotConfig = async (companyId: string): Promise<SlotConfig> => {
   try {
-    const response = await api.get(`/user/companies/${companyId}/slots/config`, {
+    const response = await api.get<SlotConfig>(`${API_ROUTES.USER.COMPANIES}/${companyId}/slots/config`, {
       withCredentials: true,
     });
     return response.data;
@@ -44,18 +61,20 @@ export const getSlotConfig = async (companyId: string) => {
   }
 };
 
-export const bookSlot = async (bookingData: { companyId: string; date: string; startTime: string }) => {
+export const bookSlot = async (bookingData: { companyId: string; date: string; startTime: string }): Promise<Booking> => {
   try {
-    const response = await api.post(`/user/slots/book`, bookingData);
+    const response = await api.post<Booking>(API_ROUTES.USER.BOOK_SLOT, bookingData);
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
   }
 };
 
-export const getUserBookings = async () => {
+export const getUserBookings = async (page?: number, limit?: number): Promise<{ bookings: Booking[]; total: number }> => {
   try {
-    const response = await api.get("/user/bookings");
+    const response = await api.get<{ bookings: Booking[]; total: number }>(API_ROUTES.USER.BOOKINGS, {
+      params: { page, limit }
+    });
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -71,9 +90,9 @@ export const createCheckoutSession = async (bookingId: string) => {
   }
 };
 
-export const verifyPaymentSession = async (sessionId: string) => {
+export const verifyPaymentSession = async (sessionId: string): Promise<{ success: boolean; bookingId: string }> => {
   try {
-    const response = await api.get("/payments/verify-session", {
+    const response = await api.get<{ success: boolean; bookingId: string }>("/payments/verify-session", {
       params: { sessionId }
     });
     return response.data;
@@ -84,7 +103,7 @@ export const verifyPaymentSession = async (sessionId: string) => {
 
 export const getFavourites = async () => {
   try {
-    const response = await api.get("/user/profile/favourites");
+    const response = await api.get(API_ROUTES.USER.FAVOURITES);
     return response.data.favourites;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -93,7 +112,7 @@ export const getFavourites = async () => {
 
 export const toggleFavourite = async (companyId: string) => {
   try {
-    const response = await api.post("/user/profile/favourites", { companyId });
+    const response = await api.post(API_ROUTES.USER.FAVOURITES, { companyId });
     return response.data.favourites;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -102,7 +121,7 @@ export const toggleFavourite = async (companyId: string) => {
 
 export const changePassword = async (data: Record<string, unknown>) => {
   try {
-    const response = await api.put("/user/profile/password", data);
+    const response = await api.patch(API_ROUTES.USER.PROFILE_PASSWORD, data);
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -111,7 +130,7 @@ export const changePassword = async (data: Record<string, unknown>) => {
 
 export const submitReview = async (data: { companyId: string; rating: number; comment: string }) => {
   try {
-    const response = await api.post("/user/reviews", data);
+    const response = await api.post(`${API_ROUTES.USER.COMPANIES}/${data.companyId}/reviews`, { rating: data.rating, comment: data.comment });
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -120,7 +139,7 @@ export const submitReview = async (data: { companyId: string; rating: number; co
 
 export const getCompanyReviews = async (companyId: string) => {
    try {
-     const response = await api.get(`/user/companies/${companyId}/reviews`);
+     const response = await api.get(`${API_ROUTES.USER.COMPANIES}/${companyId}/reviews`);
      return response.data;
    } catch (error) {
      throw new Error(extractAxiosError(error));
@@ -129,9 +148,13 @@ export const getCompanyReviews = async (companyId: string) => {
  
  export const completeBooking = async (bookingId: string) => {
    try {
-     const response = await api.patch(`/user/bookings/${bookingId}/complete`);
+     const response = await api.patch(`${API_ROUTES.USER.BOOKINGS}/${bookingId}/complete`);
      return response.data;
    } catch (error) {
      throw new Error(extractAxiosError(error));
    }
  };
+export const getPublicStats = async () => {
+  const response = await api.get(API_ROUTES.USER.STATS);
+  return response.data;
+};

@@ -3,17 +3,25 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateEmail, validatePassword } from '@/utils/Validation';
-import { LoginData } from "@/types/AuthTypes";
+import { LoginData, Profile } from "@/types/AuthTypes";
 import { loginAdmin } from "@/services/AuthService";
 import { toast } from "react-toastify";
+import { useAuth } from '@/context/AuthContext';
 
 const AdminLogin: React.FC = () => {
     const router = useRouter();
+    const { login: contextLogin, isAuthenticated, role: currentRole, isLoading: authLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email: string; password: string }>({ email: '', password: '' });
+
+  React.useEffect(() => {
+    if (!authLoading && isAuthenticated && currentRole === "admin") {
+      router.replace("/Admin/AdminDashBoard");
+    }
+  }, [router, isAuthenticated, currentRole, authLoading]);
 
 const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -40,11 +48,27 @@ const handleLogin = async (e: React.FormEvent) => {
     };
 
     const response = await loginAdmin(loginData);
- toast.success(response.message || "Signup successful!");
+    toast.success(response.message || "Login successful!");
+    
+    // Convert admin user to Profile type
+    const adminUser: Profile = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: "admin"
+    };
+
+    // Store admin info in context
+    contextLogin(adminUser, "admin");
+    localStorage.setItem("adminId", response.user.id);
+    // Token is stored in cookies by backend, but we can store it in localStorage if needed by interceptors
+    // Based on previous code, I'll keep it for now but context is primary.
+    // localStorage.setItem("token", response.accessToken); 
+    
     resetForms();
     
     // 🔥 Redirect to admin dashboard
-    router.push("/Admin/AdminDashBoard");
+    router.replace("/Admin/AdminDashBoard");
 
   } catch (error: unknown) {
     let message = "Login failed";

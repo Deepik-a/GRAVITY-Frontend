@@ -2,24 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import styles from './style.module.css';
+import { useAuth } from '@/context/AuthContext';
 
 export interface SidebarProps {
   onNavigate?: (section: string) => void;
   activeSection?: string;
-  userInfo?: {
-    name: string;
-    type: string;
-    initials: string;
-  };
 }
 
 export default function Sidebar({ 
   onNavigate, 
   activeSection = 'overview',
-  userInfo = { name: 'Elite Properties', type: 'Company Account', initials: 'EP' }
 }: SidebarProps) {
+  const { user, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Map user to userInfo fallback
+  const userInfo = {
+    name: user?.name || 'Loading...',
+    type: user?.role === 'company' ? 'Company Account' : 'User Account',
+    initials: user?.name?.charAt(0).toUpperCase() || '?'
+  };
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -50,7 +53,12 @@ export default function Sidebar({
   };
 
   // Handle navigation click
-  const handleNavClick = (section: string) => {
+  const handleNavClick = async (section: string) => {
+    if (section === 'logout') {
+      await logout();
+      return;
+    }
+    
     if (onNavigate) {
       onNavigate(section);
     }
@@ -163,6 +171,15 @@ export default function Sidebar({
           icon: (
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )
+        },
+        { 
+          section: 'logout', 
+          label: 'Logout', 
+          icon: (
+            <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           )
         },
