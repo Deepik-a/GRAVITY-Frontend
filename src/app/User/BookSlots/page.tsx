@@ -35,7 +35,7 @@ function BookSlotsContent() {
   const [companyName, setCompanyName] = useState("");
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [consultationFee, setConsultationFee] = useState(0);
-  const [sessionHours, setSessionHours] = useState(1);
+  const [sessionHours] = useState(1);
   const [selectedDate, setSelectedDate] = useState("");
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);

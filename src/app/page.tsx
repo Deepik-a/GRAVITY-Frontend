@@ -19,7 +19,7 @@ const GravityLandingPage = () => {
       setIndex((prev) => (prev + 1) % words.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [words.length]);
 
 
   
@@ -422,16 +422,13 @@ const GravityLandingPage = () => {
             {/* RIGHT SIDE - Image */}
             <div className="flex-1 min-w-[320px] flex items-stretch">
               <div className="w-full rounded-3xl overflow-hidden shadow-2xl border-2 border-[rgba(210,152,4,0.2)] hover:scale-[1.01] transition-transform duration-700 group relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-[500px] md:min-h-[600px] flex items-center justify-center">
-                <img 
+                <Image 
                   src="/assets/LandingPage.jpg"
                   alt="Modern apartment building construction"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
-                  style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
-                  loading="eager"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
-                  }}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-1000"
+                  priority
+                  unoptimized
                 />
               </div>
             </div>
