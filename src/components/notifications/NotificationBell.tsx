@@ -48,6 +48,14 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
           setNotifications((prev) => [notification, ...prev]);
           setUnreadCount((prev) => prev + 1);
           
+          // Sound the notification (ring)
+          try {
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+            audio.play().catch(e => console.warn("Audio play failed, likely gesture required", e));
+          } catch (e) {
+            console.warn("Audio play error", e);
+          }
+
           // Show toast for new notification
           toast.info(notification.title, {
             onClick: () => setIsOpen(true),

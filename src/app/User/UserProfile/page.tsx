@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import UserNavbar from "@/components/user/UserNavbar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
 import VideoCall from "@/components/video/VideoCall";
+import ChatWindow from "@/components/chat/ChatWindow";
 import io from "socket.io-client";
 import {
   LayoutDashboard,
@@ -44,22 +45,9 @@ import {
 } from "lucide-react";
 
 import { resolveImageUrl } from "@/utils/urlHelper";
+import { Booking } from "@/types/BookingTypes";
 
-interface Booking {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "pending" | "confirmed" | "cancelled";
-  paymentStatus: "pending" | "paid" | "failed";
-  serviceStatus: "pending" | "completed";
-  isRescheduled?: boolean;
-  companyDetails?: {
-    name: string;
-    logo?: string;
-  };
-  companyId: string;
-}
+
 
 import AvatarEditor from 'react-avatar-editor';
 
@@ -78,6 +66,12 @@ const Dashboard = () => {
   const [favourites, setFavourites] = useState<CompanyProfile[]>([]);
   const [loadingFavourites, setLoadingFavourites] = useState(false);
   
+  // Pagination for Bookings
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [totalBookingsPages, setTotalBookingsPages] = useState(1);
+  const bookingsPerPage = 5;
+  
   // Video Call State
   const [videoCallData, setVideoCallData] = useState<{
     targetId: string;
@@ -89,7 +83,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!profileData) return;
     
-    const socket = io("http://localhost:5000");
+    const socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000");
     socket.emit("join", { userId: profileData.id, type: "user" });
 
     socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
@@ -122,6 +116,9 @@ const Dashboard = () => {
   const [editorPosition, setEditorPosition] = useState({ x: 0.5, y: 0.5 });
   const [imageUploadMessage, setImageUploadMessage] = useState<{type: 'success' | 'error' | 'info', message: string} | null>(null);
   
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatRecipient, setChatRecipient] = useState<{ id: string; name: string } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AvatarEditor>(null);
 
@@ -157,12 +154,16 @@ const Dashboard = () => {
   useEffect(() => {
     if (activeSection === "consultations") {
       setLoadingBookings(true);
-      getUserBookings()
-        .then(setBookings)
+      getUserBookings(bookingsPage, bookingsPerPage)
+        .then(result => {
+          setBookings(result.bookings || []);
+          setTotalBookings(result.total || 0);
+          setTotalBookingsPages(Math.ceil((result.total || 0) / bookingsPerPage));
+        })
         .catch(err => toast.error(extractAxiosError(err)))
         .finally(() => setLoadingBookings(false));
     }
-  }, [activeSection]);
+  }, [activeSection, bookingsPage]);
   
   // Fetch favourites
   useEffect(() => {
@@ -464,22 +465,48 @@ const Dashboard = () => {
 
   // Delete a profile field
   const handleDeleteField = async (field: keyof Profile) => {
-    if (!confirm(`Are you sure you want to remove your ${field}?`)) return;
+    const resolveDelete = async () => {
+      try {
+        await deleteProfileField(field);
+        setProfileData(prev => prev ? { ...prev, [field]: '' } : null);
+        setEditForm(prev => ({ ...prev, [field]: '' }));
+        setFormErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+        toast.success(`${field} removed successfully`);
+      } catch (error) {
+        const message = extractAxiosError(error);
+        toast.error(`Failed to remove ${field}: ${message}`);
+      }
+    };
 
-    try {
-      await deleteProfileField(field);
-      setProfileData(prev => prev ? { ...prev, [field]: '' } : null);
-      setEditForm(prev => ({ ...prev, [field]: '' }));
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-      toast.success(`${field} removed successfully`);
-    } catch (error) {
-      const message = extractAxiosError(error);
-      toast.error(`Failed to remove ${field}: ${message}`);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Are you sure you want to remove your {field}?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolveDelete();
+              }}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   // Save profile changes
@@ -541,22 +568,52 @@ const Dashboard = () => {
   };
 
   const handleMarkAsCompleted = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to mark this service as completed? This will initiate the settlement to the company.")) return;
+    const resolveComplete = async () => {
+      try {
+        await completeBooking(bookingId);
+        toast.success("Service marked as completed!");
+        
+        // Refresh bookings
+        setLoadingBookings(true);
+        getUserBookings(bookingsPage, bookingsPerPage)
+          .then(result => {
+            setBookings(result.bookings || []);
+            setTotalBookings(result.total || 0);
+            setTotalBookingsPages(Math.ceil((result.total || 0) / bookingsPerPage));
+          })
+          .catch(err => toast.error(extractAxiosError(err)))
+          .finally(() => setLoadingBookings(false));
+      } catch (error) {
+        const message = extractAxiosError(error);
+        toast.error(message);
+      }
+    };
 
-    try {
-      await completeBooking(bookingId);
-      toast.success("Service marked as completed!");
-      
-      // Refresh bookings
-      setLoadingBookings(true);
-      getUserBookings()
-        .then(setBookings)
-        .catch(err => toast.error(extractAxiosError(err)))
-        .finally(() => setLoadingBookings(false));
-    } catch (error) {
-      const message = extractAxiosError(error);
-      toast.error(message);
-    }
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Are you sure you want to mark this service as completed? This will initiate the settlement to the company.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolveComplete();
+              }}
+              className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   // Get initials safely
@@ -719,6 +776,20 @@ const Dashboard = () => {
                 </button>
               );
             })}
+            
+            {/* Logout Button */}
+            <button
+              onClick={() => {
+                localStorage.removeItem("user");
+                localStorage.removeItem("token");
+                localStorage.removeItem("role");
+                window.location.href = "/signup?show=login&userType=user";
+              }}
+              className="w-full flex items-center px-4 py-3 mb-2 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-300 transform hover:scale-105"
+            >
+              <XCircle className="w-5 h-5 mr-3" />
+              Logout
+            </button>
           </nav>
 
           {/* Ads */}
@@ -808,143 +879,187 @@ const Dashboard = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6">
-                  {bookings.map((booking, idx) => (
-                    <div 
-                      key={booking.id || idx}
-                      className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 hover:border-[rgb(210,152,4)] transition-all group relative overflow-hidden"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center gap-6">
-                        {/* Company Logo/Image */}
-                        <div className="w-16 h-16 rounded-2xl bg-gray-50 flex-shrink-0 flex items-center justify-center overflow-hidden border-2 border-gray-100 group-hover:border-[rgb(210,152,4)] transition-colors">
-                          {booking.companyDetails?.logo ? (
-                            <Image 
-                              src={resolveImageUrl(booking.companyDetails.logo) || ""} 
-                              alt="Company" 
-                              width={64} 
-                              height={64} 
-                              className="w-full h-full object-cover" 
-                              unoptimized
-                            />
-                          ) : (
-                            <div className="text-[rgb(210,152,4)] font-bold text-xl">
-                              {booking.companyDetails?.name?.charAt(0) || "C"}
-                            </div>
-                          )}
-                        </div>
+                <>
+                  <div className="grid grid-cols-1 gap-6">
+                    {bookings.map((booking, idx) => (
+                      <div 
+                        key={booking.id || idx}
+                        className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 hover:border-[rgb(210,152,4)] transition-all group relative overflow-hidden"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center gap-6">
+                          {/* Company Logo/Image */}
+                          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex-shrink-0 flex items-center justify-center overflow-hidden border-2 border-gray-100 group-hover:border-[rgb(210,152,4)] transition-colors">
+                            {booking.companyDetails?.logo ? (
+                              <Image 
+                                src={resolveImageUrl(booking.companyDetails.logo) || ""} 
+                                alt="Company" 
+                                width={64} 
+                                height={64} 
+                                className="w-full h-full object-cover" 
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="text-[rgb(210,152,4)] font-bold text-xl">
+                                {booking.companyDetails?.name?.charAt(0) || "C"}
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Booking Details */}
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                               booking.status === "cancelled" ? "bg-red-100 text-red-700" :
-                               booking.status === "confirmed" ? "bg-green-100 text-green-700" :
-                               "bg-blue-100 text-blue-700"
-                             }`}>
-                               {booking.status}
-                             </span>
-                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                               booking.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                             }`}>
-                               {booking.paymentStatus === "paid" ? "Paid" : "Payment Pending"}
-                             </span>
-                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                               booking.serviceStatus === "completed" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
-                             }`}>
-                               Service: {booking.serviceStatus === "completed" ? "Completed" : "In Progress"}
-                             </span>
-                             {booking.isRescheduled && (
-                               <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1">
-                                 <RefreshCcw className="w-2.5 h-2.5" /> Rescheduled
+                          {/* Booking Details */}
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                 booking.status === "cancelled" ? "bg-red-100 text-red-700" :
+                                 booking.status === "confirmed" ? "bg-green-100 text-green-700" :
+                                 "bg-blue-100 text-blue-700"
+                               }`}>
+                                 {booking.status}
                                </span>
-                             )}
-                             <span className="text-xs text-gray-400">ID: #{booking.id?.slice(-6).toUpperCase()}</span>
-                          </div>
-                          <h3 className="text-xl font-black text-[#081c45] mb-1 group-hover:text-[rgb(210,152,4)] transition-colors">
-                            {booking.companyDetails?.name || "Premium Company"}
-                          </h3>
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 font-medium">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4" />
-                              {new Date(booking.date).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                              })}
+                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                 booking.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                               }`}>
+                                 {booking.paymentStatus === "paid" ? "Paid" : "Payment Pending"}
+                               </span>
+                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                 booking.serviceStatus === "completed" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
+                               }`}>
+                                 Service: {booking.serviceStatus === "completed" ? "Completed" : "In Progress"}
+                               </span>
+                               {booking.isRescheduled && (
+                                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 flex items-center gap-1">
+                                   <RefreshCcw className="w-2.5 h-2.5" /> Rescheduled
+                                 </span>
+                               )}
+                               <span className="text-xs text-gray-400">ID: #{booking.id?.slice(-6).toUpperCase()}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Settings className="w-4 h-4" />
-                              {booking.startTime} - {booking.endTime}
+                            <h3 className="text-xl font-black text-[#081c45] mb-1 group-hover:text-[rgb(210,152,4)] transition-colors">
+                              {booking.companyDetails?.name || "Premium Company"}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 font-medium">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                {new Date(booking.date).toLocaleDateString('en-US', { 
+                                  weekday: 'long', 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric' 
+                                })}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Settings className="w-4 h-4" />
+                                {booking.startTime} - {booking.endTime}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                          {(booking.status === "confirmed" || booking.paymentStatus === "paid") && 
-                           booking.serviceStatus === "pending" && 
-                           isBookingPast(booking.date, booking.endTime) && (
-                            <button
-                              onClick={() => handleMarkAsCompleted(booking.id)}
-                              className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg hover:shadow-green-200 animate-pulse"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              Mark as Completed
-                            </button>
-                          )}
-
-                          {booking.status === "confirmed" && booking.serviceStatus === "pending" && (
-                            <>
-                              <button 
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-xs"
-                                onClick={() => toast.info("Chat feature coming soon!")}
+                          <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
+                            {(booking.status === "confirmed" || booking.paymentStatus === "paid") && 
+                             booking.serviceStatus === "pending" && 
+                             isBookingPast(booking.date, booking.endTime) && (
+                              <button
+                                onClick={() => handleMarkAsCompleted(booking.id)}
+                                className="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg hover:shadow-green-200 animate-pulse"
                               >
-                                <MessageSquare size={14} /> Chat
+                                <CheckCircle className="w-4 h-4" />
+                                Mark as Completed
                               </button>
-                              
+                            )}
+
+                            {booking.status === "confirmed" && booking.serviceStatus === "pending" && (
+                              <>
+                                <button 
+                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all text-xs"
+                                  onClick={() => {
+                                    setChatRecipient({
+                                      id: booking.companyId!,
+                                      name: booking.companyDetails?.name || "Company",
+                                    });
+                                    setIsChatOpen(true);
+                                  }}
+                                >
+                                  <MessageSquare size={14} /> Chat
+                                </button>
+                                
+                                <button 
+                                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                                  onClick={() => {
+                                    setVideoCallData({
+                                      targetId: booking.companyId!,
+                                      targetName: booking.companyDetails?.name || "Company",
+                                      isIncoming: false
+                                    });
+                                  }}
+                                >
+                                  <Video size={14} /> Video Call
+                                </button>
+                              </>
+                            )}
+
+                            {booking.serviceStatus === "completed" && (
+                               <button 
+                                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
+                                 onClick={() => toast.info("Review feature coming soon!")}
+                                >
+                                 <Star size={14} /> Review Service
+                               </button>
+                            )}
+
+                            {booking.status !== "cancelled" && booking.serviceStatus === "pending" && (
                               <button 
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
-                                onClick={() => {
-                                  setVideoCallData({
-                                    targetId: booking.companyId!,
-                                    targetName: booking.companyDetails?.name || "Company",
-                                    isIncoming: false
-                                  });
-                                }}
+                                className="px-4 py-2 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm"
+                                onClick={() => toast.info("Please contact support to cancel or reschedule.")}
                               >
-                                <Video size={14} /> Video Call
+                                Help
                               </button>
-                            </>
-                          )}
-
-                          {booking.serviceStatus === "completed" && (
-                             <button 
-                               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
-                               onClick={() => toast.info("Review feature coming soon!")}
-                              >
-                               <Star size={14} /> Review Service
-                             </button>
-                          )}
-
-                          {booking.status !== "cancelled" && booking.serviceStatus === "pending" && (
-                            <button 
-                              className="px-4 py-2 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm"
-                              onClick={() => toast.info("Please contact support to cancel or reschedule.")}
+                            )}
+                            
+                            <Link
+                              href={`/User/CompanyListing`}
+                              className="px-4 py-2 border-2 border-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                             >
-                              Help
-                            </button>
-                          )}
-                          
-                          <Link
-                            href={`/User/CompanyListing`}
-                            className="px-4 py-2 border-2 border-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                          >
-                            View Company
-                          </Link>
+                              View Company
+                            </Link>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination UI for Bookings */}
+                  {totalBookings > bookingsPerPage && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-12 py-6 border-t border-gray-100">
+                      <p className="text-sm text-gray-400 font-bold">
+                        Showing <span className="text-[#081c45]">{Math.min(totalBookings, (bookingsPage - 1) * bookingsPerPage + 1)}</span> to <span className="text-[#081c45]">{Math.min(totalBookings, bookingsPage * bookingsPerPage)}</span> of <span className="text-[#081c45]">{totalBookings}</span> results
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setBookingsPage(p => Math.max(1, p - 1))}
+                          disabled={bookingsPage === 1}
+                          className="p-2.5 rounded-xl border-2 border-gray-100 bg-white text-gray-500 hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          <RefreshCcw size={18} className="rotate-180" />
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {[...Array(totalBookingsPages)].map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setBookingsPage(i + 1)}
+                              className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${bookingsPage === i + 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-400 hover:bg-gray-100'}`}
+                            >
+                              {i + 1}
+                            </button>
+                          )).slice(Math.max(0, bookingsPage - 3), Math.min(totalBookingsPages, bookingsPage + 2))}
+                        </div>
+                        <button
+                          onClick={() => setBookingsPage(p => Math.min(totalBookingsPages, p + 1))}
+                          disabled={bookingsPage === totalBookingsPages}
+                          className="p-2.5 rounded-xl border-2 border-gray-100 bg-white text-gray-500 hover:border-blue-500 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          <RefreshCcw size={18} />
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1502,6 +1617,22 @@ const Dashboard = () => {
           onClose={() => setVideoCallData(null)}
           isIncoming={videoCallData.isIncoming}
           incomingOffer={videoCallData.offer}
+        />
+      )}
+      {isChatOpen && profileData && chatRecipient && (
+        <ChatWindow
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          currentUser={{
+            id: profileData.id,
+            name: profileData.name,
+            role: "user"
+          }}
+          otherParticipant={{
+            id: chatRecipient.id,
+            name: chatRecipient.name,
+            role: "company"
+          }}
         />
       )}
     </div>

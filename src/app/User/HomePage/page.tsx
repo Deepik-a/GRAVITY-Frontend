@@ -2,10 +2,9 @@
 
 // app/page.tsx
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
+import { getAllCompanies, getFavourites, toggleFavourite, getPublicStats } from '@/services/UserService'
 import type { CompanyProfile } from '@/types/AuthTypes'
 import UserNavbar from '@/components/user/UserNavbar'
 import { toast } from 'react-toastify'
@@ -25,6 +24,14 @@ export default function HomePage() {
   const [searchCategory, setSearchCategory] = useState("");
   const [searchService, setSearchService] = useState("");
   const [searchCity, setSearchCity] = useState("");
+
+  const [stats, setStats] = useState({
+    successfulProjects: 1200,
+    happyCustomers: 800,
+    expertConsultants: 150,
+    yearsExperience: 25,
+    ongoingProjects: 60
+  });
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -48,6 +55,9 @@ export default function HomePage() {
           setFavourites(favs.map((f: { _id?: string, id?: string }) => f._id || f.id || ""));
         }
       })
+      .catch(() => {});
+    getPublicStats()
+      .then(setStats)
       .catch(() => {});
   }, [])
 
@@ -173,31 +183,31 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 text-center">
               {/* Successful Projects */}
               <div>
-                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">1200+</h2>
+                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">{stats.successfulProjects}+</h2>
                 <p className="text-sm sm:text-base text-gray-200">Successful Projects</p>
               </div>
 
               {/* Happy Customers */}
               <div>
-                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">800+</h2>
+                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">{stats.happyCustomers}+</h2>
                 <p className="text-sm sm:text-base text-gray-200">Happy Customers</p>
               </div>
 
               {/* Expert Consultants */}
               <div>
-                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">150+</h2>
+                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">{stats.expertConsultants}+</h2>
                 <p className="text-sm sm:text-base text-gray-200">Expert Consultants</p>
               </div>
 
               {/* Years of Experience */}
               <div>
-                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">25+</h2>
+                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">{stats.yearsExperience}+</h2>
                 <p className="text-sm sm:text-base text-gray-200">Years of Experience</p>
               </div>
 
               {/* Ongoing Projects */}
               <div>
-                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">60+</h2>
+                <h2 className="text-3xl font-extrabold text-[rgb(210,152,4)]">{stats.ongoingProjects}+</h2>
                 <p className="text-sm sm:text-base text-gray-200">Ongoing Projects</p>
               </div>
             </div>
@@ -207,7 +217,7 @@ export default function HomePage() {
 
       {/* Quick categories */}
       <section className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Residential */}
           <div 
             className="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between border-2 border-[rgb(0,14,41)] relative"
@@ -233,12 +243,12 @@ export default function HomePage() {
               <li>Renovation services</li>
             </ul>
             <div className="mt-6">
-              <Link 
+              {/* <Link 
                 href="/User/CompanyListing?category=Residential" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -267,12 +277,12 @@ export default function HomePage() {
               <li>Corporate spaces</li>
             </ul>
             <div className="mt-6">
-              <Link 
+              {/* <Link 
                 href="/User/CompanyListing?category=Commercial" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -301,48 +311,15 @@ export default function HomePage() {
               <li>Premium furnishing</li>
             </ul>
             <div className="mt-6">
-              <Link 
+              {/* <Link 
                 href="/User/CompanyListing?category=Villas" 
                 className="text-indigo-600 text-sm font-semibold inline-block"
               >
                 Show Companies →
-              </Link>
+              </Link> */}
             </div>
           </div>
 
-          {/* Apartments */}
-          <div 
-            className="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between border-2 border-[rgb(0,14,41)] relative"
-            style={{ boxShadow: '0 0 8px rgb(210,152,4)' }}
-          >
-            <div className="flex items-center gap-4">
-              <Image 
-                src="https://images.unsplash.com/photo-1472224371017-08207f84aaae?auto=format&q=60&w=400&fit=crop" 
-                alt="Apartments"
-                width={112}
-                height={112}
-                className="w-28 h-28 rounded object-cover border-2 border-[rgb(210,152,4)]"
-                unoptimized
-              />
-              <div>
-                <h3 className="font-bold text-lg text-[rgb(0,14,41)]">Apartments</h3>
-                <p className="text-sm text-gray-600">Apartment renovations & interiors</p>
-              </div>
-            </div>
-            <ul className="mt-4 list-disc list-inside text-gray-500 text-sm space-y-1">
-              <li>Modern apartment layouts</li>
-              <li>Space optimization</li>
-              <li>Contemporary designs</li>
-            </ul>
-            <div className="mt-6">
-              <Link 
-                href="/User/CompanyListing?category=Residential" 
-                className="text-indigo-600 text-sm font-semibold inline-block"
-              >
-                Show Companies →
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -388,11 +365,11 @@ export default function HomePage() {
 </section>
 
       {/* Success Stories (Admin highlighted) */}
-      <section className="max-w-7xl mx-auto p-6">
+      {/* <section className="max-w-7xl mx-auto p-6">
         <h2 className="text-2xl font-semibold mb-4">Success Stories</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {/* Story 1 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
+          {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
             <div className="relative h-48 flex">
               <div className="flex-1 relative">
                 <Image 
@@ -417,10 +394,10 @@ export default function HomePage() {
               <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Heritage Villa, Coorg</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">Complete restoration of a 1960s manor into a sustainable luxury retreat.</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Story 2 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
+          {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
             <div className="relative h-48 flex">
               <div className="flex-1 relative">
                 <Image 
@@ -445,10 +422,10 @@ export default function HomePage() {
               <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Tech HQ, Bengaluru</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">Transformation of an old warehouse into a LEED Gold certified workspace.</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Story 3 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
+          {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
             <div className="relative h-48 flex">
               <div className="flex-1 relative text-center flex items-center justify-center bg-gray-200">
                 <span className="text-[10px] text-gray-500 font-bold">LEGACY<br/>STRUCTURE</span>
@@ -467,10 +444,10 @@ export default function HomePage() {
               <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Riverside Lofts</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">Sustainable retrofitting for 120 urban apartments with smart energy.</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Story 4 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
+          {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
             <div className="relative h-48 flex">
               <div className="flex-1 relative">
                 <Image 
@@ -495,10 +472,10 @@ export default function HomePage() {
               <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Azure Beach Cottages</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">Zero-impact coastal foundations meeting premium living standards.</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Story 5 */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
+          {/* <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden group">
             <div className="relative h-48 flex">
               <div className="flex-1 relative">
                 <Image 
@@ -523,16 +500,16 @@ export default function HomePage() {
               <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Skyline Mall</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">Redevelopment that saw a 40% increase in visitor engagement.</p>
             </div>
-          </div>
-        </div>
-      </section>
+      //     </div> */}
+        
+     
 
       {/* Testimonials */}
-      <section className="max-w-7xl mx-auto p-6">
+      {/* <section className="max-w-7xl mx-auto p-6">
         <h2 className="text-2xl font-semibold mb-6 text-[rgb(0,14,41)]">What Homeowners Say</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {/* Testimonial 1 */}
-          <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
+          {/* <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <Image 
                 src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop" 
@@ -545,10 +522,10 @@ export default function HomePage() {
               <div className="font-bold text-[rgb(210,152,4)]">R. Mehta</div>
             </div>
             <p className="italic text-[rgb(0,14,41)]">Kitchen renovation delivered ahead of schedule with premium finishes.</p>
-          </div>
-
-          {/* Testimonial 2 */}
-          <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
+          </div> */}
+{/* 
+          Testimonial 2 */}
+          {/* <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <Image 
                 src="https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=200&auto=format&fit=crop" 
@@ -560,10 +537,10 @@ export default function HomePage() {
               <div className="font-bold text-[rgb(210,152,4)]">Priya K.</div>
             </div>
             <p className="italic text-[rgb(0,14,41)]">Our office fit-out was seamless. Transparent pricing and great communication.</p>
-          </div>
+          </div> */}
 
           {/* Testimonial 3 */}
-          <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
+          {/* <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <Image 
                 src="https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=200&auto=format&fit=crop" 
@@ -575,10 +552,10 @@ export default function HomePage() {
               <div className="font-bold text-[rgb(210,152,4)]">Ankit S.</div>
             </div>
             <p className="italic text-[rgb(0,14,41)]">Consultation helped us plan budgets realistically. Highly recommend!</p>
-          </div>
+          </div> */}
 
           {/* Testimonial 4 */}
-          <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
+          {/* <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <Image 
                 src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop" 
@@ -590,10 +567,10 @@ export default function HomePage() {
               <div className="font-bold text-[rgb(210,152,4)]">S. Iyer</div>
             </div>
             <p className="italic text-[rgb(0,14,41)]">Attention to detail and a team that genuinely cares about quality.</p>
-          </div>
+          </div> */}
 
           {/* Testimonial 5 */}
-          <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
+          {/* <div className="bg-white p-6 shadow border-2 border-[rgb(0,14,41)] rounded-tr-2xl rounded-bl-2xl flex flex-col">
             <div className="flex items-center gap-3 mb-4">
               <Image 
                 src="https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=200&auto=format&fit=crop" 
@@ -605,9 +582,139 @@ export default function HomePage() {
               <div className="font-bold text-[rgb(210,152,4)]">Leena V.</div>
             </div>
             <p className="italic text-[rgb(0,14,41)]">They transformed our outdated apartment into a bright, functional home.</p>
+          </div> */}
+         <footer className="bg-gradient-to-br from-[#000E29] to-[#081C45] text-white py-14 px-6 md:px-10 lg:px-16">
+  <div className="max-w-7xl mx-auto">
+    {/* Top Section */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+
+      {/* Brand Column */}
+      <div className="sm:col-span-2 lg:col-span-2">
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-5">
+          <svg width="30" height="20" viewBox="0 0 30 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#D29804" />
+                <stop offset="100%" stopColor="#EEB21B" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="8" cy="10" rx="7" ry="7" stroke="url(#logoGrad)" strokeWidth="2.2" fill="none" />
+            <ellipse cx="22" cy="10" rx="7" ry="7" stroke="url(#logoGrad)" strokeWidth="2.2" fill="none" />
+          </svg>
+          <span className="text-white text-2xl font-extrabold tracking-widest">
+            GRA
+            <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+              VI
+            </span>
+            TY
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className="text-gray-400 text-sm leading-relaxed max-w-sm mb-7">
+          Revolutionizing the construction industry by connecting homeowners with trusted builders and experts.
+          Building dreams, delivering excellence.
+        </p>
+
+        {/* Contact Info */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-sm text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D29804" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <span>contact@gravity.com</span>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EEB21B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+            <span>+1 (555) 123-4567</span>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D29804" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>123 Construction Ave, Building City, BC 12345</span>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Quick Links */}
+      <div>
+        <h4 className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent font-semibold text-base mb-5">
+          Quick Links
+        </h4>
+        <ul className="space-y-3">
+          {["About GRAVITY", "Our Services", "Find Builders", "Join as Company", "Customer Support"].map((item) => (
+            <li key={item}>
+              <a href="#" className="text-gray-300 text-sm hover:text-white transition-colors duration-200">
+                {item}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Legal */}
+      <div>
+        <h4 className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent font-semibold text-base mb-5">
+          Legal
+        </h4>
+        <ul className="space-y-3">
+          {["Terms & Conditions", "Privacy Policy", "Cookie Policy", "Support Center", "Careers"].map((item) => (
+            <li key={item}>
+              <a href="#" className="text-gray-300 text-sm hover:text-white transition-colors duration-200">
+                {item}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    {/* Divider */}
+    <div className="border-t border-white/10 mt-12 mb-8" />
+
+    {/* Bottom Section */}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+      <div>
+        <h5 className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent font-semibold text-base mb-1">
+          Stay Connected
+        </h5>
+        <p className="text-gray-400 text-sm">Follow us for the latest updates and success stories</p>
+      </div>
+
+      {/* Social Icons */}
+      <div className="flex items-center gap-3">
+        {/* Facebook */}
+        <a href="#" aria-label="Facebook" className="w-11 h-11 rounded-full bg-[#0a1a3a] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:border-[#EEB21B]/40 hover:bg-[#0f2350] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        {/* Twitter / X */}
+        <a href="#" aria-label="Twitter" className="w-11 h-11 rounded-full bg-[#0a1a3a] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:border-[#EEB21B]/40 hover:bg-[#0f2350] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+          </svg>
+        </a>
+        {/* Instagram */}
+        <a href="#" aria-label="Instagram" className="w-11 h-11 rounded-full bg-[#0a1a3a] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:border-[#EEB21B]/40 hover:bg-[#0f2350] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+          </svg>
+        </a>
+        {/* LinkedIn */}
+        <a href="#" aria-label="LinkedIn" className="w-11 h-11 rounded-full bg-[#0a1a3a] border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:border-[#EEB21B]/40 hover:bg-[#0f2350] transition-all duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
     </div>
   )
 }

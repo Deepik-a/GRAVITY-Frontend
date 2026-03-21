@@ -113,14 +113,6 @@ export const CompanyCard = React.memo(({
               View Portfolio
             </span>
           </Link>
-          <Link
-            href={`/User/BookSlots?companyId=${company.id}`}
-            className="px-4 py-3 bg-gradient-to-r from-[#0F1E50] via-[#1A3A8F] to-[#0F1E50] text-white text-center font-bold rounded-xl shadow-lg hover:shadow-xl hover:shadow-[#FFD700]/30 transform transition-all duration-300 hover:scale-105 hover:from-[#1A3A8F] hover:via-[#0F1E50] hover:to-[#1A3A8F] group"
-          >
-            <span className="flex items-center justify-center gap-2">
-              Book Now
-            </span>
-          </Link>
         </div>
       </div>
     </div>

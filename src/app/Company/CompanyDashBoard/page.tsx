@@ -92,7 +92,7 @@ export default function DashboardPage() {
         });
       });
     } else {
-      router.push('/Login');
+      router.push('/signup?show=login&userType=company');
     }
   }, [router]);
 
@@ -208,10 +208,9 @@ export default function DashboardPage() {
   ];
 
   const projectStatus = [
-    { name: 'Commercial', percentage: 85, color: 'bg-blue-500' },
     { name: 'Residential', percentage: 72, color: 'bg-green-500' },
-    { name: 'Industrial', percentage: 63, color: 'bg-yellow-500' },
-    { name: 'Retail', percentage: 91, color: 'bg-purple-500' }
+    { name: 'Villas', percentage: 63, color: 'bg-yellow-500' },
+    { name: 'Commercial', percentage: 85, color: 'bg-blue-500' },
   ];
 
   const recentActivities = [

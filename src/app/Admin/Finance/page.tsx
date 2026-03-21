@@ -66,19 +66,45 @@ const FinancePage = () => {
   }, []);
 
   const handleInitiatePayout = async (bookingId: string) => {
-    if (!confirm("Are you sure you want to confirm this payout to the company wallet?")) return;
-    
-    setPayoutLoading(bookingId);
-    try {
-      await initiatePayout(bookingId);
-      toast.success("Payout initiated successfully!");
-      fetchTransactions();
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(error.message || "Failed to initiate payout");
-    } finally {
-      setPayoutLoading(null);
-    }
+    const resolvePayout = async () => {
+      setPayoutLoading(bookingId);
+      try {
+        await initiatePayout(bookingId);
+        toast.success("Payout initiated successfully!");
+        fetchTransactions();
+      } catch (err: unknown) {
+        const error = err as Error;
+        toast.error(error.message || "Failed to initiate payout");
+      } finally {
+        setPayoutLoading(null);
+      }
+    };
+
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Are you sure you want to confirm this payout to the company wallet?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolvePayout();
+              }}
+              className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

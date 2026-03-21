@@ -38,6 +38,12 @@ export default function CompanyBookings() {
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isFetchingSlots, setIsFetchingSlots] = useState(false);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 6;
 
   // Video Call State
   const [currentCompany, setCurrentCompany] = useState<{ id: string, name: string } | null>(null);
@@ -54,7 +60,7 @@ export default function CompanyBookings() {
       const user = JSON.parse(userStr);
       setCurrentCompany({ id: user.id, name: user.name });
       
-      const socket = io("http://localhost:5000");
+      const socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000");
       socket.emit("join", { userId: user.id, type: "company" });
 
       socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
@@ -73,14 +79,21 @@ export default function CompanyBookings() {
   }, []);
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    fetchBookings(currentPage);
+  }, [currentPage]);
 
-  const fetchBookings = async () => {
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  const fetchBookings = async (page = 1) => {
     setLoading(true);
     try {
-      const data = await getCompanyBookings();
-      setBookings(data);
+      const result = await getCompanyBookings(page, itemsPerPage);
+      // Backend returns { bookings: Booking[], total: number } now
+      setBookings(result.bookings || []);
+      setTotalItems(result.total || 0);
+      setTotalPages(Math.ceil((result.total || 0) / itemsPerPage));
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast.error(err.message || "Failed to fetch bookings");
@@ -203,18 +216,25 @@ export default function CompanyBookings() {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 shrink-0 overflow-hidden border-4 border-white shadow-sm">
-                    {booking.userDetails?.profileImage ? (
-                      <Image 
-                        src={resolveImageUrl(booking.userDetails.profileImage) || ""} 
-                        alt="" 
-                        width={80} 
-                        height={80} 
-                        className="w-full h-full object-cover" 
-                        unoptimized
-                      />
-                    ) : (
-                      <User size={32} />
-                    )}
+                {
+  booking.userDetails?.profileImage ? (
+    <>
+      {/*
+      <Image 
+        src={resolveImageUrl(booking.userDetails.profileImage) || ""} 
+        alt="" 
+        width={80} 
+        height={80} 
+        className="w-full h-full object-cover" 
+        unoptimized
+      />
+      */}
+      <User size={32} />
+    </>
+  ) : (
+    <User size={32} />
+  )
+}
                   </div>
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-3">
@@ -295,9 +315,9 @@ export default function CompanyBookings() {
                         </button>
                       </div>
                     )}
-                    <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
+                    {/* <button className="flex-1 lg:flex-none px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200">
                       View Details
-                    </button>
+                    </button> */}
                   </div>
               </div>
 
@@ -348,6 +368,42 @@ export default function CompanyBookings() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination UI */}
+      {!loading && totalItems > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-gray-100">
+          <p className="text-sm text-gray-500 font-bold">
+            Showing <span className="text-gray-900">{Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)}</span> to <span className="text-gray-900">{Math.min(totalItems, currentPage * itemsPerPage)}</span> of <span className="text-gray-900">{totalItems}</span> total consultations
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-3 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              <RefreshCcw size={18} className="rotate-180" />
+            </button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl text-sm font-black transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}
+                >
+                  {i + 1}
+                </button>
+              )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-3 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              <RefreshCcw size={18} />
+            </button>
+          </div>
         </div>
       )}
 

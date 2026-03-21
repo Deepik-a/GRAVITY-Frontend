@@ -1,4 +1,5 @@
 import api from "./api/useApi";
+import { API_ROUTES } from "@/shared/constants/routes";
 import { AxiosError } from "axios";
 import {
   SignupData,
@@ -24,10 +25,6 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-const AUTH = "/auth";
-const ADMIN = "/admin";
-const USER="/user"
-
 // --------------------------------------------------
 // GENERIC POST WRAPPER
 // --------------------------------------------------
@@ -46,14 +43,14 @@ const post = async (endpoint: string, body: unknown, fallback: string) => {
 // USER / COMPANY SIGNUP
 // --------------------------------------------------
 export const signupUser = async (data: SignupData): Promise<AuthResponse> => {
-  return post(`${AUTH}/signup`, data, "Signup failed");
+  return post(API_ROUTES.AUTH.SIGNUP, data, "Signup failed");
 };
 
 // --------------------------------------------------
 // USER / COMPANY LOGIN
 // --------------------------------------------------
 export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
-  return post(`${AUTH}/login`, data, "Login failed");
+  return post(API_ROUTES.AUTH.LOGIN, data, "Login failed");
 };
 
 // --------------------------------------------------
@@ -61,33 +58,33 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
 // --------------------------------------------------
 export const loginAdmin = async (
   data: LoginData
-): Promise<{ accessToken: string; refreshToken: string; message: string }> => {
-  return post(`${ADMIN}/login`, data, "Admin login failed");
+): Promise<{ accessToken: string; refreshToken: string; message: string; user: { id: string; email: string; name: string } }> => {
+  return post(API_ROUTES.ADMIN.LOGIN, data, "Admin login failed");
 };
 
 // --------------------------------------------------
 // FORGOT PASSWORD
 // --------------------------------------------------
 export const forgotPassword = (email: string) =>
-  post(`${AUTH}/forgot-password`, { email }, "Forgot password failed");
+  post(API_ROUTES.AUTH.FORGOT_PASSWORD, { email }, "Forgot password failed");
 
 // --------------------------------------------------
 // VERIFY OTP
 // --------------------------------------------------
 export const verifyOtp = (email: string, otp: string, purpose: string) =>
-  post(`${AUTH}/verify-otp`, { email, otp, purpose }, "Verify OTP failed");
+  post(API_ROUTES.AUTH.VERIFY_OTP, { email, otp, purpose }, "Verify OTP failed");
 
 // --------------------------------------------------
 // RESEND OTP
 // --------------------------------------------------
 export const resendOtp = (email: string) =>
-  post(`${AUTH}/resend-otp`, { email }, "Resend OTP failed");
+  post(API_ROUTES.AUTH.RESEND_OTP, { email }, "Resend OTP failed");
 
 // --------------------------------------------------
 // RESET PASSWORD
 // --------------------------------------------------
 export const resetPassword = (email: string, newPassword: string) =>
-  post(`${AUTH}/reset-password`, { email, newPassword }, "Reset password failed");
+  post(API_ROUTES.AUTH.RESET_PASSWORD, { email, newPassword }, "Reset password failed");
 
 // --------------------------------------------------
 // GOOGLE LOGIN
@@ -97,7 +94,7 @@ export const googleLogin = async (
   role?: string
 ): Promise<GoogleAuthResponse> => {
   return post(
-    `${AUTH}/google`,
+    API_ROUTES.AUTH.GOOGLE,
     { token: googleIdToken, role },
     "Google login failed"
   );
@@ -108,7 +105,7 @@ export const googleLogin = async (
 // --------------------------------------------------
 export const getProfile = async (): Promise<Profile> => {
   try {
-    const response = await api.get(`${USER}/profile`, {
+    const response = await api.get(API_ROUTES.USER.PROFILE, {
       withCredentials: true,
     });
 
@@ -132,7 +129,7 @@ export const getProfile = async (): Promise<Profile> => {
 
 export const updateProfile = async (data: Partial<Profile>): Promise<Profile> => {
   try {
-    const response = await api.put(`${USER}/profile`, data, {
+    const response = await api.patch(API_ROUTES.USER.PROFILE, data, {
       withCredentials: true,
     });
      const p = response.data.profile;
@@ -157,7 +154,7 @@ export const uploadProfileImage = async (file: File): Promise<{ url: string }> =
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await api.post(`${USER}/profile/image`, formData, {
+    const response = await api.post(API_ROUTES.USER.PROFILE_IMAGE, formData, {
       withCredentials: true,
       headers: {
         "Content-Type": "multipart/form-data",
@@ -172,14 +169,24 @@ export const uploadProfileImage = async (file: File): Promise<{ url: string }> =
 
 export const deleteProfileField = async (field: keyof Profile): Promise<void> => {
   try {
-    // We can implement this by updating the profile with an empty value for the field
-    // OR by calling a specific DELETE endpoint if the backend supports it.
-    // For now, let's assume we call a specific endpoint or use a special update.
-    // Let's use a specific endpoint for clarity as per the function name.
-    await api.patch(`${USER}/profile/field`, { field }, {
+    await api.patch(API_ROUTES.USER.PROFILE_FIELD, { field }, {
         withCredentials: true
     });
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to delete field"));
+  }
+};
+
+// --------------------------------------------------
+// LOGOUT
+// --------------------------------------------------
+export const logout = async () => {
+  try {
+    const response = await api.post(API_ROUTES.AUTH.LOGOUT, {}, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Logout failed"));
   }
 };

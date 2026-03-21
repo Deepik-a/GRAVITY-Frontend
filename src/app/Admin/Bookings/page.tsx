@@ -31,17 +31,28 @@ export default function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 8;
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    fetchBookings(currentPage);
+  }, [currentPage]);
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (page = 1) => {
     setLoading(true);
     try {
-      const data = await getAllBookings();
-   //debugger;and now check in frontend console
-      setBookings(data);
+      const result = await getAllBookings(page, itemsPerPage);
+      setBookings(result.bookings || []);
+      setTotalItems(result.total || 0);
+      setTotalPages(Math.ceil((result.total || 0) / itemsPerPage));
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast.error(err.message || "Failed to fetch bookings");
@@ -139,7 +150,7 @@ export default function AdminBookingsPage() {
           />
         </div>
         <button 
-          onClick={fetchBookings}
+          onClick={() => fetchBookings(currentPage)}
           className="bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
         >
           <Loader2 size={18} className={loading ? "animate-spin" : ""} />
@@ -231,6 +242,40 @@ export default function AdminBookingsPage() {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination UI */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+          <p className="text-sm text-gray-500 font-medium">
+            Showing <span className="font-bold text-gray-900">{Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(totalItems, currentPage * itemsPerPage)}</span> of <span className="font-bold text-gray-900">{totalItems}</span> bookings
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1 || loading}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                  {i + 1}
+                </button>
+              )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || loading}
+              className="px-4 py-2 border border-gray-200 rounded-xl text-sm font-bold bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

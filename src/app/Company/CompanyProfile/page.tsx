@@ -141,8 +141,8 @@ export default function CompanyProfilePage() {
   const [isClient, setIsClient] = useState(false); // Track client-side rendering
 
   // Category and service options
-  const categoryOptions = ['Residential', 'Commercial', 'Villas', 'Industrial', 'Hospitality'];
-  const serviceOptions = ['Architecture', 'Renovation', 'Interior Design', 'Construction', 'Project Management', 'Consultation'];
+  const categoryOptions = ['Residential', 'Villas', 'Commercial'];
+  const serviceOptions = ['Architecture', 'Interior Design', 'Renovation'];
   const companySizeOptions = ['1-10 employees', '11-50 employees', '51-200 employees', '200+ employees'];
 
   useEffect(() => {

@@ -18,11 +18,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
     { name: 'User Management', icon: 'fas fa-users', route: '/Admin/UserManagment' },
     { name: 'Companies', icon: 'fas fa-building', route: '/Admin/CompanyManagment' },
     { name: 'Bookings', icon: 'fas fa-calendar-check', route: '/Admin/Bookings' },
+    { name: 'Chat', icon: 'fas fa-comments', route: '/Admin/Chat' },
     { name: 'Subscriptions', icon: 'fas fa-crown', route: '/Admin/SubscriptionManagement' },
     { name: 'Revenue', icon: 'fas fa-money-bill-wave', route: '/Admin/Revenue' },
     { name: 'Finance', icon: 'fas fa-wallet', route: '/Admin/Finance' },
     { name: 'Verifications', icon: 'fas fa-id-card', route: '/Admin/Verifications' },
     { name: 'Settings', icon: 'fas fa-cog', route: '/Admin/Settings' },
+    { name: 'Logout', icon: 'fas fa-sign-out-alt', route: '/Login' },
   ];
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -72,6 +74,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
                       : 'text-gray-800 hover:bg-[#081C45]/10'
                   }`}
                   onClick={() => {
+                    if (item.name === 'Logout') {
+                      localStorage.removeItem("user");
+                      localStorage.removeItem("token");
+                      localStorage.removeItem("role");
+                      router.push("/Login");
+                      return;
+                    }
                     onItemClick?.(item.name);
                     router.push(item.route);
                     setIsOpen(false); // Close sidebar on mobile after clicking
@@ -90,10 +99,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
           <div className="flex items-center px-4 py-3">
             <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
               <Image src="/assets/AlternativeSignUpImage.jpg" alt="Admin" width={40} height={40} />
-            </div>
-            <div className="ml-3 overflow-hidden">
-              <p className="font-medium text-gray-800 truncate">Alex Morgan</p>
-              <p className="text-sm text-gray-600">Administrator</p>
             </div>
           </div>
         </div>

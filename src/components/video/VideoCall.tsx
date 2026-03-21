@@ -75,7 +75,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
   }, [targetUserId, targetUserType]);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:5000");
+    socketRef.current = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000");
 
     socketRef.current.emit("join", { userId: currentUserId, type: currentUserType });
 

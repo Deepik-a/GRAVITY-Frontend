@@ -244,7 +244,7 @@ function BookSlotsContent() {
                         </div>
                       )}
 
-                      <div className="space-y-3 pt-4 border-t border-gray-50">
+                      {/* <div className="space-y-3 pt-4 border-t border-gray-50">
                         <label className="text-sm font-black text-gray-900 ml-1">Consultation Depth</label>
                         <div className="grid grid-cols-5 gap-2">
                           {[1, 2, 3, 4, 5].map(h => (
@@ -257,7 +257,7 @@ function BookSlotsContent() {
                             </button>
                           ))}
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   ) : (
                     <div className="h-[432px] bg-white rounded-[40px] border border-gray-100 border-dashed flex flex-col items-center justify-center p-12 text-center space-y-6">

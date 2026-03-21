@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import chatService from '@/services/ChatService';
 import { format } from 'date-fns';
-import { Search, User, Send, Building2, Check, CheckCheck } from 'lucide-react';
+import { Search, User, Send, Building2, Check, CheckCheck, Smile, Paperclip, FileIcon } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { toast } from 'react-toastify';
 
 interface Conversation {
   id: string;
@@ -24,6 +26,8 @@ interface Message {
   senderId: string;
   senderType: string;
   content: string;
+  attachmentUrl?: string; // Add attachmentUrl
+  attachmentType?: 'image' | 'file'; // Add attachmentType
   createdAt: string;
   status?: 'sent' | 'delivered' | 'read';
 }
@@ -42,6 +46,9 @@ export default function CompanyMessages() {
   const [isTyping, setIsTyping] = useState(false);
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchConversations = useCallback(async (userId: string) => {
     try {
@@ -92,27 +99,27 @@ export default function CompanyMessages() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      console.log("CompanyMessages: Loaded user from localStorage", user);
-      setCurrentUser(user);
-      
-      if (!user.id) {
-          console.error("CompanyMessages: User ID is missing in localStorage object");
+      if (!currentUser || currentUser.id !== user.id) {
+        console.log("CompanyMessages: Setting currentUser", user);
+        setCurrentUser(user);
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log("CompanyMessages: Connecting to socket with ID", currentUser.id);
+      chatService.connect(currentUser.id, 'company');
       
-      chatService.connect(user.id, 'company');
-      console.log("CompanyMessages: Connected to socket with ID", user.id);
-      
-      fetchConversations(user.id);
-      console.log("CompanyMessages: Fetching conversations for user ID", user.id);
+      fetchConversations(currentUser.id);
 
       const socket = chatService.getSocket();
-      socket?.off("new_message"); // Remove old listener if any
-      socket?.on("new_message", (message: Message) => {
+      
+      const handleNewMessage = (message: Message) => {
         const currentConv = selectedConversationRef.current;
         if (currentConv && message.conversationId === currentConv.id) {
           setMessages((prev) => {
-            // Check if it's our own message (via temp ID or real ID match)
-            if (currentUser && message.senderId === currentUser.id) {
+            if (message.senderId === currentUser.id) {
                const existingIdx = prev.findIndex(m => m.id === message.id || (m.id.startsWith('temp-') && m.content === message.content));
                if (existingIdx !== -1) {
                   const updated = [...prev];
@@ -120,17 +127,23 @@ export default function CompanyMessages() {
                   return updated;
                }
             } else {
-               // From someone else
                if (prev.find(m => m.id === message.id)) return prev;
             }
             return [...prev, message];
           });
           scrollToBottom();
         }
-        fetchConversations(user.id);
-      });
+        fetchConversations(currentUser.id);
+      };
+
+      socket?.off("new_message");
+      socket?.on("new_message", handleNewMessage);
+
+      return () => {
+        socket?.off("new_message", handleNewMessage);
+      }
     }
-  }, [fetchConversations, currentUser]);
+  }, [fetchConversations, currentUser?.id]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -207,6 +220,42 @@ export default function CompanyMessages() {
                 chatService.stopTyping(currentUser.id, otherParticipant.participantId);
              }, 2000);
         }
+    }
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const { url, type } = await chatService.uploadAttachment(file);
+      
+      const otherParticipant = selectedConversation?.participants.find(p => p.participantId !== currentUser?.id);
+      if (!otherParticipant || !currentUser) return;
+
+      const messageData = {
+        senderId: currentUser.id,
+        senderType: "company" as const,
+        receiverId: otherParticipant.participantId,
+        receiverType: otherParticipant.participantType as any,
+        content: `Attached ${type}: ${file.name}`,
+        attachmentUrl: url,
+        attachmentType: type as 'image' | 'file'
+      };
+
+      chatService.sendMessage(messageData);
+      scrollToBottom();
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload attachment");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -368,7 +417,33 @@ export default function CompanyMessages() {
                         <div className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
                           isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'
                         }`}>
-                          <p className="text-sm leading-relaxed">{msg.content}</p>
+                          {msg.attachmentUrl ? (
+                            <div className="mb-2">
+                               {msg.attachmentType === 'image' ? (
+                                  <div className="relative w-full aspect-auto min-h-[100px] rounded-lg overflow-hidden border border-gray-500/10">
+                                     <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                                       <img 
+                                         src={msg.attachmentUrl} 
+                                         alt="Attachment" 
+                                         className="max-w-full h-auto cursor-zoom-in" 
+                                       />
+                                     </a>
+                                  </div>
+                               ) : (
+                                  <a 
+                                    href={msg.attachmentUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-2 p-2 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-100 border-gray-200 text-blue-600'}`}
+                                  >
+                                     <FileIcon size={20} />
+                                     <span className="truncate max-w-[150px]">{msg.content || 'File'}</span>
+                                  </a>
+                               )}
+                            </div>
+                          ) : (
+                            <p className="text-sm leading-relaxed">{msg.content}</p>
+                          )}
                           <div className={`flex items-center gap-1 mt-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <span className="text-[10px] opacity-70">
                               {msg.createdAt && format(new Date(msg.createdAt), 'HH:mm')}
@@ -406,11 +481,40 @@ export default function CompanyMessages() {
             </div>
 
             {/* Input Area */}
+            <div className="relative">
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-4 mb-2 z-50">
+                  <EmojiPicker onEmojiClick={handleEmojiClick} />
+                </div>
+              )}
+            </div>
             <form onSubmit={handleFormSubmit} className="p-4 bg-white border-t border-gray-100 flex items-center gap-3">
+              <button 
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+              >
+                <Smile size={24} />
+              </button>
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-2 transition-colors ${isUploading ? 'text-blue-500 animate-pulse' : 'text-gray-400 hover:text-blue-600'}`}
+                disabled={isUploading}
+              >
+                <Paperclip size={24} />
+              </button>
+              <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  onChange={handleFileUpload}
+              />
               <input
                 type="text"
                 value={newMessage}
                 onChange={handleInputChange}
+                onFocus={() => setShowEmojiPicker(false)}
                 placeholder="Type your message here..."
                 className="flex-1 px-6 py-3 bg-gray-50 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
