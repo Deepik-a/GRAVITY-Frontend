@@ -223,20 +223,54 @@ export default function SlotManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this rule?")) return;
-    
-    setLoading(true);
-    try {
-      await deleteSlotConfig();
-      toast.success("Rule deleted successfully");
-      await fetchConfigs();
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast.error(err.message || "Failed to delete rule");
-    } finally {
-      setLoading(false);
-    }
+  const handleDelete = () => {
+    // Custom toast with confirmation
+    const resolveDelete = async (toastId: string | number) => {
+      toast.dismiss(toastId);
+      setLoading(true);
+      try {
+        await deleteSlotConfig();
+        toast.success("Rule deleted successfully");
+        await fetchConfigs();
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        toast.error(err.message || "Failed to delete rule");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Are you sure you want to delete this rule?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (typeof closeToast === 'function') closeToast();
+                resolveDelete(123456); // specific ID or just let it be
+              }}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+            >
+              Confirm Delete
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        toastId: 123456, // Unique ID to target for dismissal
+      }
+    );
   };
 
   const resetForm = () => {

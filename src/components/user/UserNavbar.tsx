@@ -1,92 +1,27 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { User, LogOut, ChevronDown, Menu, X } from "lucide-react";
-import { getProfile } from "@/services/AuthService";
-import { Profile } from "@/types/AuthTypes";
 import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 
 import NotificationBell from "../notifications/NotificationBell";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function UserNavbar() {
-  const router = useRouter();
-  const [user, setUser] = useState<Profile | null>(null);
+  const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          const profile = await getProfile();
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "";
-        console.error("Failed to fetch user profile:", err);
-        
-        // Handle blocked user (Interceptor also handles this, but we cleanup local state here)
-        if (message === "Your account has been blocked. Please contact admin.") {
-          setUser(null);
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          // Interceptor will handle redirect and toast
-          return;
-        }
-
-        // For other errors (like network), try fallback to localStorage
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch {
-            setUser(null);
-          }
-        }
-      }
-    };
-
-    fetchUser();
-
-    // Listen for custom "userUpdate" event
-    const handleUserUpdate = () => fetchUser();
-    window.addEventListener("userUpdate", handleUserUpdate);
-
-    // Listen for storage changes (for multiple tabs)
-    window.addEventListener("storage", handleUserUpdate);
-
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("userUpdate", handleUserUpdate);
-      window.removeEventListener("storage", handleUserUpdate);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    router.push("/Login");
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/90 backdrop-blur-md shadow-md py-3"
-          : "bg-transparent py-5"
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md py-3 transition-all duration-300"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
@@ -95,11 +30,7 @@ export default function UserNavbar() {
             <div className="w-10 h-10 bg-[rgb(0,14,41)] rounded-xl flex items-center justify-center border-2 border-[rgb(210,152,4)] group-hover:scale-110 transition-transform">
               <span className="text-[rgb(210,152,4)] font-black text-xl">G</span>
             </div>
-            <span
-              className={`text-2xl font-black tracking-tighter transition-colors duration-300 ${
-                scrolled ? "text-[rgb(0,14,41)]" : "text-white"
-              }`}
-            >
+            <span className="text-2xl font-black tracking-tighter text-[rgb(0,14,41)]">
               GRAVITY
             </span>
           </Link>
@@ -108,27 +39,15 @@ export default function UserNavbar() {
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/User/HomePage"
-              className={`text-sm font-bold uppercase tracking-wider hover:text-[rgb(210,152,4)] transition-colors ${
-                scrolled ? "text-gray-700" : "text-white/90"
-              }`}
+              className="text-sm font-bold uppercase tracking-wider text-gray-700 hover:text-[rgb(210,152,4)] transition-colors"
             >
               Home
             </Link>
             <Link
-              href="/User/Search"
-              className={`text-sm font-bold uppercase tracking-wider hover:text-[rgb(210,152,4)] transition-colors ${
-                scrolled ? "text-gray-700" : "text-white/90"
-              }`}
+              href="/User/CompanyListing"
+              className="text-sm font-bold uppercase tracking-wider text-gray-700 hover:text-[rgb(210,152,4)] transition-colors"
             >
-              Companies
-            </Link>
-            <Link
-              href="#"
-              className={`text-sm font-bold uppercase tracking-wider hover:text-[rgb(210,152,4)] transition-colors ${
-                scrolled ? "text-gray-700" : "text-white/90"
-              }`}
-            >
-              Projects
+              Company
             </Link>
           </div>
 
@@ -136,7 +55,7 @@ export default function UserNavbar() {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-4">
-                <NotificationBell currentUser={{ id: user.id, role: user.role as "user" | "company" }} scrolled={scrolled} />
+                <NotificationBell currentUser={{ id: user.id, role: user.role as "user" | "company" }} scrolled={true} />
 
                 <div className="relative">
                   <button
@@ -162,7 +81,7 @@ export default function UserNavbar() {
                       size={16}
                       className={`transition-transform duration-300 ${
                         isDropdownOpen ? "rotate-180" : ""
-                      } ${scrolled ? "text-gray-600" : "text-white"}`}
+                      } text-gray-600`}
                     />
                   </button>
 
@@ -199,12 +118,8 @@ export default function UserNavbar() {
             ) : (
               <div className="flex items-center gap-3">
                 <Link
-                  href="/Login"
-                  className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                    scrolled
-                      ? "text-[rgb(0,14,41)] hover:bg-gray-100"
-                      : "text-white hover:bg-white/10"
-                  }`}
+                  href="/signup?show=login&userType=user"
+                  className="px-6 py-2 rounded-xl text-sm font-bold text-[rgb(0,14,41)] hover:bg-gray-100 transition-all"
                 >
                   Login
                 </Link>
@@ -220,9 +135,7 @@ export default function UserNavbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`md:hidden p-2 rounded-lg ${
-                scrolled ? "text-gray-600" : "text-white"
-              }`}
+              className="md:hidden p-2 rounded-lg text-gray-600"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -242,23 +155,16 @@ export default function UserNavbar() {
               Home
             </Link>
             <Link
-              href="/User/Search"
+              href="/User/CompanyListing"
               className="text-gray-700 font-bold py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Companies
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-700 font-bold py-2"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Projects
+              Company
             </Link>
             {!user && (
               <div className="flex flex-col gap-2 pt-4 border-t border-gray-50">
                 <Link
-                  href="/Login"
+                  href="/signup?show=login&userType=user"
                   className="w-full text-center py-3 rounded-xl font-bold text-gray-700 bg-gray-50"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

@@ -116,9 +116,9 @@ export const getCompanies = async (): Promise<CompanyProfile[]> => {
 // Approve or reject a company
 export const verifyCompany = async (companyId: string, approve: boolean, reason?: string) => {
   try {
-    const response = await api.post(
-      "admin/verify-company",
-      { companyId, approve, reason },
+    const response = await api.patch(
+      `admin/companies/${companyId}/verify`,
+      { approve, reason },
       { withCredentials: true }
     );
     return response.data;
@@ -129,7 +129,7 @@ export const verifyCompany = async (companyId: string, approve: boolean, reason?
 
 export const toggleUserBlockStatus = async (userId: string, isBlocked: boolean) => {
   try {
-    const response = await api.patch("admin/users/block", { id: userId, isBlocked }, { withCredentials: true });
+    const response = await api.patch(`admin/users/${userId}/block`, { isBlocked }, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to update user block status"));
@@ -138,16 +138,16 @@ export const toggleUserBlockStatus = async (userId: string, isBlocked: boolean) 
 
 export const toggleCompanyBlockStatus = async (companyId: string, isBlocked: boolean) => {
   try {
-    const response = await api.patch("admin/companies/block", { id: companyId, isBlocked }, { withCredentials: true });
+    const response = await api.patch(`admin/companies/${companyId}/block`, { isBlocked }, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to update company block status"));
   }
 };
 
-export const getAllBookings = async () => {
+export const getAllBookings = async (page: number = 1, limit: number = 10) => {
   try {
-    const response = await api.get("admin/bookings", { withCredentials: true });
+    const response = await api.get(`admin/bookings?page=${page}&limit=${limit}`, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to fetch bookings"));
@@ -165,7 +165,7 @@ export const getRevenue = async () => {
 
 export const initiatePayout = async (bookingId: string) => {
   try {
-    const response = await api.post("admin/payout", { bookingId }, { withCredentials: true });
+    const response = await api.post(`admin/bookings/${bookingId}/payout`, {}, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to initiate payout"));

@@ -1,12 +1,13 @@
 import { io, Socket } from "socket.io-client";
 import api from "./api/useApi";
+import { API_ROUTES } from "@/shared/constants/routes";
 
-const SOCKET_URL = "http://localhost:5000"; // Adjust to your backend port
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"; // Adjust to your backend port
 
 class ChatService {
   private socket: Socket | null = null;
 
-  connect(userId: string, type: 'user' | 'company' = 'user') {
+  connect(userId: string, type: 'user' | 'company' | 'admin' = 'user') {
     if (this.socket) return this.socket;
     this.socket = io(SOCKET_URL, {
       withCredentials: true,
@@ -31,24 +32,35 @@ class ChatService {
     return this.socket;
   }
 
-  async getConversations(participantId: string, type: 'user' | 'company' = 'user') {
-    const response = await api.get(`/chat/conversations/${participantId}`, {
+  async getConversations(participantId: string, type: 'user' | 'company' | 'admin' = 'user') {
+    const response = await api.get(`${API_ROUTES.CHAT.CONVERSATIONS}/${participantId}`, {
       params: { type }
     });
     return response.data;
   }
 
   async getMessages(conversationId: string) {
-    const response = await api.get(`/chat/messages/${conversationId}`);
+    const response = await api.get(`${API_ROUTES.CHAT.MESSAGES}/${conversationId}`);
+    return response.data;
+  }
+
+  async uploadAttachment(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(API_ROUTES.CHAT.ATTACHMENTS, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   }
 
   sendMessage(data: {
     senderId: string;
-    senderType: "user" | "company";
+    senderType: "user" | "company" | "admin";
     receiverId: string;
-    receiverType: "user" | "company";
+    receiverType: "user" | "company" | "admin";
     content: string;
+    attachmentUrl?: string; // add this
+    attachmentType?: "image" | "file"; // add this
   }) {
     if (this.socket) {
       this.socket.emit("send_message", data);

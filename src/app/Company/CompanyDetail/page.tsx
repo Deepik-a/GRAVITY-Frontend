@@ -144,8 +144,8 @@ export default function CompanyProfileManagement() {
   const cropperRef = useRef<ReactCropperElement>(null);
 
   // Category options
-  const categoryOptions = ['Residential', 'Commercial', 'Villas'];
-  const serviceOptions = ['Architecture', 'Renovation', 'Interior Design'];
+  const categoryOptions = ['Residential', 'Villas', 'Commercial'];
+  const serviceOptions = ['Architecture', 'Interior Design', 'Renovation'];
   const companySizeOptions = ['1-10 employees', '11-50 employees', '51-200 employees', '200+ employees'];
 
   // Handle category selection with validation
@@ -184,7 +184,7 @@ export default function CompanyProfileManagement() {
 
   const removeTeamMember = (id: number) => {
     if (teamMembers.length > 1) {
-      if (window.confirm('Are you sure you want to remove this team member?')) {
+      const resolveRemove = () => {
         const newTeamMembers = teamMembers.filter(member => member.id !== id);
         setTeamMembers(newTeamMembers);
         
@@ -196,7 +196,34 @@ export default function CompanyProfileManagement() {
           }
           return newErrors;
         });
-      }
+        toast.info('Team member removed');
+      };
+
+      toast(
+        ({ closeToast }) => (
+          <div className="flex flex-col gap-3 p-1">
+            <p className="font-semibold text-gray-800">Are you sure you want to remove this team member?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  closeToast();
+                  resolveRemove();
+                }}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={closeToast}
+                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        { position: "top-center", autoClose: false }
+      );
     } else {
       toast.error('At least one team member is required.');
     }
@@ -231,7 +258,7 @@ export default function CompanyProfileManagement() {
 
   const removeProject = (id: number) => {
     if (projects.length > 1) {
-      if (window.confirm('Are you sure you want to remove this project?')) {
+      const resolveRemove = () => {
         const newProjects = projects.filter(project => project.id !== id);
         setProjects(newProjects);
         
@@ -243,7 +270,34 @@ export default function CompanyProfileManagement() {
           }
           return newErrors;
         });
-      }
+        toast.info('Project removed');
+      };
+
+      toast(
+        ({ closeToast }) => (
+          <div className="flex flex-col gap-3 p-1">
+            <p className="font-semibold text-gray-800">Are you sure you want to remove this project?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  closeToast();
+                  resolveRemove();
+                }}
+                className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={closeToast}
+                className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ),
+        { position: "top-center", autoClose: false }
+      );
     } else {
       toast.error('At least one project is required.');
     }
@@ -493,7 +547,7 @@ export default function CompanyProfileManagement() {
 
   // Image removal functions
   const removeBrandImage = (type: keyof FileUploadState) => {
-    if (window.confirm(`Are you sure you want to remove the ${type.replace(/([A-Z])/g, ' $1').toLowerCase()}?`)) {
+    const resolveRemove = () => {
       setFileUploadState(prev => {
         const newState = { ...prev };
         delete newState[type as keyof FileUploadState];
@@ -502,22 +556,74 @@ export default function CompanyProfileManagement() {
       });
       setUploadSuccess(prev => ({ ...prev, [type]: false }));
       toast.info('Image removed successfully');
-    }
+    };
+
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Are you sure you want to remove the {type.replace(/([A-Z])/g, ' $1').toLowerCase()}?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolveRemove();
+              }}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   const removeTeamMemberPhoto = (memberId: number) => {
-    if (window.confirm('Remove this photo?')) {
+    const resolveRemove = () => {
       setTeamMembers(prev => prev.map(member => 
         member.id === memberId 
           ? { ...member, photoPreview: undefined, photoFile: undefined, photo: undefined }
           : member
       ));
       toast.info('Team member photo removed');
-    }
+    };
+
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Remove this photo?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolveRemove();
+              }}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   const removeProjectImage = (projectId: number, type: 'beforeImage' | 'afterImage') => {
-    if (window.confirm(`Remove this ${type === 'beforeImage' ? 'Before' : 'After'} image?`)) {
+    const resolveRemove = () => {
       setProjects(prev => prev.map(project => 
         project.id === projectId 
           ? { 
@@ -529,7 +635,33 @@ export default function CompanyProfileManagement() {
           : project
       ));
       toast.info('Project image removed');
-    }
+    };
+
+    toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-1">
+          <p className="font-semibold text-gray-800">Remove this {type === 'beforeImage' ? 'Before' : 'After'} image?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                closeToast();
+                resolveRemove();
+              }}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={closeToast}
+              className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      { position: "top-center", autoClose: false }
+    );
   };
 
   // Real-time validation on field change

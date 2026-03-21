@@ -10,6 +10,18 @@ const GravityLandingPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [userType, setUserType] = useState<'user' | 'company' | null>(null);
   const router = useRouter();
+  const words = ["HomeOwner", "HomeDreamer"];
+
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % words.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+
   
   const typedTextRef = useRef<HTMLSpanElement>(null);
 
@@ -271,7 +283,161 @@ const GravityLandingPage = () => {
       </nav>
 
 
+<section id="about" className="bg-white w-full min-h-screen py-16 px-4 md:py-20 md:px-6 font-sans flex items-center mt-16 lg:mt-20">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="flex flex-col lg:flex-row items-stretch gap-8 lg:gap-12">
 
+            {/* LEFT SIDE - Text and Stats */}
+       <div className="flex-1 min-w-[320px] flex flex-col justify-between">
+  <div>
+    {/* Trust Badge */}
+    <div className="inline-flex items-center gap-2 bg-[rgba(210,152,4,0.1)] px-4 py-2 rounded-full border-l-4 border-[rgb(210,152,4)] mb-6 w-fit">
+      <i className="fas fa-hard-hat text-[rgb(210,152,4)]"></i>
+      <span className="text-[rgb(0,14,41)] font-semibold text-sm">
+        SINCE 2018 · TRUSTED NETWORK
+      </span>
+    </div>
+
+   <div className="flex-1 min-w-[320px] flex flex-col justify-between">
+      <div>
+      
+
+        {/* Heading FIXED */}
+        <h2 className="text-4xl md:text-6xl font-black leading-tight text-[rgb(0,14,41)]">
+          <span className="bg-gradient-to-r from-[#020D2E] via-[#132b79] to-[#0f2fa8] bg-clip-text text-transparent">
+            GRA
+          </span>
+          <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+            VITY
+          </span>{" "}
+          – Connecting{" "}
+          <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+            {words[index]}
+          </span>{" "}
+          with Trusted Builders & Experts
+        </h2>
+
+        {/* Description */}
+        <p className="text-lg md:text-xl text-gray-700 leading-relaxed mt-4 mb-6 max-w-xl">
+          The future of home construction is here. Connect with verified builders,
+          get transparent pricing, and build your dream home with confidence.
+        </p>
+      </div>
+
+      {/* Stats Grid (unchanged) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
+        {/* keep your existing stat boxes here exactly same */}
+      </div>
+
+      {/* Micro Trust */}
+      <div className="flex items-center gap-3 mt-6 text-[rgb(0,14,41)]">
+        <i className="fas fa-circle-check text-[rgb(210,152,4)]"></i>
+        <span className="text-sm">
+          ISO certified partners · fully insured
+        </span>
+      </div>
+    </div>
+
+  
+  </div>
+
+  {/* Stats Grid */}
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-4">
+    {/* Box 1 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-building text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        50,000+
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Trusted Companies
+      </div>
+    </div>
+
+    {/* Box 2 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-star text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        99.8%
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Customer Sat.
+      </div>
+    </div>
+
+    {/* Box 3 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-hard-hat text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        150k+
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Projects Done
+      </div>
+    </div>
+
+    {/* Box 4 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-headset text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        24/7
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Support
+      </div>
+    </div>
+
+    {/* Box 5 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-face-smile text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        187k+
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Happy Customers
+      </div>
+    </div>
+
+    {/* Box 6 */}
+    <div className="stat-train bg-white border border-gray-200 rounded-2xl p-4 md:p-5 text-center shadow-sm hover:shadow-lg hover:border-[rgb(210,152,4)] transition-all duration-300 hover:-translate-y-1">
+      <i className="fas fa-trowel text-2xl text-[rgba(210,152,4,0.6)] mb-2"></i>
+      <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">
+        8,200+
+      </div>
+      <div className="text-sm text-[rgb(0,14,41)] opacity-80 font-medium">
+        Expert Builders
+      </div>
+    </div>
+  </div>
+
+  {/* Micro Trust */}
+  <div className="flex items-center gap-3 mt-6 text-[rgb(0,14,41)]">
+    <i className="fas fa-circle-check text-[rgb(210,152,4)]"></i>
+    <span className="text-sm">
+      ISO certified partners · fully insured
+    </span>
+  </div>
+</div>
+
+            {/* RIGHT SIDE - Image */}
+            <div className="flex-1 min-w-[320px] flex items-stretch">
+              <div className="w-full rounded-3xl overflow-hidden shadow-2xl border-2 border-[rgba(210,152,4,0.2)] hover:scale-[1.01] transition-transform duration-700 group relative bg-gradient-to-br from-gray-100 to-gray-200 min-h-[500px] md:min-h-[600px] flex items-center justify-center">
+                <img 
+                  src="/assets/LandingPage.jpg"
+                  alt="Modern apartment building construction"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                  style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* About Section */}
 <section
@@ -627,8 +793,8 @@ const GravityLandingPage = () => {
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <Image src="/assets/modern-business-buildings-financial-district.jpg" alt="Industrial" fill className="object-cover" />
-        <div className="orbit-label-close">Industrial</div>
+        <Image src="/assets/high-building-construction-city.jpg" alt="Architecture" fill className="object-cover" />
+        <div className="orbit-label-close">Architecture</div>
       </div>
     </div>
 
@@ -649,8 +815,8 @@ const GravityLandingPage = () => {
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <Image src="/assets/small_apartments.jpg" alt="Apartments" fill className="object-cover" />
-        <div className="orbit-label-close">Apartments</div>
+        <Image src="/assets/office.jpg" alt="Interior Design" fill className="object-cover" />
+        <div className="orbit-label-close">Interior Design</div>
       </div>
     </div>
 
@@ -671,8 +837,8 @@ const GravityLandingPage = () => {
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <Image src="/assets/office.jpg" alt="Interiors" fill className="object-cover" />
-        <div className="orbit-label-close">Interiors</div>
+        <Image src="/assets/high-building-construction-city.jpg" alt="Renovation" fill className="object-cover" />
+        <div className="orbit-label-close">Renovation</div>
       </div>
     </div>
 
@@ -682,8 +848,8 @@ const GravityLandingPage = () => {
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <Image src="/assets/high-building-construction-city.jpg" alt="Renovation" fill className="object-cover" />
-        <div className="orbit-label-close">Renovation</div>
+        <Image src="/assets/modern-business-buildings-financial-district.jpg" alt="Architecture" fill className="object-cover" />
+        <div className="orbit-label-close">Architecture</div>
       </div>
     </div>
 
@@ -693,8 +859,8 @@ const GravityLandingPage = () => {
         onMouseEnter={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1.1)"}
         onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.transform="scale(1)"}
       >
-        <Image src="/assets/pexels-photo-1396132.jpeg" alt="Landscaping" fill className="object-cover" />
-        <div className="orbit-label-close">Landscaping</div>
+        <Image src="/assets/pexels-photo-1396132.jpeg" alt="Interior Design" fill className="object-cover" />
+        <div className="orbit-label-close">Interior Design</div>
       </div>
     </div>
 
@@ -873,8 +1039,7 @@ const GravityLandingPage = () => {
 
 
       {/* Mission & Vision Section */}
-<section id="vision-mission" className="py-8 px-6 relative overflow-hidden min-h-[450px] flex items-center">
-  {/* Background Image */}
+<section id="vision-mission" className="py-8 relative overflow-hidden justify-center">  {/* Background Image */}
   <div className="absolute inset-0 w-full h-full relative">
     <Image 
       src="/assets/H.png"
@@ -887,8 +1052,7 @@ const GravityLandingPage = () => {
   </div>
 
   {/* Content */}
-  <div className="container mx-auto max-w-7xl relative z-10">
-    {/* Header - Reduced margin */}
+<div className="w-full max-w-5xl mx-auto px-4 relative z-10">    {/* Header - Reduced margin */}
     <div className="text-center mb-6">
       <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">
         Our <span className="bg-gradient-to-r from-[#D29804] to-[#EEB21B] bg-clip-text text-transparent">Vision & Mission</span>
@@ -1508,20 +1672,7 @@ const GravityLandingPage = () => {
               >
                 Cancel
               </button>
-              <button
-                onClick={() => {
-                  // Handle continue action based on userType
-                  setShowModal(false);
-                }}
-                disabled={!userType}
-                className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                  userType 
-                    ? 'bg-gradient-to-r from-[#D29804] to-[#EEB21B] text-[#000E29] hover:shadow-lg' 
-                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                Continue
-              </button>
+
             </div>
           </div>
         </div>

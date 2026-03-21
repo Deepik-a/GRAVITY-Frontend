@@ -2,14 +2,18 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import chatService from '@/services/ChatService';
-import { X, Send, User, Building2, Check, CheckCheck } from 'lucide-react';
+import { X, Send, User, Building2, Check, CheckCheck, Smile, Paperclip, FileIcon } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { format } from 'date-fns';
+import { toast } from 'react-toastify';
 
 interface Message {
   id: string;
   senderId: string;
   senderType: string;
   content: string;
+  attachmentUrl?: string;
+  attachmentType?: 'image' | 'file';
   createdAt: string;
   status?: 'sent' | 'delivered' | 'read';
 }
@@ -27,16 +31,17 @@ interface ChatWindowProps {
   currentUser: {
     id: string;
     name: string;
-    role: "user" | "company";
+    role: "user" | "company" | "admin";
   };
   otherParticipant: {
     id: string;
     name: string;
-    role: "user" | "company";
+    role: "user" | "company" | "admin";
   };
+  className?: string;
 }
 
-export default function ChatWindow({ isOpen, onClose, currentUser, otherParticipant }: ChatWindowProps) {
+export default function ChatWindow({ isOpen, onClose, currentUser, otherParticipant, className }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -46,6 +51,9 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false); // Default to false, wait for check
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchConversation = useCallback(async () => {
     try {
@@ -172,6 +180,44 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
     }
   };
 
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const { url, type } = await chatService.uploadAttachment(file);
+      
+      const senderRole = currentUser.role || "user";
+      const receiverRole = otherParticipant.role || "company";
+
+      const messageData = {
+        senderId: currentUser.id,
+        senderType: senderRole,
+        receiverId: otherParticipant.id,
+        receiverType: receiverRole,
+        content: `Attached ${type}: ${file.name}`,
+        attachmentUrl: url,
+        attachmentType: type
+      };
+
+      await chatService.sendMessage(messageData);
+      
+      // We don't need optimistic update for file because sendMessage will broadcast 
+      // but maybe a small notification is good.
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload attachment");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -236,7 +282,7 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200 overflow-hidden animate-fade-in-up">
+    <div className={className || "fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200 overflow-hidden animate-fade-in-up"}>
       {/* Header */}
       <div className="p-4 bg-gradient-to-r from-blue-900 to-blue-700 text-white flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -274,7 +320,33 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${
                   isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
                 }`}>
-                  <p className={isMe ? 'text-white' : 'text-gray-800'}>{msg.content}</p>
+                  {msg.attachmentUrl ? (
+                    <div className="mb-2">
+                       {msg.attachmentType === 'image' ? (
+                          <div className="relative w-full aspect-auto min-h-[100px] rounded-lg overflow-hidden border border-gray-500/10">
+                             <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
+                               <img 
+                                 src={msg.attachmentUrl} 
+                                 alt="Attachment" 
+                                 className="max-w-full h-auto cursor-zoom-in" 
+                               />
+                             </a>
+                          </div>
+                       ) : (
+                          <a 
+                            href={msg.attachmentUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className={`flex items-center gap-2 p-2 rounded-lg border ${isMe ? 'bg-white/10 border-white/20 text-white' : 'bg-gray-100 border-gray-200 text-blue-600'}`}
+                          >
+                             <FileIcon size={20} />
+                             <span className="truncate max-w-[150px]">{msg.content || 'File'}</span>
+                          </a>
+                       )}
+                    </div>
+                  ) : (
+                    <p className={isMe ? 'text-white' : 'text-gray-800'}>{msg.content}</p>
+                  )}
                   <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                     <span className={`text-[10px] ${isMe ? 'text-blue-100' : 'text-gray-500'}`}>
                       {msg.createdAt ? format(new Date(msg.createdAt), 'HH:mm') : 'Just now'}
@@ -312,11 +384,40 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
       </div>
 
       {/* Input */}
+      <div className="relative">
+        {showEmojiPicker && (
+          <div className="absolute bottom-full right-0 mb-2 z-50">
+            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          </div>
+        )}
+      </div>
       <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex items-center gap-2">
+        <button 
+          type="button"
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+        >
+          <Smile size={20} />
+        </button>
+        <button 
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={`p-2 transition-colors ${isUploading ? 'text-blue-500 animate-pulse' : 'text-gray-400 hover:text-blue-600'}`}
+          disabled={isUploading}
+        >
+          <Paperclip size={20} />
+        </button>
+        <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            onChange={handleFileUpload}
+        />
         <input
           type="text"
           value={newMessage}
           onChange={handleInputChange}
+          onFocus={() => setShowEmojiPicker(false)}
           placeholder="Type a message..."
           className="flex-1 px-4 py-2 bg-gray-100 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 placeholder:text-gray-500"
           style={{ color: '#1f2937' }} 

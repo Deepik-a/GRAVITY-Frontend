@@ -12,19 +12,21 @@ import {
   validateConfirmPassword,
 } from "@/utils/Validation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
-import { SignupData } from "@/types/AuthTypes";
+import { SignupData, Profile } from "@/types/AuthTypes";
+import { useAuth } from "@/context/AuthContext";
 
 
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login: contextLogin, isAuthenticated, role: currentRole, isLoading: authLoading } = useAuth();
   
   const [isSignup, setIsSignup] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [hydrated, setHydrated] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [googleAuthLoading, setGoogleAuthLoading] = useState(false); // spinners added
+    const [googleAuthLoading, setGoogleAuthLoading] = useState(false); 
      const [role, setRole] = useState<'user' | 'company' | null>(null);
 
   useEffect(() => {
@@ -37,6 +39,7 @@ function SignupContent() {
   }
 }, [searchParams]);
 
+  // ... formData and other states ...
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -60,7 +63,17 @@ function SignupContent() {
 
   useEffect(() => {
     setHydrated(true);
-    
+
+    if (!authLoading && isAuthenticated && currentRole) {
+      if (currentRole === "user") {
+        router.replace("/User/HomePage");
+      } else if (currentRole === "company") {
+        router.replace("/Company/CompanyDashBoard");
+      } else if (currentRole === "admin") {
+        router.replace("/Admin/AdminDashBoard");
+      }
+    }
+
     // Check if redirected from OTP verification
     const verified = searchParams.get('verified');
     const email = searchParams.get('email');
@@ -79,7 +92,7 @@ function SignupContent() {
     if (show === 'login') {
       setIsSignup(false);
     }
-  }, [searchParams]);
+  }, [searchParams, router, isAuthenticated, currentRole, authLoading]);
 
   // ✅ Signup input change with validation
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,10 +246,9 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       toast.success(response.message || "Login successful!");
     }
 
-    // ⭐ Store basic user info
-    localStorage.setItem("user", JSON.stringify(response.user));
-    localStorage.setItem("token", response.token);
-    localStorage.setItem("role", response.role);
+    // ⭐ Store session in context
+    contextLogin(response.user as Profile, response.role as "user" | "company" | "admin");
+    localStorage.setItem("token", response.token); 
 
     // 🔥 If company, fetch profile to prefill
     if (response.role === "company") {
@@ -252,14 +264,14 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     // 🔥 Role-based redirect (same behavior as Google Auth)
     if (response.role === "user") {
-      router.push("/User/HomePage");
+      router.replace("/User/HomePage");
 
     } else if (response.role === "company") {
         
         const docStatus = response.documentStatus;
         if (docStatus === "rejected") {
            toast.error("Documents rejected. Please upload again.");
-           router.push(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
+           router.replace(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
         } else if (docStatus === "pending") {
            toast.info("Company verification is pending approval by admin. Please wait.");
         } else if (!docStatus) {
@@ -269,14 +281,14 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
            // Verified
            const isProfileFilled = response.user.isProfileFilled;
            if (isProfileFilled) {
-             router.push("/Company/CompanyDashBoard");
+             router.replace("/Company/CompanyDashBoard");
            } else {
-             router.push("/Company/CompanyDetail");
+             router.replace("/Company/CompanyDetail");
            }
         }
 
     } else if (response.role === "admin") {
-      router.push("/Admin/AdminDashboard");
+      router.replace("/Admin/AdminDashboard");
 
     } else {
       router.push("/");
@@ -345,22 +357,21 @@ console.log(res,"res from signup")
     }
 
     // ⭐ Store basic user info
-    const userData = {
+    const userData: Profile = {
       id: res.user.id,
       name: res.user.name,
       email: res.user.email,
       role: res.user.role,
       phone: (res.user as { phone?: string }).phone || ""
     };
-    
-    localStorage.setItem("user", JSON.stringify(userData));
+
+    // ⭐ Store session in context
+    contextLogin(userData, res.user.role as "user" | "company");
     localStorage.setItem("token", res.user.token);
-    localStorage.setItem("role", res.user.role);
 
     // 🔥 If company, fetch profile to prefill
     if (res.user.role === "company") {
       try {
-        // Use the normalized userData.id
         if (userData.id) {
           const profileData = await apiGetProfile(userData.id);
           if (profileData && Object.keys(profileData).length > 0) {
@@ -385,7 +396,7 @@ console.log(res,"res from signup")
     if (res.user.role === "user") {
     console.log("res.user.role ", res.user.role) // ✅ correct
        
-      router.push("/User/HomePage");
+      router.replace("/User/HomePage");
     } else if (res.user.role === "company") {
        // Logic for Rejected, Pending, New
        const docStatus = res.documentStatus;
@@ -400,7 +411,7 @@ console.log(res,"res from signup")
          // Do nothing or maybe clear loading state?
        } else if (!docStatus || res.isNewUser) {
           // New company or no docs
-          router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
+          router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
        } else {
          // Verified
          const isProfileFilled = res.user.isProfileFilled;
@@ -412,7 +423,7 @@ console.log(res,"res from signup")
        }
     } else {
       // Fallback for unknown roles
-      router.push("/");
+      router.replace("/");
     }
   } finally {
     setGoogleAuthLoading(false); // spinners added
