@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import chatService from '@/services/ChatService';
 import { format } from 'date-fns';
 import { Search, User, Send, Building2, Check, CheckCheck, Smile, Paperclip, FileIcon } from 'lucide-react';
@@ -104,7 +105,7 @@ export default function CompanyMessages() {
         setCurrentUser(user);
       }
     }
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -242,7 +243,7 @@ export default function CompanyMessages() {
         senderId: currentUser.id,
         senderType: "company" as const,
         receiverId: otherParticipant.participantId,
-        receiverType: otherParticipant.participantType as any,
+        receiverType: otherParticipant.participantType as "user" | "company",
         content: `Attached ${type}: ${file.name}`,
         attachmentUrl: url,
         attachmentType: type as 'image' | 'file'
@@ -422,10 +423,13 @@ export default function CompanyMessages() {
                                {msg.attachmentType === 'image' ? (
                                   <div className="relative w-full aspect-auto min-h-[100px] rounded-lg overflow-hidden border border-gray-500/10">
                                      <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
-                                       <img 
+                                       <Image 
                                          src={msg.attachmentUrl} 
                                          alt="Attachment" 
-                                         className="max-w-full h-auto cursor-zoom-in" 
+                                         width={500}
+                                         height={300}
+                                         className="max-w-full h-auto cursor-zoom-in object-contain" 
+                                         unoptimized
                                        />
                                      </a>
                                   </div>
