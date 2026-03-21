@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { getCompanyBookings, rescheduleBooking } from "@/services/CompanyService";
 import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
 import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw, Video } from "lucide-react";
-import { resolveImageUrl } from "@/utils/urlHelper";
 import io from "socket.io-client";
 import VideoCall from "@/components/video/VideoCall";
 

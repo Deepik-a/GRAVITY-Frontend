@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import chatService from '@/services/ChatService';
 import { X, Send, User, Building2, Check, CheckCheck, Smile, Paperclip, FileIcon } from 'lucide-react';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -325,10 +326,13 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
                        {msg.attachmentType === 'image' ? (
                           <div className="relative w-full aspect-auto min-h-[100px] rounded-lg overflow-hidden border border-gray-500/10">
                              <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer">
-                               <img 
+                               <Image 
                                  src={msg.attachmentUrl} 
                                  alt="Attachment" 
-                                 className="max-w-full h-auto cursor-zoom-in" 
+                                 width={500}
+                                 height={300}
+                                 className="max-w-full h-auto cursor-zoom-in object-contain" 
+                                 unoptimized
                                />
                              </a>
                           </div>
