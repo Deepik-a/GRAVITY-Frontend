@@ -21,8 +21,9 @@ interface CompanyDetails {
   name: string;
   profile?: {
     consultationFee?: number;
+    location?: string;
     address?: string;
-  };
+  } | null;
   contactEmail?: string;
 }
 
@@ -69,7 +70,7 @@ function BookSlotsContent() {
     setLoading(true);
     try {
       const availableSlots = await getAvailableSlots(companyId, selectedDate);
-      setSlots(availableSlots);
+      setSlots(availableSlots.map(s => s.startTime));
       setSelectedSlot("");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to fetch slots";

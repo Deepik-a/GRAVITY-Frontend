@@ -817,7 +817,7 @@ export default function CompanyProfileManagement() {
           banner2?: string;
           profilePicture?: string;
         };
-      } 
+      } | null | undefined;
     }) => {
       if (company && company.profile) {
         const p = company.profile;

@@ -105,7 +105,7 @@ export default function CompanyMessages() {
         setCurrentUser(user);
       }
     }
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser?.id) {

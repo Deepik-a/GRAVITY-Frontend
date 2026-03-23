@@ -11,8 +11,8 @@ export interface Company {
   email: string;
   profile?: {
     companyName?: string;
-    categories: string[];
-    services: string[];
+    categories?: string[];
+    services?: string[];
     consultationFee: number;
     establishedYear: number;
     companySize: string;
@@ -20,7 +20,7 @@ export interface Company {
     brandIdentity?: {
       banner1?: string;
     };
-  };
+  } | null;
 }
 
 interface CompanyCardProps {
@@ -78,7 +78,7 @@ export const CompanyCard = React.memo(({
               {company.profile?.companyName || company.name}
             </h3>
             <p className="text-[#FFD700] font-semibold text-sm line-clamp-1 mt-1">
-              {company.profile?.categories.join(' • ')}
+              {company.profile?.categories?.join(' • ') || ''}
             </p>
           </div>
           <div className="text-right ml-4">
@@ -90,7 +90,7 @@ export const CompanyCard = React.memo(({
           {company.profile?.overview || 'Leading construction and design firm providing exceptional quality services for residential and commercial projects.'}
         </p>
         <div className="flex flex-wrap gap-2 mb-5">
-          {company.profile?.services.slice(0, 3).map((service: string) => (
+          {company.profile?.services?.slice(0, 3).map((service: string) => (
             <span 
               key={service} 
               className="px-3 py-1 bg-gradient-to-r from-[#0F1E50]/10 to-[#1A3A8F]/10 text-[#0F1E50] text-xs font-semibold rounded-full border border-[#0F1E50]/20 transition-all duration-300 hover:scale-105 hover:bg-[#0F1E50] hover:text-white"
