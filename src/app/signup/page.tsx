@@ -534,13 +534,15 @@ console.log(res,"res from signup")
 {/* Google Sign In */}
 <div className="flex justify-center">
   <div className="w-full relative"> {/* Full width container */}
-    <GoogleLogin
-      onSuccess={handleGoogleAuth}
-      onError={() => toast.error("Google Login Failed")}
-      shape="rectangular"
-      size="large"
-      width="100%"
-    />
+{isSignup && (
+      <GoogleLogin
+        onSuccess={handleGoogleAuth}
+        onError={() => toast.error("Google Login Failed")}
+        shape="rectangular"
+        size="large"
+        width="100%"
+      />
+    )}
     {googleAuthLoading && (
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
@@ -732,12 +734,14 @@ console.log(res,"res from signup")
                       {/* Google Sign In */}
                       <div className="flex justify-center">
                         <div className="w-full relative">
-                          <GoogleLogin
-                            onSuccess={handleGoogleAuth}
-                            onError={() => toast.error("Google Login Failed")}
-                            shape="rectangular"
-                            size="large"
-                          />
+                          {!isSignup && (
+                            <GoogleLogin
+                              onSuccess={handleGoogleAuth}
+                              onError={() => toast.error("Google Login Failed")}
+                              shape="rectangular"
+                              size="large"
+                            />
+                          )}
                           {googleAuthLoading && (
                             <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
                               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
