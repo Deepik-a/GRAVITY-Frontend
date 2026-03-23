@@ -7,18 +7,24 @@ import { useAuth } from '@/context/AuthContext';
 export interface SidebarProps {
   onNavigate?: (section: string) => void;
   activeSection?: string;
+  userInfo?: {
+    name: string;
+    type: string;
+    initials: string;
+  };
 }
 
 export default function Sidebar({ 
   onNavigate, 
   activeSection = 'overview',
+  userInfo: passedUserInfo,
 }: SidebarProps) {
   const { user, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Map user to userInfo fallback
-  const userInfo = {
+  // Map user to userInfo fallback if passedUserInfo is not provided
+  const userInfo = passedUserInfo || {
     name: user?.name || 'Loading...',
     type: user?.role === 'company' ? 'Company Account' : 'User Account',
     initials: user?.name?.charAt(0).toUpperCase() || '?'

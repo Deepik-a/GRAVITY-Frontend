@@ -112,7 +112,7 @@ export default function CompanyBookings() {
       // Ensure date is in YYYY-MM-DD format
       const dateStr = new Date(booking.date).toISOString().split('T')[0];
       const slots = await getAvailableSlots(booking.companyId, dateStr);
-      setAvailableSlots(slots.slice(0, 5));
+      setAvailableSlots(slots.slice(0, 5).map(s => s.startTime));
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast.error(err.message || "Failed to fetch available slots");

@@ -44,7 +44,7 @@ export default function CompanySubscriptionPage() {
       setPlans(plansData);
 
       // Extract subscription info from profile
-      const profile = profileData as { subscription: CurrentSubscription; id: string; _id: string };
+      const profile = (profileData as unknown) as { subscription: CurrentSubscription; id: string; _id: string };
       const sub = profile.subscription; 
       if (sub) {
         setCurrentSub(sub);

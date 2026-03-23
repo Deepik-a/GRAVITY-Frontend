@@ -12,15 +12,23 @@ export interface Slot {
   status: string;
 }
 
-export interface SlotConfig {
-  id: string;
-  companyId: string;
-  slots: Slot[];
+export interface ExceptionalDay {
+  date: string;
+  reason: string;
 }
 
-export const getAllCompanies = async (params: Record<string, unknown> = {}): Promise<{ companies: CompanyProfile[]; total: number }> => {
+export interface SlotConfig {
+  id?: string;
+  companyId?: string;
+  startDate: string;
+  endDate: string;
+  weekdays: string[];
+  exceptionalDays: ExceptionalDay[];
+}
+
+export const getAllCompanies = async (params: Record<string, unknown> = {}): Promise<{ companies: CompanyProfile[]; total: number; totalPages: number }> => {
   try {
-    const response = await api.get<{ companies: CompanyProfile[]; total: number }>(API_ROUTES.USER.COMPANIES, { params });
+    const response = await api.get<{ companies: CompanyProfile[]; total: number; totalPages: number }>(API_ROUTES.USER.COMPANIES, { params });
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));

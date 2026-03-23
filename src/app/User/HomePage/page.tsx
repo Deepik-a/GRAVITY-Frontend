@@ -37,8 +37,8 @@ export default function HomePage() {
     const fetchCompanies = async () => {
       try {
         const response = await getAllCompanies()
-        // The API now returns a paginated object { data: Company[], total: number, ... }
-        setCompanies(response.data || [])
+        // The API now returns a paginated object { companies: Company[], total: number, ... }
+        setCompanies(response.companies || [])
       } catch (err) {
         console.error(err)
         setError((err as Error).message || 'Failed to load companies')

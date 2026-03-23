@@ -1,6 +1,7 @@
 import api from "./api/useApi";
 import { AxiosError } from "axios";
 import { API_ROUTES } from "@/shared/constants/routes";
+import { CompanyProfile } from "@/types/AuthTypes";
 
 export interface DashboardStats {
   totalConsultations: number;
@@ -23,6 +24,7 @@ export interface CompanyServiceProfile {
   bio?: string;
   profileImage?: string;
   isSubscribed?: boolean;
+  profile?: CompanyProfile['profile'];
 }
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {

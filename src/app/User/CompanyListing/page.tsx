@@ -4,26 +4,10 @@ import { useState, useEffect, useCallback, Suspense } from 'react'
 import { getAllCompanies, getFavourites, toggleFavourite } from '@/services/UserService'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'react-toastify'
-import { CompanyCard } from '@/components/user/CompanyCard' // optimized
+import { CompanyCard, type Company } from '@/components/user/CompanyCard' // optimized
 import { CompanyCardSkeleton } from '@/components/ui/Skeleton' // spinners added
 
-interface Company {
-  id: string;
-  name: string;
-  email: string;
-  profile?: {
-    companyName?: string;
-    categories: string[];
-    services: string[];
-    consultationFee: number;
-    establishedYear: number;
-    companySize: string;
-    overview: string;
-    brandIdentity?: {
-      banner1?: string;
-    };
-  };
-}
+
 
 function CompanyListingContent() {
   const searchParams = useSearchParams()
@@ -120,7 +104,7 @@ function CompanyListingContent() {
       }
 
       const response = await getAllCompanies(params)
-      setCompanies(response.data)
+      setCompanies(response.companies as unknown as Company[])
       setTotal(response.total)
       setTotalPages(response.totalPages)
     } catch (error) {

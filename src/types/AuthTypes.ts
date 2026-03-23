@@ -83,6 +83,8 @@ export interface CompanyProfile {
   isProfileFilled?: boolean;
   isSubscribed?: boolean;
   profile?: {
+    companyName?: string;
+    location?: string;
     categories: string[];
     services: string[];
     consultationFee: number;
