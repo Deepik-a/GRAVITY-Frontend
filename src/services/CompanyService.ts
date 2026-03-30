@@ -184,7 +184,7 @@ export const getWallet = async () => {
 
 export const rescheduleBooking = async (bookingId: string, newDate: string, newStartTime: string) => {
   try {
-    const response = await api.patch(`/company/bookings/${bookingId}/reschedule`, {
+    const response = await api.patch(`${API_ROUTES.COMPANY.BOOKING_UPDATE.replace(":bookingId", bookingId)}/reschedule`, {
       newDate,
       newStartTime
     }, {
@@ -199,7 +199,7 @@ export const rescheduleBooking = async (bookingId: string, newDate: string, newS
 
 export const cancelBooking = async (bookingId: string) => {
   try {
-    const response = await api.patch(`/company/bookings/${bookingId}/cancel`, {}, {
+    const response = await api.patch(`${API_ROUTES.COMPANY.BOOKING_UPDATE.replace(":bookingId", bookingId)}/cancel`, {}, {
       withCredentials: true,
     });
     return response.data;

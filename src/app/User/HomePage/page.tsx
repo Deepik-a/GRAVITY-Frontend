@@ -324,13 +324,7 @@ function HomePageContent() {
                   >
                     {item.stat}
                   </motion.span>
-                  <Link 
-                    href={`/User/CompanyListing?category=${item.title}`} 
-                    className="flex items-center gap-1 sm:gap-2 text-[#000E29] hover:text-[#EEB21B] transition-all duration-300 group/link"
-                  >
-                    <span className="text-sm sm:text-base font-medium">Explore</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-1" />
-                  </Link>
+             
                 </div>
               </div>
             </motion.div>
