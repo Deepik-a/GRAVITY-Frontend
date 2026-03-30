@@ -68,8 +68,8 @@ export default function AdminBookingsPage() {
       await refundBooking(bookingId);
       toast.success("Refund processed successfully!");
       fetchBookings(currentPage);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to process refund");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to process refund");
     }
   };
 
@@ -179,7 +179,7 @@ export default function AdminBookingsPage() {
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Provider</th>
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Schedule</th>
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Fee & Actions</th>
+                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Fee &amp; Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

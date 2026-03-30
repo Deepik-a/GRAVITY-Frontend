@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Building, Users, Award, Calendar, Edit, Save, X, CheckCircle, Star, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Building, Users, Award, Camera, Edit, Save, X, CheckCircle, Loader2, Star, Calendar, LucideIcon } from 'lucide-react';
 import Image from 'next/image';
 import { getProfile as apiGetProfile, saveProfile as apiSaveProfile, uploadCompanyImage } from '@/services/CompanyService';
 import { resolveImageUrl } from '@/utils/urlHelper';
-import { Camera } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 interface CompanyProfile {
@@ -137,16 +136,15 @@ export default function CompanyProfilePage() {
   const [tempProfile, setTempProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
-  const [imageVersion, setImageVersion] = useState(0); // Use a simple counter instead of Date.now()
-  const [isClient, setIsClient] = useState(false); // Track client-side rendering
+  const [imageVersion, setImageVersion] = useState(0);
+  const [isClient, setIsClient] = useState(false);
 
-  // Category and service options
   const categoryOptions = ['Residential', 'Villas', 'Commercial'];
   const serviceOptions = ['Architecture', 'Interior Design', 'Renovation'];
   const companySizeOptions = ['1-10 employees', '11-50 employees', '51-200 employees', '200+ employees'];
 
   useEffect(() => {
-    setIsClient(true); // Set to true when component mounts on client
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
@@ -163,7 +161,6 @@ export default function CompanyProfilePage() {
         const companyId = user.id || user._id;
 
         const data = await apiGetProfile(companyId);
-        console.log("Fetched Company Profile Data:", data);
         if (data && data.profile) {
           const mappedProfile: CompanyProfile = {
             id: companyId,
@@ -177,7 +174,6 @@ export default function CompanyProfilePage() {
           setProfile(mappedProfile);
           setTempProfile(mappedProfile);
         } else {
-          // If no profile, initialize with basic info from user object
           const initialProfile = {
             ...defaultCompanyProfile,
             id: companyId,
@@ -188,8 +184,8 @@ export default function CompanyProfilePage() {
           setTempProfile(initialProfile);
         }
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Failed to fetch profile";
-        toast.error(message);
+        console.error("Fetch profile failed:", error);
+        toast.error("Failed to fetch profile");
       } finally {
         setIsLoading(false);
       }
@@ -197,21 +193,6 @@ export default function CompanyProfilePage() {
 
     fetchProfileData();
   }, []);
-
-  // Helper function to add cache busting to image URLs - only on client side
-  const getImageUrlWithCacheBust = (url?: string): string => {
-    if (!url) return '';
-    const resolvedUrl = resolveImageUrl(url);
-    if (!resolvedUrl) return '';
-    
-    // Only add cache busting parameter on client side
-    if (isClient && imageVersion > 0) {
-      const separator = resolvedUrl.includes('?') ? '&' : '?';
-      return `${resolvedUrl}${separator}v=${imageVersion}`;
-    }
-    
-    return resolvedUrl;
-  };
 
   const handleEditClick = () => {
     setTempProfile(profile);
@@ -249,11 +230,11 @@ export default function CompanyProfilePage() {
       await apiSaveProfile(companyId, profileData);
       setProfile(tempProfile);
       setIsEditing(false);
-      setImageVersion(prev => prev + 1); // Increment counter instead of using Date.now()
+      setImageVersion(prev => prev + 1);
       toast.success('Profile updated successfully!');
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to update profile";
-      toast.error(message);
+      console.error("Update profile failed:", error);
+      toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
     }
@@ -286,12 +267,11 @@ export default function CompanyProfilePage() {
         }));
       }
       
-      // Force image refresh on next render
       setImageVersion(prev => prev + 1);
       
       toast.success("Image uploaded successfully!");
     } catch (err) {
-      console.error("Failed to upload image:", err);
+      console.error("Image upload failed:", err);
       toast.error("Failed to upload image");
     } finally {
       setUploadingField(null);
@@ -310,16 +290,6 @@ export default function CompanyProfilePage() {
     }));
   };
 
-  const handleContactOptionChange = (option: keyof CompanyProfile['contactOptions']) => {
-    setTempProfile(prev => ({
-      ...prev,
-      contactOptions: {
-        ...prev.contactOptions,
-        [option]: !prev.contactOptions[option],
-      },
-    }));
-  };
-
   const handleTeamMemberChange = (id: number, field: keyof CompanyProfile['teamMembers'][0], value: string) => {
     setTempProfile(prev => ({
       ...prev,
@@ -335,15 +305,6 @@ export default function CompanyProfilePage() {
       projects: prev.projects.map(project =>
         project.id === id ? { ...project, [field]: value } : project
       ),
-    }));
-  };
-
-  const handleCategoryToggle = (category: string) => {
-    setTempProfile(prev => ({
-      ...prev,
-      categories: prev.categories.includes(category)
-        ? prev.categories.filter(c => c !== category)
-        : [...prev.categories, category],
     }));
   };
 
@@ -370,6 +331,15 @@ export default function CompanyProfilePage() {
     }));
   };
 
+  const handleCategoryToggle = (category: string) => {
+    setTempProfile(prev => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter(c => c !== category)
+        : [...prev.categories, category],
+    }));
+  };
+
   const addProject = () => {
     const newProject = {
       id: Date.now(),
@@ -384,8 +354,8 @@ export default function CompanyProfilePage() {
     }));
   };
 
-  // Statistics Cards Component
-  const StatCard = ({ icon: Icon, value, label, color = 'blue' }: { icon: React.ElementType, value: string | number, label: string, color?: string }) => {
+  // Helper Components
+  const StatCard = ({ icon: Icon, value, label, color = 'blue' }: { icon: LucideIcon, value: string | number, label: string, color?: string }) => {
     const colorClasses = {
       blue: 'bg-blue-50 text-blue-600 border-blue-100',
       green: 'bg-green-50 text-green-600 border-green-100',
@@ -408,7 +378,6 @@ export default function CompanyProfilePage() {
     );
   };
 
-  // Status Badge Component
   const StatusBadge = ({ active, label }: { active: boolean, label: string }) => (
     <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
       {active ? <CheckCircle size={14} /> : <X size={14} />}
@@ -416,7 +385,6 @@ export default function CompanyProfilePage() {
     </div>
   );
 
-  // Don't render images during SSR to avoid hydration mismatch
   if (!isClient) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -441,7 +409,6 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header Banner */}
       <div className="relative h-64 bg-slate-900 group">
         {tempProfile.brandIdentity.banner1 ? (
           <Image 
@@ -528,11 +495,8 @@ export default function CompanyProfilePage() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-8 -mt-12 relative z-10">
-        {/* Logo and Banner 2 Section */}
         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          {/* Logo Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:w-1/3">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Building size={20} />
@@ -579,7 +543,6 @@ export default function CompanyProfilePage() {
             </div>
           </div>
 
-          {/* Secondary Banner Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:w-2/3">
             <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Camera size={20} />
@@ -629,7 +592,6 @@ export default function CompanyProfilePage() {
           </div>
         </div>
 
-        {/* Header Actions */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
           <div className="flex flex-wrap gap-2">
             {profile.categories.map(category => (
@@ -677,9 +639,7 @@ export default function CompanyProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Profile */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Company Overview */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -705,7 +665,6 @@ export default function CompanyProfilePage() {
               )}
             </div>
 
-            {/* Services Offered */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <CheckCircle size={20} />

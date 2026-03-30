@@ -71,7 +71,7 @@ const headlineVariants = {
     opacity: 0,
     y: -20,
     filter: "blur(4px)",
-    transition: { duration: 0.25, ease: "easeIn" },
+    transition: { duration: 0.25, ease: [0.42, 0, 1, 1] as const },
   },
 };
 
