@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Check, CheckCheck, CreditCard, Calendar, RefreshCcw, AlertCircle, Info, X } from "lucide-react";
+import {
+  Bell, Check, CheckCheck, CreditCard, Calendar,
+  RefreshCcw, AlertCircle, Info, X,
+} from "lucide-react";
 import notificationService, { INotification } from "@/services/NotificationService";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import chatService from "@/services/ChatService";
 
 interface NotificationBellProps {
-  currentUser: {
-    id: string;
-    role: "user" | "company";
-  };
+  currentUser: { id: string; role: "user" | "company" };
   scrolled?: boolean;
 }
 
@@ -22,11 +22,9 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Fetch existing notifications
     const fetchNotifications = async () => {
       try {
         const data = await notificationService.getNotifications();
-        // The backend now filters by recipientType based on the X-Role header
         setNotifications(data);
         setUnreadCount(data.filter((n: INotification) => !n.isRead).length);
       } catch (error) {
@@ -36,41 +34,28 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
 
     if (currentUser?.id) {
       fetchNotifications();
-
-      // 2. Connect socket if not already connected
-      // This now joins a room named `${role}:${id}` preventing cross-role notifications
       chatService.connect(currentUser.id, currentUser.role);
-
-      // 3. Listen for real-time notifications
       notificationService.onNotification((notification: INotification) => {
-        // Only show if it matches current role (redundant safety check)
         if (notification.recipientType === currentUser.role) {
           setNotifications((prev) => [notification, ...prev]);
           setUnreadCount((prev) => prev + 1);
-          
-          // Sound the notification (ring)
           try {
-            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
-            audio.play().catch(e => console.warn("Audio play failed, likely gesture required", e));
+            // Using a clearer bell ring sound
+            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
+            audio.play().catch((e) => console.warn("Audio play failed", e));
           } catch (e) {
             console.warn("Audio play error", e);
           }
-
-          // Show toast for new notification
           toast.info(notification.title, {
             onClick: () => setIsOpen(true),
-            icon: <Bell className="text-blue-500" />
+            icon: <Bell className="text-blue-500" />,
           });
         }
       });
     }
-
-    return () => {
-      notificationService.offNotification();
-    };
+    return () => { notificationService.offNotification(); };
   }, [currentUser]);
 
-  // Handle outside clicks to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -84,12 +69,10 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
+      console.error("Failed to mark as read:", error);
     }
   };
 
@@ -104,147 +87,181 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
   };
 
   const getNotificationIcon = (type: string, isRead: boolean) => {
-    const baseClass = `p-2 rounded-xl shrink-0 ${!isRead ? "bg-opacity-100" : "bg-opacity-10 opacity-60"}`;
-    
+    const base = `w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${!isRead ? "" : "opacity-50"}`;
     switch (type) {
       case "PAYMENT_SUCCESS":
       case "SUBSCRIPTION_SUCCESS":
-        return (
-          <div className={`${baseClass} bg-green-100 text-green-600`}>
-            <CreditCard size={18} />
-          </div>
-        );
+        return <div className={`${base} bg-green-100 text-green-600`}><CreditCard size={13} /></div>;
       case "NEW_BOOKING":
-        return (
-          <div className={`${baseClass} bg-blue-100 text-blue-600`}>
-            <Calendar size={18} />
-          </div>
-        );
+        return <div className={`${base} bg-blue-100 text-blue-600`}><Calendar size={13} /></div>;
       case "BOOKING_RESCHEDULED":
-        return (
-          <div className={`${baseClass} bg-orange-100 text-orange-600`}>
-            <RefreshCcw size={18} />
-          </div>
-        );
+        return <div className={`${base} bg-orange-100 text-orange-600`}><RefreshCcw size={13} /></div>;
       case "BOOKING_REMINDER":
-        return (
-          <div className={`${baseClass} bg-amber-100 text-amber-600`}>
-            <AlertCircle size={18} />
-          </div>
-        );
+        return <div className={`${base} bg-amber-100 text-amber-600`}><AlertCircle size={13} /></div>;
       default:
-        return (
-          <div className={`${baseClass} bg-gray-100 text-gray-500`}>
-            <Info size={18} />
-          </div>
-        );
+        return <div className={`${base} bg-blue-100 text-blue-600`}><Info size={13} /></div>;
     }
   };
 
   return (
     <div className="relative" ref={dropdownRef}>
+
+      {/* ── Bell button ── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`group p-2.5 rounded-2xl transition-all duration-500 relative ${
-          isOpen ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : (scrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10")
+        className={`relative p-2 rounded-xl transition-all duration-300 ${
+          isOpen
+            ? "bg-blue-600 text-white"
+            : scrolled
+            ? "text-gray-700 hover:bg-gray-100"
+            : "text-white hover:bg-white/10"
         }`}
       >
-        <Bell size={22} className={isOpen ? "animate-none" : "group-hover:rotate-12 transition-transform"} />
+        <Bell size={19} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-lg flex items-center justify-center border-2 border-white shadow-sm animate-bounce">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-0.5 border border-white">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
+      {/* ── Backdrop (prevents homepage interaction) ── */}
       {isOpen && (
-        <div className="absolute right-0 mt-4 w-85 sm:w-[420px] bg-white rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100/50 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-300 origin-top-right">
-          {/* Header */}
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white">
-            <div>
-              <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                Notifications
+        <div
+          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* ── Dropdown panel ── */}
+      {isOpen && (
+        <div
+          className="fixed sm:absolute right-0 sm:right-0 z-50 sm:mt-3 w-[calc(100vw-24px)] sm:w-[340px] origin-top-right"
+          style={{
+            top: "calc(100% + 8px)",
+            /* on mobile: center below the bell */
+          }}
+        >
+          {/* Card with gradient background */}
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "linear-gradient(to right, #020D2E, #0F2FA8)",
+              boxShadow:
+                "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06)",
+            }}
+          >
+
+            {/* ── Header ── */}
+            <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2">
+                {/* Blue icon badge — matches reference */}
+                <div className="w-6 h-6 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                  <Bell size={12} className="text-white" />
+                </div>
+                <span className="text-[13px] font-bold text-white tracking-tight">
+                  Notifications
+                </span>
                 {unreadCount > 0 && (
-                  <span className="text-[11px] bg-blue-600 text-white px-2.5 py-0.5 rounded-full font-bold">
+                  <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold leading-none">
                     {unreadCount}
                   </span>
                 )}
-              </h3>
-              <p className="text-xs text-gray-400 font-medium mt-0.5">Stay updated with your latest alerts</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllAsRead}
-                  title="Mark all as read"
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                >
-                  <CheckCheck size={18} />
-                </button>
-              )}
-              <button onClick={() => setIsOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* List */}
-          <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-            {notifications.length === 0 ? (
-              <div className="py-20 px-8 text-center bg-gray-50/30">
-                <div className="w-24 h-24 bg-white rounded-[32px] shadow-sm flex items-center justify-center mx-auto mb-6">
-                  <Bell size={40} className="text-gray-200" />
-                </div>
-                <h4 className="text-lg font-bold text-gray-900">All caught up!</h4>
-                <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-                  No notifications for your <span className="text-blue-600 font-bold">{currentUser.role}</span> account at the moment.
-                </p>
               </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`px-6 py-5 border-b border-gray-50 last:border-0 hover:bg-gray-50/80 transition-all cursor-pointer relative group ${
-                    !notification.isRead ? "bg-blue-50/10" : ""
-                  }`}
-                  onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+
+              <div className="flex items-center gap-1">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    title="Mark all as read"
+                    className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                  >
+                    <CheckCheck size={14} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all"
                 >
-                  <div className="flex gap-4">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* ── Notification list ── */}
+            <div className="max-h-[340px] overflow-y-auto bg-white">
+              {notifications.length === 0 ? (
+                <div className="py-10 px-4 text-center">
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Bell size={18} className="text-gray-300" />
+                  </div>
+                  <p className="text-[12px] font-semibold text-gray-700">All caught up!</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    No notifications for your{" "}
+                    <span className="text-blue-600 font-semibold">{currentUser.role}</span>{" "}
+                    account.
+                  </p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                    className={`px-4 py-3 flex gap-3 border-b border-gray-50 last:border-0 cursor-pointer transition-all duration-200 hover:bg-gray-50/80 relative ${
+                      !notification.isRead ? "bg-blue-50/30" : ""
+                    }`}
+                  >
+                    {/* Icon */}
                     {getNotificationIcon(notification.type, notification.isRead)}
+
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <p className={`text-[15px] pr-8 ${!notification.isRead ? "font-black text-gray-900" : "font-semibold text-gray-600"}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p
+                          className={`text-[12px] leading-snug pr-1 ${
+                            !notification.isRead
+                              ? "font-bold text-gray-900"
+                              : "font-medium text-gray-500"
+                          }`}
+                        >
                           {notification.title}
                         </p>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1.5 shrink-0 mt-1">
+                        <span className="text-[9px] text-gray-400 font-medium shrink-0 mt-0.5 whitespace-nowrap">
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className={`text-sm leading-relaxed ${!notification.isRead ? "text-gray-600 font-medium" : "text-gray-400"}`}>
+                      <p className={`text-[11px] leading-relaxed mt-0.5 ${
+                        !notification.isRead ? "text-gray-500" : "text-gray-400"
+                      }`}>
                         {notification.message}
                       </p>
-                      
+
                       {!notification.isRead && (
-                        <div className="flex items-center gap-2 mt-3 text-xs font-bold text-blue-600 group-hover:translate-x-1 transition-transform">
-                          <span>Mark as read</span>
-                          <Check size={12} />
+                        <div className="flex items-center gap-1 mt-1.5">
+                          {/* "Learn More" style pill — matches reference */}
+                          <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            Mark as read <Check size={9} />
+                          </span>
                         </div>
                       )}
                     </div>
-                  </div>
-                  {!notification.isRead && (
-                    <div className="absolute top-6 right-6 h-2 w-2 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
 
-          {/* Footer */}
-          <div className="p-4 bg-white text-center border-t border-gray-50">
-            <button className="w-full py-3 text-sm font-black text-gray-500 hover:text-blue-600 rounded-2xl border-2 border-transparent hover:border-blue-50 transition-all uppercase tracking-widest">
-              View Earlier Alerts
-            </button>
+                    {/* Unread dot */}
+                    {!notification.isRead && (
+                      <div className="absolute top-3.5 right-3.5 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* ── Footer ── */}
+            <div className="px-4 py-2.5 border-t border-white/10 bg-white/5 backdrop-blur-sm">
+              <button className="w-full py-1.5 text-[11px] font-bold text-white/60 hover:text-white rounded-xl transition-colors uppercase tracking-widest">
+                View all alerts
+              </button>
+            </div>
+
           </div>
         </div>
       )}

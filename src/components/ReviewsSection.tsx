@@ -209,7 +209,7 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Your Detailed Review</label>
                     <textarea
                       rows={5}
-                      className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl p-6 focus:bg-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-300 font-medium"
+                      className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl p-6 focus:bg-white focus:border-blue-500 focus:outline-none transition-all placeholder:text-gray-300 font-medium text-gray-900"
                       value={newReview.comment}
                       onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
                       placeholder="What did you like about their service?"
@@ -228,7 +228,8 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex-[2] px-8 py-5 bg-blue-600 text-white rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                      className="flex-[2] px-8 py-5 text-white rounded-3xl text-sm font-black uppercase tracking-widest disabled:opacity-50 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                      style={{ background: 'linear-gradient(to right, #020D2E, #0F2FA8)' }}
                     >
                       {submitting ? (
                         <span className="flex items-center justify-center gap-2">

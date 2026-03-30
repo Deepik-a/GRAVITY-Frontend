@@ -197,6 +197,18 @@ export const rescheduleBooking = async (bookingId: string, newDate: string, newS
   }
 };
 
+export const cancelBooking = async (bookingId: string) => {
+  try {
+    const response = await api.patch(`/company/bookings/${bookingId}/cancel`, {}, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Cancel booking failed", error);
+    throw new Error(extractErrorMessage(error, "Cancel booking failed"));
+  }
+};
+
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
     const response = await api.get<DashboardStats>(API_ROUTES.COMPANY.DASHBOARD_STATS, {

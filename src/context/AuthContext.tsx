@@ -6,6 +6,8 @@ import { Profile } from "@/types/AuthTypes";
 import { getProfile, logout as apiLogout } from "@/services/AuthService";
 import { getMyProfile as getCompanyProfile } from "@/services/CompanyService";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { setUserProfile, clearUserProfile } from "@/redux/slices/userSlice";
 
 interface AuthContextType {
   user: Profile | null;
@@ -106,6 +108,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("role", userRole);
   };
+
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (user) {
+      dispatch(setUserProfile({
+        name: user.name,
+        profileImage: user.profileImage
+      }));
+    } else {
+      dispatch(clearUserProfile());
+    }
+  }, [user, dispatch]);
 
   return (
     <AuthContext.Provider

@@ -4,7 +4,8 @@ export interface Booking {
   startTime: string;
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
-  paymentStatus: "pending" | "paid" | "failed";
+  price?: number;
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
   serviceStatus: "pending" | "completed";
   isRescheduled?: boolean;
   companyDetails?: {

@@ -2,16 +2,21 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { getProfile, updateProfile, uploadProfileImage, deleteProfileField } from "@/services/AuthService";
 import { getUserBookings, getFavourites, changePassword, completeBooking } from "@/services/UserService";
 import { Profile, CompanyProfile } from "@/types/AuthTypes";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 import { toast } from "react-toastify";
-import UserNavbar from "@/components/user/UserNavbar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
-import VideoCall from "@/components/video/VideoCall";
+import { CompanyCard, type Company } from "@/components/user/CompanyCard";
 import ChatWindow from "@/components/chat/ChatWindow";
+import { toast as toastify } from "react-toastify";
+import { toggleFavourite as apiToggleFavourite } from "@/services/UserService";
 import io from "socket.io-client";
+import { useDispatch } from "react-redux";
+import { updateName, updateProfileImage } from "@/redux/slices/userSlice";
 import {
   LayoutDashboard,
   Calendar,
@@ -51,8 +56,20 @@ import { Booking } from "@/types/BookingTypes";
 
 import AvatarEditor from 'react-avatar-editor';
 
-const Dashboard = () => {
-  const [activeSection, setActiveSection] = useState("overview");
+const ProfileContent = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const sectionParam = searchParams.get("section");
+  
+  const [activeSection, setActiveSection] = useState(sectionParam || "overview");
+
+  // Sync section with URL param
+  useEffect(() => {
+    if (sectionParam) {
+      setActiveSection(sectionParam);
+    }
+  }, [sectionParam]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
@@ -121,6 +138,7 @@ const Dashboard = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<AvatarEditor>(null);
+  const dispatch = useDispatch();
 
   // optimized: useCallback for fetching profile
   const fetchProfileData = useCallback(() => {
@@ -410,6 +428,9 @@ const Dashboard = () => {
         setProfileData(prev => prev ? { ...prev, profileImage: uploadedImage.url } : null);
         setImagePreview(resolveImageUrl(uploadedImage.url));
 
+        // ✅ Update Redux store
+        dispatch(updateProfileImage(uploadedImage.url));
+
         // ✅ Update localStorage so other components reflect changes
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
@@ -419,9 +440,6 @@ const Dashboard = () => {
             profileImage: uploadedImage.url
           }));
         }
-
-        // ✅ Notify other components (like Navbar) to refresh
-        window.dispatchEvent(new Event('userUpdate'));
 
         setImageUploadMessage({
           type: 'success',
@@ -532,6 +550,9 @@ const Dashboard = () => {
       const updatedProfile = await updateProfile(editForm);
       setProfileData(updatedProfile);
       
+      // ✅ Update Redux store
+      dispatch(updateName(updatedProfile.name));
+
       // ✅ Update localStorage so other components reflect changes
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
@@ -542,9 +563,6 @@ const Dashboard = () => {
           email: updatedProfile.email
         }));
       }
-
-      // ✅ Notify other components (like Navbar) to refresh
-      window.dispatchEvent(new Event('userUpdate'));
 
       setIsEditModalOpen(false);
       toast.success('Profile updated successfully!');
@@ -688,11 +706,7 @@ const Dashboard = () => {
   
   return (
     <div className="bg-gray-50 min-h-screen">
-      <UserNavbar />
       
-      {/* Spacer for Navbar */}
-      <div className="h-20 lg:h-24"></div>
-
       <div className="lg:flex max-w-[1600px] mx-auto relative">
         {/* Mobile Header */}
         <div className="lg:hidden bg-gradient-to-br from-[#081c45] to-[#1e40af] p-4 flex items-center justify-between sticky top-0 z-50 shadow-lg">
@@ -831,14 +845,109 @@ const Dashboard = () => {
           />
         )}
 
-        {/* Main Content */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 w-full">
-          {activeSection === "overview" && (
-            <div className="animate-fade-in">
-              <h1 className="text-3xl sm:text-4xl font-bold text-[#081c45] mb-2">
-                Welcome Back, {profileData.name}!
-              </h1>
-              <p className="text-gray-600">Here&apos;s your dashboard overview.</p>
+          {activeSection === "overview" && profileData && (
+            <div className="animate-fade-in space-y-8">
+              <div className="bg-gradient-to-r from-[#081c45] to-[#1e40af] rounded-[2.5rem] p-8 sm:p-12 text-white relative overflow-hidden shadow-2xl">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/10 rounded-full -ml-24 -mb-24 blur-2xl"></div>
+                
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                   <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-white/10 backdrop-blur-xl border-2 border-white/20 flex items-center justify-center overflow-hidden shadow-inner shrink-0">
+                      {profileData.profileImage ? (
+                        <Image src={resolveImageUrl(profileData.profileImage) || ""} alt={profileData.name} width={128} height={128} className="w-full h-full object-cover" unoptimized/>
+                      ) : (
+                        <User size={48} className="text-white/40" />
+                      )}
+                   </div>
+                   <div className="text-center md:text-left">
+                      <h1 className="text-3xl sm:text-5xl font-black mb-2 tracking-tight uppercase leading-none">
+                        {profileData.name}
+                      </h1>
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-blue-100 font-bold mb-4">
+                        <span className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs">
+                          <Mail size={12} /> {profileData.email}
+                        </span>
+                        {profileData.phone && (
+                          <span className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs">
+                             <Phone size={12} /> {profileData.phone}
+                          </span>
+                        )}
+                      </div>
+                      <p className="max-w-xl text-blue-50 text-sm leading-relaxed opacity-90 font-medium italic">
+                        &quot;Welcome to your GRAVITY Command Center. Here, you orchestrate your dream projects, manage elite consultations, and discover the future of construction excellence.&quot;
+                      </p>
+                   </div>
+                </div>
+              </div>
+
+              {/* Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { label: "My Appointments", value: totalBookings, icon: Calendar, color: "text-blue-500", bg: "bg-blue-50" },
+                  { label: "Saved Firms", value: favourites.length, icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
+                  { label: "Total Spent", value: "₹" + bookings.reduce((acc, b) => acc + (b.paymentStatus === 'paid' ? (b.price || 0) : 0), 0), icon: Crown, color: "text-amber-500", bg: "bg-amber-50" },
+                  { label: "Wallet Balance", value: "₹" + (profileData.walletBalance || 0).toLocaleString(), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" }
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
+                    <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                       <stat.icon size={24} />
+                    </div>
+                    <p className="text-gray-400 text-xs font-black uppercase tracking-widest">{stat.label}</p>
+                    <p className="text-2xl font-black text-[#081c45] mt-1">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* GRAVITY Experience Secton */}
+              <div className="bg-slate-50 rounded-[2.5rem] p-8 border-2 border-dashed border-gray-200">
+                  <h3 className="text-[#081c45] font-black text-xl mb-6 flex items-center gap-3">
+                    <Star className="text-amber-500 fill-amber-500" /> GRAVITY Experience Essentials
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-4">
+                        <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                              <LayoutDashboard className="text-blue-600" size={20} />
+                           </div>
+                           <div>
+                              <h4 className="font-black text-[#081c45] text-sm">Centralized Projects</h4>
+                              <p className="text-xs text-gray-500 font-medium">Manage all your construction needs from a single, high-tech interface.</p>
+                           </div>
+                        </div>
+                        <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                              <MessageSquare className="text-indigo-600" size={20} />
+                           </div>
+                           <div>
+                              <h4 className="font-black text-[#081c45] text-sm">Direct Communication</h4>
+                              <p className="text-xs text-gray-500 font-medium">Real-time messaging and video calls with verified industry professionals.</p>
+                           </div>
+                        </div>
+                     </div>
+                     <div className="space-y-4">
+                        <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                              <Settings className="text-gray-600" size={20} />
+                           </div>
+                           <div>
+                              <h4 className="font-black text-[#081c45] text-sm">Flexible Management</h4>
+                              <p className="text-xs text-gray-500 font-medium">Easily reschedule, cancel, or track the progress of your consultations.</p>
+                           </div>
+                        </div>
+                        <div className="flex gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+                              <Crown className="text-amber-600" size={20} />
+                           </div>
+                           <div>
+                              <h4 className="font-black text-[#081c45] text-sm">Premium Network</h4>
+                              <p className="text-xs text-gray-500 font-medium">Access to the top 1% of construction firms across the country.</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+              </div>
             </div>
           )}
 
@@ -849,12 +958,7 @@ const Dashboard = () => {
                   <h1 className="text-3xl font-bold text-[#081c45]">Consultations</h1>
                   <p className="text-gray-600">View and manage your scheduled consultations</p>
                 </div>
-                <Link 
-                  href="/User/HomePage" 
-                  className="bg-[rgb(210,152,4)] text-white px-6 py-2.5 rounded-xl font-bold hover:shadow-lg transition-all flex items-center gap-2"
-                >
-                  Book New Slot
-                </Link>
+              
               </div>
 
               {loadingBookings ? (
@@ -982,11 +1086,7 @@ const Dashboard = () => {
                                 <button 
                                   className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
                                   onClick={() => {
-                                    setVideoCallData({
-                                      targetId: booking.companyId!,
-                                      targetName: booking.companyDetails?.name || "Company",
-                                      isIncoming: false
-                                    });
+                                    router.push(`/VideoCall?targetId=${booking.companyId}&targetName=${booking.companyDetails?.name || "Company"}&targetType=company`);
                                   }}
                                 >
                                   <Video size={14} /> Video Call
@@ -995,25 +1095,18 @@ const Dashboard = () => {
                             )}
 
                             {booking.serviceStatus === "completed" && (
-                               <button 
+                               <Link 
+                                 href={`/User/CompanyPage?id=${booking.companyId}&tab=reviews`}
                                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all text-xs"
-                                 onClick={() => toast.info("Review feature coming soon!")}
                                 >
                                  <Star size={14} /> Review Service
-                               </button>
+                               </Link>
                             )}
 
-                            {booking.status !== "cancelled" && booking.serviceStatus === "pending" && (
-                              <button 
-                                className="px-4 py-2 rounded-xl border-2 border-gray-100 text-gray-700 font-bold hover:bg-gray-50 transition-all text-sm"
-                                onClick={() => toast.info("Please contact support to cancel or reschedule.")}
-                              >
-                                Help
-                              </button>
-                            )}
+                          
                             
                             <Link
-                              href={`/User/CompanyListing`}
+                              href={`/User/CompanyPage?id=${booking.companyId}`}
                               className="px-4 py-2 border-2 border-gray-100 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                             >
                               View Company
@@ -1091,38 +1184,28 @@ const Dashboard = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
                   {favourites.map((company, idx) => (
-                    <div 
+                    <CompanyCard 
                       key={company.id || idx}
-                      className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all group"
-                    >
-                      <div className="relative h-40 bg-gray-200">
-                         {company.profile?.brandIdentity?.logo ? (
-                           <Image
-                             src={resolveImageUrl(company.profile.brandIdentity.logo) || ""}
-                             alt={company.name}
-                             fill
-                             className="object-cover"
-                           />
-                         ) : (
-                           <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
-                             <span className="text-4xl font-bold">{company.name?.charAt(0)}</span>
-                           </div>
-                         )}
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-lg font-bold text-[#081c45] mb-2 truncate">{company.name}</h3>
-                        <p className="text-sm text-gray-500 mb-4 line-clamp-2">{company.profile?.overview || "No description available"}</p>
-                        
-                        <Link 
-                          href={`/User/CompanyPage/${company.id}`}
-                          className="block w-full text-center bg-gradient-to-r from-[#081c45] to-[#1e40af] text-white py-2 rounded-lg hover:opacity-90 transition-opacity"
-                        >
-                          View Profile
-                        </Link>
-                      </div>
-                    </div>
+                      company={company as unknown as Company}
+                      index={idx}
+                      isFavourite={true}
+                      onToggleFavourite={async (e, id) => {
+                        e.preventDefault();
+                        try {
+                          const updatedFavs = await apiToggleFavourite(id);
+                          // Refresh favorites list
+                          setLoadingFavourites(true);
+                          getFavourites()
+                            .then(data => setFavourites(data))
+                            .finally(() => setLoadingFavourites(false));
+                          toastify.success("Removed from favourites");
+                        } catch (err) {
+                          toastify.error("Failed to update favourites");
+                        }
+                      }}
+                    />
                   ))}
                 </div>
               )}
@@ -1607,18 +1690,6 @@ const Dashboard = () => {
         .animate-fade-in { animation: fade-in 0.5s ease-out; }
         .animate-modal-in { animation: modal-in 0.3s ease-out; }
       `}</style>
-      {videoCallData && profileData && (
-        <VideoCall
-          currentUserId={profileData.id}
-          currentUserType="user"
-          currentUserName={profileData.name}
-          targetUserId={videoCallData.targetId}
-          targetUserType="company"
-          onClose={() => setVideoCallData(null)}
-          isIncoming={videoCallData.isIncoming}
-          incomingOffer={videoCallData.offer}
-        />
-      )}
       {isChatOpen && profileData && chatRecipient && (
         <ChatWindow
           isOpen={isChatOpen}
@@ -1639,4 +1710,14 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+           <LoadingSpinner size={48} text="Initializing Dashboard..." />
+        </div>
+    }>
+      <ProfileContent />
+    </Suspense>
+  );
+}

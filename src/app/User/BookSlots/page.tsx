@@ -6,7 +6,6 @@ import { getAvailableSlots, bookSlot, getCompanyById, getSlotConfig } from "@/se
 import { Clock, Calendar, CheckCircle2, Building2, Timer, CreditCard, AlertCircle, ChevronRight, Share2, Heart, Star, MapPin, Phone, Info } from "lucide-react";
 import { format } from "date-fns";
 import { useSearchParams, useRouter } from "next/navigation";
-import UserNavbar from "@/components/user/UserNavbar";
 import BookingCalendar from "@/components/user/BookingCalendar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
 
@@ -70,7 +69,7 @@ function BookSlotsContent() {
     setLoading(true);
     try {
       const availableSlots = await getAvailableSlots(companyId, selectedDate);
-      setSlots(availableSlots.map(s => s.startTime));
+      setSlots(availableSlots);
       setSelectedSlot("");
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to fetch slots";
@@ -120,9 +119,23 @@ function BookSlotsContent() {
   };
 
   return (
-    <div className="bg-[#FAFBFD] min-h-screen pb-20">
-      <UserNavbar />
-      <div className="h-24 sm:h-28"></div>
+    <div className="bg-[#FAFBFD] min-h-screen pb-20 relative">
+      {bookingLoading && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[200] flex flex-col items-center justify-center animate-in fade-in duration-300">
+           <div className="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6 border border-white/20">
+              <LoadingSpinner size={64} className="text-blue-600" />
+              <div className="text-center space-y-2">
+                 <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Securing Your Choice</h3>
+                 <p className="text-gray-500 font-bold text-sm">Transferring to secure payment gateway...</p>
+                 <div className="flex justify-center gap-1.5 pt-2">
+                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce"></div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
       
       <div className="max-w-7xl mx-auto px-6">
         {/* Navigation Breadcrumb */}
@@ -244,21 +257,6 @@ function BookSlotsContent() {
                           <p className="text-xs text-gray-400 font-medium px-8">The professional has no available openings for this day. Please try another red-marked date.</p>
                         </div>
                       )}
-
-                      {/* <div className="space-y-3 pt-4 border-t border-gray-50">
-                        <label className="text-sm font-black text-gray-900 ml-1">Consultation Depth</label>
-                        <div className="grid grid-cols-5 gap-2">
-                          {[1, 2, 3, 4, 5].map(h => (
-                            <button
-                              key={h}
-                              onClick={() => setSessionHours(h)}
-                              className={`py-3 rounded-2xl font-black text-sm transition-all ${sessionHours === h ? 'bg-gray-900 text-white shadow-xl' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
-                            >
-                              {h}h
-                            </button>
-                          ))}
-                        </div>
-                      </div> */}
                     </div>
                   ) : (
                     <div className="h-[432px] bg-white rounded-[40px] border border-gray-100 border-dashed flex flex-col items-center justify-center p-12 text-center space-y-6">
