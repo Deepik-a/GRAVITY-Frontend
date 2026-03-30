@@ -356,6 +356,34 @@ export default function CompanyProfilePage() {
     }));
   };
 
+  const addTeamMember = () => {
+    const newMember = {
+      id: Date.now(),
+      name: '',
+      qualification: '',
+      role: '',
+      photo: ''
+    };
+    setTempProfile(prev => ({
+      ...prev,
+      teamMembers: [...prev.teamMembers, newMember]
+    }));
+  };
+
+  const addProject = () => {
+    const newProject = {
+      id: Date.now(),
+      title: '',
+      description: '',
+      beforeImage: '',
+      afterImage: ''
+    };
+    setTempProfile(prev => ({
+      ...prev,
+      projects: [...prev.projects, newProject]
+    }));
+  };
+
   // Statistics Cards Component
   const StatCard = ({ icon: Icon, value, label, color = 'blue' }: { icon: React.ElementType, value: string | number, label: string, color?: string }) => {
     const colorClasses = {
@@ -417,12 +445,11 @@ export default function CompanyProfilePage() {
       <div className="relative h-64 bg-slate-900 group">
         {tempProfile.brandIdentity.banner1 ? (
           <Image 
-            src={getImageUrlWithCacheBust(tempProfile.brandIdentity.banner1)}
+            src={resolveImageUrl(tempProfile.brandIdentity.banner1) || ""}
             alt="Banner" 
             fill 
             className="object-cover opacity-60"
             unoptimized
-            key={`banner1-${imageVersion}`}
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-700"></div>
@@ -453,13 +480,12 @@ export default function CompanyProfilePage() {
             <div className="w-24 h-24 rounded-full bg-white border-4 border-white shadow-lg overflow-hidden group relative">
               {tempProfile.brandIdentity.profilePicture ? (
                 <Image 
-                  src={getImageUrlWithCacheBust(tempProfile.brandIdentity.profilePicture)}
+                  src={resolveImageUrl(tempProfile.brandIdentity.profilePicture) || ""}
                   alt="Profile Picture" 
                   width={96} 
                   height={96} 
                   unoptimized
                   className="w-full h-full object-cover"
-                  key={`profile-${imageVersion}`}
                 />
               ) : (
                 <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-500">
@@ -516,13 +542,12 @@ export default function CompanyProfilePage() {
               <div className="w-40 h-40 rounded-lg bg-gray-100 overflow-hidden relative group mb-4">
                 {tempProfile.brandIdentity.logo ? (
                   <Image
-                    src={getImageUrlWithCacheBust(tempProfile.brandIdentity.logo)}
+                    src={resolveImageUrl(tempProfile.brandIdentity.logo) || ""}
                     alt="Company Logo"
                     width={160}
                     height={160}
                     className="w-full h-full object-contain"
                     unoptimized
-                    key={`logo-${imageVersion}`}
                   />
                 ) : (
                   <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-500">
@@ -563,13 +588,12 @@ export default function CompanyProfilePage() {
             <div className="h-48 rounded-lg bg-gray-100 overflow-hidden relative group">
               {tempProfile.brandIdentity.banner2 ? (
                 <Image
-                  src={getImageUrlWithCacheBust(tempProfile.brandIdentity.banner2)}
+                  src={resolveImageUrl(tempProfile.brandIdentity.banner2) || ""}
                   alt="Secondary Banner"
                   width={800}
                   height={192}
                   className="w-full h-full object-cover"
                   unoptimized
-                  key={`banner2-${imageVersion}`}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white">
@@ -728,7 +752,13 @@ export default function CompanyProfilePage() {
                   Our Team
                 </h2>
                 {isEditing && (
-                  <span className="text-sm text-blue-600 font-medium">Editing</span>
+                  <button
+                    type="button"
+                    onClick={addTeamMember}
+                    className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 font-medium"
+                  >
+                    + Add Member
+                  </button>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -737,13 +767,12 @@ export default function CompanyProfilePage() {
                     <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 relative group">
                       {member.photo ? (
                         <Image
-                          src={getImageUrlWithCacheBust(member.photo)}
+                          src={resolveImageUrl(member.photo) || ""}
                           alt={member.name}
                           width={64}
                           height={64}
                           className="w-full h-full object-cover"
                           unoptimized
-                          key={`team-${member.id}-${imageVersion}`}
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -834,7 +863,13 @@ export default function CompanyProfilePage() {
                   Featured Projects
                 </h2>
                 {isEditing && (
-                  <span className="text-sm text-blue-600 font-medium">Editing</span>
+                  <button
+                    type="button"
+                    onClick={addProject}
+                    className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 font-medium"
+                  >
+                    + Add Project
+                  </button>
                 )}
               </div>
               <div className="space-y-6">
@@ -880,13 +915,12 @@ export default function CompanyProfilePage() {
                         <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
                           {project.beforeImage ? (
                             <Image
-                              src={getImageUrlWithCacheBust(project.beforeImage)}
+                              src={resolveImageUrl(project.beforeImage) || ""}
                               alt="Before"
                               width={600}
                               height={400}
                               className="w-full h-full object-cover"
                               unoptimized
-                              key={`before-${project.id}-${imageVersion}`}
                             />
                           ) : (
                             <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -918,13 +952,12 @@ export default function CompanyProfilePage() {
                         <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden relative group">
                           {project.afterImage ? (
                             <Image
-                              src={getImageUrlWithCacheBust(project.afterImage)}
+                              src={resolveImageUrl(project.afterImage) || ""}
                               alt="After"
                               width={600}
                               height={400}
                               className="w-full h-full object-cover"
                               unoptimized
-                              key={`after-${project.id}-${imageVersion}`}
                             />
                           ) : (
                             <div className="w-full h-full bg-emerald-50 flex items-center justify-center text-emerald-500">
@@ -1140,47 +1173,19 @@ export default function CompanyProfilePage() {
                 Contact Options
               </h2>
               <div className="space-y-4">
-                {isEditing ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Chat Support</p>
-                        <p className="text-sm text-gray-600">Enable instant messaging</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleContactOptionChange('chatSupport')}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempProfile.contactOptions.chatSupport ? 'bg-blue-600' : 'bg-gray-300'}`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempProfile.contactOptions.chatSupport ? 'translate-x-6' : 'translate-x-1'}`} />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">Video Calls</p>
-                        <p className="text-sm text-gray-600">Schedule video consultations</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleContactOptionChange('videoCalls')}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${tempProfile.contactOptions.videoCalls ? 'bg-blue-600' : 'bg-gray-300'}`}
-                      >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${tempProfile.contactOptions.videoCalls ? 'translate-x-6' : 'translate-x-1'}`} />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-3">
-                    <StatusBadge
-                      active={profile.contactOptions.chatSupport}
-                      label="Chat Support Available"
-                    />
-                    <StatusBadge
-                      active={profile.contactOptions.videoCalls}
-                      label="Video Calls Available"
-                    />
-                  </div>
-                )}
+                <div className="space-y-3">
+                  <StatusBadge
+                    active={tempProfile.contactOptions.chatSupport}
+                    label="Chat Support"
+                  />
+                  <StatusBadge
+                    active={tempProfile.contactOptions.videoCalls}
+                    label="Video Calls"
+                  />
+                  <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded italic">
+                    Contact options are managed by support and cannot be edited.
+                  </p>
+                </div>
               </div>
             </div>
 

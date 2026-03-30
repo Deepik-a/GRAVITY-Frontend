@@ -36,72 +36,39 @@ const UserManagementPage: React.FC = () => {
     }
   }, []);
 
-  /* ---------------- Initial load ---------------- */
-useEffect(() => {
-  if (!mounted) return;
-  
-  // Direct call ചെയ്യുക
-  const loadInitialUsers = async () => {
-    setLoading(true);
-    try {
-      const users = await getUsers();
-      console.log(users,"users from backend")
-      setUsers(users);
-      setTotalItems(users.length);
-      setTotalPages(1);
-    } catch {
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  loadInitialUsers();
-}, [mounted]); // ✅ fetchUsers dependency ഇല്ല
-
   /* ---------------- Debounce ---------------- */
   useEffect(() => {
-    console.log(" debouncing runn");
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(searchQuery.trim());
     }, 300);
-
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
   }, [searchQuery]);
 
-  /* ---------------- Search API ---------------- */
-useEffect(() => {
-  if (!mounted || !debouncedSearch.trim()) return;
-console.log("Running in background search useEffect");
-  const runSearch = async () => {
-    console.log('🔍 Search useEffect triggered - debouncedSearch:', debouncedSearch);
-    setLoading(true);
-    try {
-      if (!debouncedSearch) {
-        const users = await getUsers();
-        setUsers(users);
-        setTotalItems(users.length);
-        setTotalPages(1);
-        return;
+  /* ---------------- Fetch Users API ---------------- */
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const query = debouncedSearch || "";
+        const res = await searchUsers(query, currentPage, itemsPerPage);
+        
+        setUsers(res.users);
+        setTotalItems(res.total);
+        setTotalPages(res.totalPages);
+      } catch {
+        toast.error('Failed to load users');
+      } finally {
+        setLoading(false);
       }
-
-      const res = await searchUsers(debouncedSearch, currentPage, itemsPerPage);
-      setUsers(res.users);
-      setTotalItems(res.total);
-      setTotalPages(res.totalPages);
-    } catch {
-      toast.error('Search failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  runSearch();
-}, [debouncedSearch, currentPage, mounted]);
+    };
+    
+    fetchUsers();
+  }, [debouncedSearch, currentPage, mounted]);
 
   /* ---------------- Block / Unblock ---------------- */
 const handleToggleBlock = async (userId: string, currentStatus: boolean) => {

@@ -60,12 +60,13 @@ export default function SlotManagement() {
 
   const fetchBookings = async () => {
     try {
-      const data = await getCompanyBookings();
+      const response = await getCompanyBookings();
+      const data = Array.isArray(response) ? response : (response?.bookings || []);
       setBookings(data);
       
       // Calculate counts
       const counts: Record<string, number> = {};
-      (data as { date: string }[]).forEach((b: { date: string }) => {
+      data.forEach((b: { date: string }) => {
         const dateStr = new Date(b.date).toISOString().split('T')[0];
         counts[dateStr] = (counts[dateStr] || 0) + 1;
       });
@@ -174,7 +175,11 @@ export default function SlotManagement() {
     e.preventDefault();
     
     if (!validateConfig()) {
-      toast.error("Please fix validation errors");
+      if (!config.startDate || !config.endDate || config.weekdays.length === 0) {
+        toast.error("Please add rule details before saving");
+      } else {
+        toast.error("Please fix validation errors");
+      }
       return;
     }
     

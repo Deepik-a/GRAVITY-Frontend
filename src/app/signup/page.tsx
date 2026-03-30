@@ -532,9 +532,9 @@ console.log(res,"res from signup")
                     {/* Google Sign Up Button */}
                   {/* Google Sign Up Button */}
 {/* Google Sign In */}
-<div className="flex justify-center">
-  <div className="w-full relative"> {/* Full width container */}
-{isSignup && (
+<div className="w-full">
+  {isSignup && (
+    <div className="flex justify-center">
       <GoogleLogin
         onSuccess={handleGoogleAuth}
         onError={() => toast.error("Google Login Failed")}
@@ -542,13 +542,13 @@ console.log(res,"res from signup")
         size="large"
         width="100%"
       />
-    )}
-    {googleAuthLoading && (
-      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
-      </div>
-    )}
-  </div>
+    </div>
+  )}
+  {googleAuthLoading && (
+    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-xl z-20">
+      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1E40AF]"></div>
+    </div>
+  )}
 </div>
 
                     {/* Divider */}

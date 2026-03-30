@@ -44,10 +44,10 @@ export const getCompanyById = async (companyId: string): Promise<CompanyProfile>
   }
 };
 
-export const getAvailableSlots = async (companyId: string, date: string): Promise<Slot[]> => {
+export const getAvailableSlots = async (companyId: string, date: string): Promise<string[]> => {
   try {
-    const response = await api.get<Slot[]>(API_ROUTES.USER.SLOTS_AVAILABLE, {
-      params: { companyId, date },
+    const response = await api.get<string[]>(API_ROUTES.USER.SLOTS_AVAILABLE, {
+      params: { companyId, date, _t: Date.now() },
       withCredentials: true,
     });
     return response.data;
@@ -60,6 +60,7 @@ export const getAvailableSlots = async (companyId: string, date: string): Promis
 export const getSlotConfig = async (companyId: string): Promise<SlotConfig> => {
   try {
     const response = await api.get<SlotConfig>(`${API_ROUTES.USER.COMPANIES}/${companyId}/slots/config`, {
+      params: { _t: Date.now() },
       withCredentials: true,
     });
     return response.data;

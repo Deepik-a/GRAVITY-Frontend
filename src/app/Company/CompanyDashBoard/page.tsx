@@ -13,6 +13,9 @@ import CompanyReviewsPage from '../Reviews/page';
 import CompanyMessagesPage from '../Messages/page';
 import { useRouter } from 'next/navigation';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import Image from 'next/image';
+import { resolveImageUrl } from '@/utils/urlHelper';
+import { getCompanyBookings, getWallet } from '@/services/CompanyService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -52,6 +55,8 @@ export default function DashboardPage() {
     isSubscribed: false 
   });
   const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null);
+  const [realtimeActivities, setRealtimeActivities] = useState<any[]>([]);
+  const [walletInfo, setWalletInfo] = useState<any>(null);
 
   // Fetch user info on mount
   useEffect(() => {
@@ -66,8 +71,8 @@ export default function DashboardPage() {
         isSubscribed: user.isSubscribed || false
       });
 
-      // Fetch dashboard stats
-      import('@/services/CompanyService').then(({ getDashboardStats, getMyProfile }) => {
+      // Fetch data
+      import('@/services/CompanyService').then(({ getDashboardStats, getMyProfile, getCompanyBookings, getWallet }) => {
         getDashboardStats().then(stats => {
           setDashboardStats(stats);
           if (stats.isSubscribed !== undefined) {
@@ -77,10 +82,23 @@ export default function DashboardPage() {
           console.error("Fetch dashboard stats failed", err);
         });
 
-        // Sync profile for isSubscribed if not already updated by stats
+        getCompanyBookings(1, 5).then(data => {
+          const bookings = Array.isArray(data) ? data : (data?.bookings || []);
+          setRealtimeActivities(bookings);
+        }).catch(err => console.error("Fetch recent activities failed", err));
+
+        getWallet().then(data => {
+          setWalletInfo(data);
+        }).catch(err => console.error("Fetch wallet failed", err));
+
+        // Sync profile for isSubscribed and Logo
         getMyProfile().then(profile => {
           if (profile) {
-            setUserInfo(prev => ({ ...prev, isSubscribed: !!profile.isSubscribed }));
+            setUserInfo(prev => ({ 
+              ...prev, 
+              isSubscribed: !!profile.isSubscribed,
+              logo: profile.profile?.brandIdentity?.logo || profile.profileImage
+            }));
             // Update localStorage if changed
             if (profile.isSubscribed !== user.isSubscribed) {
               const newUser = { ...user, isSubscribed: !!profile.isSubscribed };
@@ -207,35 +225,36 @@ export default function DashboardPage() {
     }
   ];
 
-  const projectStatus = [
-    { name: 'Residential', percentage: 72, color: 'bg-green-500' },
-    { name: 'Villas', percentage: 63, color: 'bg-yellow-500' },
-    { name: 'Commercial', percentage: 85, color: 'bg-blue-500' },
+  // Derived Stats
+  const cancelledCount = dashboardStats?.statusBreakdown?.find(s => s.status.toLowerCase() === 'cancelled')?.count || 0;
+  const completedCount = dashboardStats?.statusBreakdown?.find(s => s.status.toLowerCase() === 'completed')?.count || 0;
+  const pendingCount = dashboardStats?.statusBreakdown?.find(s => ['pending', 'scheduled'].includes(s.status.toLowerCase()))?.count || 0;
+  const totalBookings = dashboardStats?.totalConsultations || (cancelledCount + completedCount + pendingCount) || 1;
+  const cancellationRate = ((cancelledCount / totalBookings) * 100).toFixed(1);
+
+  const dynamicProjectStatus = [
+    { name: 'Completed', percentage: Math.round((completedCount / totalBookings) * 100), color: 'bg-green-500' },
+    { name: 'Pending', percentage: Math.round((pendingCount / totalBookings) * 100), color: 'bg-yellow-500' },
+    { name: 'Cancelled', percentage: Math.round((cancelledCount / totalBookings) * 100), color: 'bg-red-500' },
   ];
 
-  const recentActivities = [
-    {
-      title: 'New project signed',
-      description: 'Commercial complex in Mumbai',
-      time: '2 hours ago',
-      icon: 'check',
-      bgColor: 'bg-green-100'
-    },
-    {
-      title: 'New team members joined',
-      description: '3 senior architects added',
-      time: '1 day ago',
-      icon: 'users',
-      bgColor: 'bg-blue-100'
-    },
-    {
-      title: 'Client review received',
-      description: '5-star rating from TechCorp Ltd.',
-      time: '2 days ago',
-      icon: 'star',
-      bgColor: 'bg-yellow-100'
-    }
-  ];
+  const processedActivities = realtimeActivities.map((b: any) => ({
+    title: `Appointment ${b.status}` as string,
+    description: `${b.userId?.name || 'A customer'} for ${b.slotId?.startTime || 'the session'}` as string,
+    time: new Date(b.createdAt).toLocaleDateString() as string,
+    icon: (b.status === 'completed' ? 'check' : b.status === 'cancelled' ? 'x' : 'calendar') as 'check' | 'x' | 'calendar',
+    bgColor: (b.status === 'completed' ? 'bg-green-100' : b.status === 'cancelled' ? 'bg-red-100' : 'bg-blue-100') as string
+  }));
+
+  interface ActivityItem {
+    title: string;
+    description: string;
+    time: string;
+    icon: 'check' | 'x' | 'calendar';
+    bgColor: string;
+  }
+
+  const finalRecentActivities: ActivityItem[] = processedActivities.length > 0 ? processedActivities : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -434,9 +453,23 @@ export default function DashboardPage() {
                    scrolled={true} 
                 />
 
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm sm:text-base">{userInfo.initials}</span>
-                </div>
+                <div 
+                   className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-full flex items-center justify-center overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                   onClick={() => setActiveSection('profile')}
+                 >
+                   {userInfo.logo ? (
+                     <Image 
+                       src={resolveImageUrl(userInfo.logo) || ""} 
+                       alt="Logo" 
+                       width={40} 
+                       height={40} 
+                       className="w-full h-full object-cover"
+                       unoptimized
+                     />
+                   ) : (
+                     <span className="text-white font-semibold text-sm sm:text-base">{userInfo.initials}</span>
+                   )}
+                 </div>
               </div>
             </div>
           </header>
@@ -490,12 +523,13 @@ export default function DashboardPage() {
                 </div>
                 
                 {/* Project Status & Recent Activities */}
+                {/* Project Status & Recent Activities */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Project Status */}
                   <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg scale-in">
-                    <h3 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-4">Project Status</h3>
+                    <h3 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-4">Booking Distributions</h3>
                     <div className="space-y-4">
-                      {projectStatus.map((project, index) => (
+                      {dynamicProjectStatus.map((project, index) => (
                         <div key={index}>
                           <div className="flex justify-between text-xs sm:text-sm mb-1">
                             <span className="text-gray-600">{project.name}</span>
@@ -516,14 +550,14 @@ export default function DashboardPage() {
                   <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg scale-in">
                     <h3 className="text-base sm:text-lg md:text-xl font-semibold text-gray-800 mb-4">Recent Activities</h3>
                     <div className="space-y-3 sm:space-y-4">
-                      {recentActivities.map((activity, index) => (
+                      {finalRecentActivities.map((activity, index) => (
                         <div key={index} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <div className="flex items-center space-x-3">
                             <div className={`w-8 h-8 ${activity.bgColor} rounded-full flex items-center justify-center`}>
                               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 {activity.icon === 'check' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>}
-                                {activity.icon === 'users' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 1.197a6 6 0 00-6-6M3 21v-1a6 6 0 016-6"></path>}
-                                {activity.icon === 'star' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>}
+                                {activity.icon === 'x' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>}
+                                {activity.icon === 'calendar' && <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>}
                               </svg>
                             </div>
                             <div>
@@ -534,6 +568,9 @@ export default function DashboardPage() {
                           <span className="text-xs text-gray-500">{activity.time}</span>
                         </div>
                       ))}
+                      {finalRecentActivities.length === 0 && (
+                        <div className="text-center py-8 text-gray-500 text-sm italic">No recent activities available</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -547,11 +584,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div className="bg-red-500 h-2 rounded-full" style={{ width: '8%' }}></div>
+                        <div className="bg-red-500 h-2 rounded-full" style={{ width: `${cancellationRate}%` }}></div>
                       </div>
-                      <span className="text-xs sm:text-sm font-medium text-gray-600">8%</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-600">{cancellationRate}%</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">12 cancelled out of 150 bookings</p>
+                    <p className="text-xs text-gray-500 mt-2">{cancelledCount} cancelled out of {totalBookings} bookings</p>
                   </div>
                   
                   <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg scale-in">
@@ -561,12 +598,12 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="text-gray-600">Processed</span>
-                        <span className="font-medium text-green-600">₹8,500</span>
+                        <span className="text-gray-600">Total Escrow</span>
+                        <span className="font-medium text-green-600">₹{(walletInfo?.balance || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-xs sm:text-sm">
-                        <span className="text-gray-600">Pending</span>
-                        <span className="font-medium text-yellow-600">₹2,100</span>
+                        <span className="text-gray-600">Recent Payouts</span>
+                        <span className="font-medium text-yellow-600">₹{(dashboardStats?.monthlyEarnings || 0).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -579,11 +616,11 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="text-gray-600">New Bookings</span>
-                        <span className="font-medium text-blue-600">34</span>
+                        <span className="font-medium text-blue-600">{totalBookings}</span>
                       </div>
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="text-gray-600">Revenue</span>
-                        <span className="font-medium text-green-600">₹45,200</span>
+                        <span className="font-medium text-green-600">₹{(dashboardStats?.monthlyEarnings || 0).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>

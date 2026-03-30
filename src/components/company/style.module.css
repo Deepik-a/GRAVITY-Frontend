@@ -1,6 +1,6 @@
 /* Sidebar Container */
 .sidebarContainer {
-    background: linear-gradient(180deg, rgb(8, 28, 69) 0%, rgb(15, 38, 85) 100%);
+    background: linear-gradient(to right, #020D2E, #0F2FA8);
     color: white;
     display: flex;
     flex-direction: column;

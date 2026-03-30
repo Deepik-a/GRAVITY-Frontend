@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getAllBookings } from "@/services/AdminService";
+import { getAllBookings, refundBooking } from "@/services/AdminService";
 import { toast } from "react-toastify";
-import { Calendar, Clock, Loader2, Search, Filter, AlertCircle, User, Building2, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Clock, Loader2, Search, Filter, AlertCircle, User, Building2, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
 import Image from "next/image";
 
@@ -14,7 +14,7 @@ interface Booking {
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
   price: number;
-  paymentStatus: "pending" | "paid" | "failed";
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
   userDetails?: {
     name: string;
     email: string;
@@ -61,6 +61,18 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const handleRefund = async (bookingId: string) => {
+    if (!window.confirm("Are you sure you want to refund this cancelled booking to the user's wallet?")) return;
+    
+    try {
+      await refundBooking(bookingId);
+      toast.success("Refund processed successfully!");
+      fetchBookings(currentPage);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to process refund");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -86,8 +98,8 @@ export default function AdminBookingsPage() {
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
-      booking.userDetails?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.companyDetails?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.userDetails?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (booking.companyDetails?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
@@ -166,8 +178,8 @@ export default function AdminBookingsPage() {
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Client</th>
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Provider</th>
                 <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Schedule</th>
-                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">status</th>
-                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Fee</th>
+                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Fee & Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -219,11 +231,21 @@ export default function AdminBookingsPage() {
                     <td className="px-6 py-5">
                       {getStatusBadge(booking.status)}
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <p className="font-black text-gray-900">₹{booking.price?.toLocaleString()}</p>
-                      <p className={`text-[10px] font-bold uppercase tracking-tighter ${booking.paymentStatus === 'paid' ? 'text-green-600' : 'text-orange-500'}`}>
-                        {booking.paymentStatus}
-                      </p>
+                    <td className="px-6 py-5 text-right space-y-2">
+                      <div>
+                        <p className="font-black text-gray-900">₹{booking.price?.toLocaleString()}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-tighter ${booking.paymentStatus === 'paid' ? 'text-green-600' : booking.paymentStatus === 'refunded' ? 'text-blue-600' : 'text-orange-500'}`}>
+                          {booking.paymentStatus}
+                        </p>
+                      </div>
+                      {booking.status === "cancelled" && booking.paymentStatus !== "refunded" && (
+                        <button
+                          onClick={() => handleRefund(booking.id)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors"
+                        >
+                          <RefreshCcw size={12} /> Refund to Wallet
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

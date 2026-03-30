@@ -37,6 +37,8 @@ interface TransactionData {
 const FinancePage = () => {
   const [data, setData] = useState<TransactionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const [payoutLoading, setPayoutLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: "",
@@ -117,6 +119,7 @@ const FinancePage = () => {
 
   const handleResetFilters = () => {
     setFilters({ type: "", status: "", startDate: "", endDate: "" });
+    setCurrentPage(1);
     setTimeout(() => fetchTransactions(), 100);
   };
 
@@ -305,7 +308,7 @@ const FinancePage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {data?.transactions.map((transaction) => (
+              {data?.transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                     {format(new Date(transaction.createdAt), "MMM dd, yyyy HH:mm")}
@@ -395,6 +398,42 @@ const FinancePage = () => {
             </tbody>
           </table>
         </div>
+        
+        {data?.transactions && data.transactions.length > 0 && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <p className="text-sm text-gray-500 font-medium">
+              Showing <span className="font-bold text-gray-900">{Math.min(data.transactions.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(data.transactions.length, currentPage * itemsPerPage)}</span> of <span className="font-bold text-gray-900">{data.transactions.length}</span> entries
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm bg-white text-gray-700"
+              >
+                Previous
+              </button>
+              <div className="flex gap-1">
+                {[...Array(Math.ceil(data.transactions.length / itemsPerPage))].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold shadow-sm transition-colors ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                  >
+                    {i + 1}
+                  </button>
+                )).slice(Math.max(0, currentPage - 3), Math.min(Math.ceil(data.transactions.length / itemsPerPage), currentPage + 2))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(data.transactions!.length / itemsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil(data.transactions.length / itemsPerPage)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm bg-white text-gray-700"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+        
         {data?.transactions.length === 0 && (
           <div className="text-center py-20 text-gray-500 bg-gray-50/50">
             <div className="text-4xl mb-4 group-hover:animate-bounce">🔍</div>

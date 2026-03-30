@@ -59,6 +59,7 @@ export type Profile = {
   isBlocked?: boolean;
   role?: string;
   bookingCount?:number;
+  walletBalance?: number;
 };
 
 

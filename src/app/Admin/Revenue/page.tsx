@@ -8,6 +8,8 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function RevenuePage() {
   const [data, setData] = useState<{ totalRevenue: number; totalCompanyShare: number; bookings: { id: string; date: string; price: number; adminCommission?: number; payoutStatus: string }[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
 
   const fetchData = async () => {
     try {
@@ -85,7 +87,7 @@ export default function RevenuePage() {
                   {data?.bookings?.length === 0 && (
                     <tr><td colSpan={7} className="px-6 py-4 text-center text-gray-500">No paid bookings found.</td></tr>
                   )}
-                  {data?.bookings?.map((booking: { id: string; date: string; price: number; adminCommission?: number; payoutStatus: string }) => {
+                  {data?.bookings?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((booking: { id: string; date: string; price: number; adminCommission?: number; payoutStatus: string }) => {
                      const adminComm = booking.adminCommission || (booking.price * 0.1);
                      const companyShare = booking.price - adminComm;
                      return (
@@ -118,6 +120,41 @@ export default function RevenuePage() {
                </tbody>
             </table>
           </div>
+          
+          {data?.bookings && data.bookings.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+              <p className="text-sm text-gray-500 font-medium">
+                Showing <span className="font-bold text-gray-900">{Math.min(data.bookings.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(data.bookings.length, currentPage * itemsPerPage)}</span> of <span className="font-bold text-gray-900">{data.bookings.length}</span> entries
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm bg-white"
+                >
+                  Previous
+                </button>
+                <div className="flex gap-1">
+                  {[...Array(Math.ceil(data.bookings.length / itemsPerPage))].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-bold shadow-sm transition-colors ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  )).slice(Math.max(0, currentPage - 3), Math.min(Math.ceil(data.bookings.length / itemsPerPage), currentPage + 2))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(data.bookings!.length / itemsPerPage), p + 1))}
+                  disabled={currentPage === Math.ceil(data.bookings.length / itemsPerPage)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-sm bg-white"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
        </div>
     </div>
   );
