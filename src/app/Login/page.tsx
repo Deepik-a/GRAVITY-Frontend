@@ -7,7 +7,7 @@ import { LoginData, Profile } from "@/types/AuthTypes";
 import { loginAdmin } from "@/services/AuthService";
 import { toast } from "react-toastify";
 import { useAuth } from '@/context/AuthContext';
-import { Shield, Users, BarChart3, Settings, Quote, Mail, Lock, Eye, EyeOff, Loader2, Info } from 'lucide-react';
+import { Users, BarChart3, Settings, Quote, Mail, Lock, Eye, EyeOff, Loader2, Info } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
     const router = useRouter();

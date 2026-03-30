@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getCompanyById, getFavourites, toggleFavourite } from '@/services/UserService';
 import type { CompanyProfile } from '@/types/AuthTypes';
 import { toast } from 'react-toastify';
 import ReviewsSection from '@/components/ReviewsSection';
 import ChatWindow from '@/components/chat/ChatWindow';
-import { Sparkles, X, MapPin, Users as UsersIcon, Phone, Mail, Globe, Layers, Award as AwardIcon } from 'lucide-react';
+import { Sparkles, MapPin, Users as UsersIcon, Globe, Layers } from 'lucide-react';
 
 type CompanyTab = {
   id: 'overview' | 'projects' | 'team' | 'reviews' | 'gallery';
@@ -39,7 +38,7 @@ function CompanyProfileContent() {
 
   useEffect(() => {
     if (tabParam && ['overview', 'projects', 'gallery', 'team', 'reviews'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
+      setActiveTab(tabParam as 'overview' | 'projects' | 'gallery' | 'team' | 'reviews');
       
       // Optionally scroll to tabs section if tab is set
       setTimeout(() => {
@@ -121,8 +120,8 @@ function CompanyProfileContent() {
   }, [companyId]);
 
   // Before/after slider mouse handlers
-  const handleSliderMouseDown = (projectId: string, e: React.MouseEvent | React.TouchEvent) => {
-    sliderDragging.current = projectId;
+  const handleSliderMouseDown = (projectId: number | string, e: React.MouseEvent | React.TouchEvent) => {
+    sliderDragging.current = String(projectId);
     e.preventDefault();
   };
 
@@ -674,7 +673,7 @@ function CompanyProfileContent() {
 
                     <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border border-gray-100 flex flex-col sm:flex-row items-center sm:items-start gap-8 hover:shadow-2xl transition-all duration-500 group">
                       <div className="w-20 h-20 gradient-bg rounded-3xl flex items-center justify-center shrink-0 shadow-2xl group-hover:scale-110 transition-transform duration-500">
-                        <Phone className="w-10 h-10 text-white" />
+                        <i className="fas fa-phone text-white text-3xl" />
                       </div>
                       <div className="text-center sm:text-left flex-1 min-w-0">
                         <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2 opacity-60">Direct Contact</div>

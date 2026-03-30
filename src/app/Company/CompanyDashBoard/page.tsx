@@ -10,12 +10,12 @@ import CompanyProfilePage from '../CompanyProfile/page';
 import CompanySubscriptionPage from '../Subscription/page';
 import CompanyWalletPage from '../Wallet/page';
 import CompanyReviewsPage from '../Reviews/page';
-import CompanyMessagesPage from '../Messages/page';
-import { useRouter } from 'next/navigation';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import Image from 'next/image';
 import { resolveImageUrl } from '@/utils/urlHelper';
-import { getCompanyBookings, getWallet } from '@/services/CompanyService';
+import CompanyMessagesPage from '../Messages/page';
+import { useRouter } from 'next/navigation';
+import { Booking } from '@/types/BookingTypes';
 
 // Register ChartJS components
 ChartJS.register(
@@ -43,6 +43,17 @@ interface IDashboardStats {
   documentStatus: string;
 }
 
+interface WalletInfo {
+  balance: number;
+  transactions?: {
+    id: string;
+    amount: number;
+    type: string;
+    date: string;
+    description: string;
+  }[];
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
@@ -52,24 +63,25 @@ export default function DashboardPage() {
     name: 'Elite Properties Ltd.', 
     type: 'Company Account', 
     initials: 'EP', 
-    isSubscribed: false 
+    isSubscribed: false,
+    logo: ''
   });
   const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null);
-  const [realtimeActivities, setRealtimeActivities] = useState<any[]>([]);
-  const [walletInfo, setWalletInfo] = useState<any>(null);
+  const [realtimeActivities, setRealtimeActivities] = useState<Booking[]>([]);
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
 
   // Fetch user info on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      setUserInfo({
+      setUserInfo(prev => ({
+        ...prev,
         id: user.id || '',
         name: user.name || 'Elite Properties Ltd.',
-        type: 'Company Account',
         initials: (user.name || 'E').charAt(0).toUpperCase(),
         isSubscribed: user.isSubscribed || false
-      });
+      }));
 
       // Fetch data
       import('@/services/CompanyService').then(({ getDashboardStats, getMyProfile, getCompanyBookings, getWallet }) => {
@@ -78,18 +90,18 @@ export default function DashboardPage() {
           if (stats.isSubscribed !== undefined) {
             setUserInfo(prev => ({ ...prev, isSubscribed: stats.isSubscribed }));
           }
-        }).catch(err => {
-          console.error("Fetch dashboard stats failed", err);
+        }).catch(_err => {
+          console.error("Fetch dashboard stats failed", _err);
         });
 
         getCompanyBookings(1, 5).then(data => {
           const bookings = Array.isArray(data) ? data : (data?.bookings || []);
           setRealtimeActivities(bookings);
-        }).catch(err => console.error("Fetch recent activities failed", err));
+        }).catch(_err => console.error("Fetch recent activities failed", _err));
 
         getWallet().then(data => {
           setWalletInfo(data);
-        }).catch(err => console.error("Fetch wallet failed", err));
+        }).catch(_err => console.error("Fetch wallet failed", _err));
 
         // Sync profile for isSubscribed and Logo
         getMyProfile().then(profile => {
@@ -97,7 +109,7 @@ export default function DashboardPage() {
             setUserInfo(prev => ({ 
               ...prev, 
               isSubscribed: !!profile.isSubscribed,
-              logo: profile.profile?.brandIdentity?.logo || profile.profileImage
+              logo: (profile.profile?.brandIdentity?.logo || profile.profileImage || '') as string
             }));
             // Update localStorage if changed
             if (profile.isSubscribed !== user.isSubscribed) {
@@ -105,8 +117,8 @@ export default function DashboardPage() {
               localStorage.setItem('user', JSON.stringify(newUser));
             }
           }
-        }).catch(err => {
-          console.error("Sync profile failed", err);
+        }).catch(_err => {
+          console.error("Sync profile failed", _err);
         });
       });
     } else {
@@ -238,13 +250,19 @@ export default function DashboardPage() {
     { name: 'Cancelled', percentage: Math.round((cancelledCount / totalBookings) * 100), color: 'bg-red-500' },
   ];
 
-  const processedActivities = realtimeActivities.map((b: any) => ({
-    title: `Appointment ${b.status}` as string,
-    description: `${b.userId?.name || 'A customer'} for ${b.slotId?.startTime || 'the session'}` as string,
-    time: new Date(b.createdAt).toLocaleDateString() as string,
-    icon: (b.status === 'completed' ? 'check' : b.status === 'cancelled' ? 'x' : 'calendar') as 'check' | 'x' | 'calendar',
-    bgColor: (b.status === 'completed' ? 'bg-green-100' : b.status === 'cancelled' ? 'bg-red-100' : 'bg-blue-100') as string
-  }));
+  const processedActivities = realtimeActivities.map((b: Booking) => {
+    const status = String(b.status).toLowerCase();
+    const isCompleted = status === 'completed';
+    const isCancelled = status === 'cancelled';
+    
+    return {
+      title: `Appointment ${b.status}` as string,
+      description: `${b.userDetails?.name || 'A customer'} for ${b.startTime || 'the session'}` as string,
+      time: new Date(b.date).toLocaleDateString() as string,
+      icon: (isCompleted ? 'check' : isCancelled ? 'x' : 'calendar') as 'check' | 'x' | 'calendar',
+      bgColor: (isCompleted ? 'bg-green-100' : isCancelled ? 'bg-red-100' : 'bg-blue-100') as string
+    };
+  });
 
   interface ActivityItem {
     title: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/redux/store";
 import VideoCall from "@/components/video/VideoCall";
@@ -19,13 +19,12 @@ function VideoCallContent() {
   
   // Check if we are starting a call (outbound)
   const targetId = searchParams.get("targetId");
-  const targetName = searchParams.get("targetName");
   const targetType = searchParams.get("targetType") || (role === "user" ? "company" : "user");
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     dispatch(clearIncomingCall());
     router.back();
-  };
+  }, [dispatch, router]);
 
   if (!user || (!incomingCall && !targetId)) {
     return (
