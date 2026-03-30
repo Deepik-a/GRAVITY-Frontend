@@ -89,13 +89,12 @@ const ProfileContent = () => {
   const [totalBookingsPages, setTotalBookingsPages] = useState(1);
   const bookingsPerPage = 5;
   
-  // Video Call State
-  const [videoCallData, setVideoCallData] = useState<{
+  /* const [videoCallData, setVideoCallData] = useState<{
     targetId: string;
     targetName: string;
     isIncoming: boolean;
     offer?: RTCSessionDescriptionInit;
-  } | null>(null);
+  } | null>(null); */
 
   useEffect(() => {
     if (!profileData) return;
@@ -103,14 +102,15 @@ const ProfileContent = () => {
     const socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000");
     socket.emit("join", { userId: profileData.id, type: "user" });
 
-    socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
+    /* socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
       setVideoCallData({
         targetId: data.callerId,
         targetName: data.callerName,
         isIncoming: true,
-        offer: data.offer,
+        offer: data.offer
       });
-    });
+      router.push("/VideoCall");
+    }); */
 
     return () => {
       socket.disconnect();
@@ -209,14 +209,6 @@ const ProfileContent = () => {
     }
     return error;
   };
-
-  {bookings.map((booking, idx) => {
-  console.log(`Booking ${idx}:`, {
-    status: booking.status,
-    paymentStatus: booking.paymentStatus,
-    serviceStatus: booking.serviceStatus
-  });
-})}
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -649,7 +641,6 @@ const ProfileContent = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        {/* spinners added */}
         <LoadingSpinner size={48} text="Loading your dashboard..." />
       </div>
     );
@@ -963,7 +954,6 @@ const ProfileContent = () => {
 
               {loadingBookings ? (
                 <div className="py-20">
-                  {/* spinners added */}
                   <LoadingSpinner size={40} text="Fetching your bookings..." />
                 </div>
               ) : bookings.length === 0 ? (
@@ -1194,14 +1184,14 @@ const ProfileContent = () => {
                       onToggleFavourite={async (e, id) => {
                         e.preventDefault();
                         try {
-                          const updatedFavs = await apiToggleFavourite(id);
+                          await apiToggleFavourite(id);
                           // Refresh favorites list
                           setLoadingFavourites(true);
                           getFavourites()
                             .then(data => setFavourites(data))
                             .finally(() => setLoadingFavourites(false));
                           toastify.success("Removed from favourites");
-                        } catch (err) {
+                        } catch {
                           toastify.error("Failed to update favourites");
                         }
                       }}

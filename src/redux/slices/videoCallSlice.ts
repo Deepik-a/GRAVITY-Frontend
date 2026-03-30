@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 interface IncomingCallData {
   callerId: string;
   callerName: string;
-  offer: any;
+  offer: RTCSessionDescriptionInit;
   receiverId: string;
   receiverType: "user" | "company";
 }

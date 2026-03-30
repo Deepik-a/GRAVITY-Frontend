@@ -19,7 +19,7 @@ interface BookingCalendarProps {
 
 export default function BookingCalendar({ selectedDate, onDateChange, config }: BookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const today = startOfToday();
+  const today = useMemo(() => startOfToday(), []);
 
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 0 });
@@ -27,7 +27,7 @@ export default function BookingCalendar({ selectedDate, onDateChange, config }: 
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
-  const isAvailable = (day: Date) => {
+  const isAvailable = useMemo(() => (day: Date) => {
     if (!config) return false;
     if (isBefore(day, today)) return false;
 
@@ -45,13 +45,13 @@ export default function BookingCalendar({ selectedDate, onDateChange, config }: 
        try {
          const exDate = format(new Date(ed.date), "yyyy-MM-dd");
          return exDate === dStr;
-       } catch (e) {
+       } catch {
          return false;
        }
     });
 
     return isWeekdayMatch && !isExceptional;
-  };
+  }, [config, today]);
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));

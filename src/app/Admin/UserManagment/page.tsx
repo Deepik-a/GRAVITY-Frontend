@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { getUsers, toggleUserBlockStatus, searchUsers } from '../../../services/AdminService';
+import { toggleUserBlockStatus, searchUsers } from '../../../services/AdminService';
 import { Profile } from '../../../types/AuthTypes';
 import DataTable from '../../../app/Admin/DataTable';
 import { resolveImageUrl } from "@/utils/urlHelper";

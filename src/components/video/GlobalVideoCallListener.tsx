@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import { setIncomingCall } from "@/redux/slices/videoCallSlice";
 import { useRouter, usePathname } from "next/navigation";
 import { toast } from "react-toastify";
-import { Phone, Bell } from "lucide-react";
+import { Phone } from "lucide-react";
 
 export default function GlobalVideoCallListener() {
   const { user, role, isAuthenticated } = useAuth();
@@ -26,7 +26,7 @@ export default function GlobalVideoCallListener() {
       
       socketRef.current.emit("join", { userId: user.id, type: role });
 
-      socketRef.current.on("incoming_call", (data: { callerId: string, callerName: string, offer: any }) => {
+      socketRef.current.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
         if (pathname === "/VideoCall") return;
         console.log("☎️ Incoming call received:", data);
         
@@ -42,8 +42,10 @@ export default function GlobalVideoCallListener() {
         // Play sound
         try {
            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
-           audio.play().catch(e => console.warn("Call sound failed", e));
-        } catch (e) {}
+            audio.play().catch(() => console.warn("Call sound failed"));
+         } catch {
+            // ignore
+         }
 
         // Immediate Redirect/Notification
         toast.info(
@@ -75,7 +77,7 @@ export default function GlobalVideoCallListener() {
         socketRef.current?.disconnect();
       };
     }
-  }, [isAuthenticated, user, role, dispatch, router]);
+  }, [isAuthenticated, user, role, dispatch, router, pathname]);
 
   return null;
 }

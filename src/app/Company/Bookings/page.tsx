@@ -7,7 +7,7 @@ import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
 import { Calendar, Clock, User, CheckCircle, Ban, RefreshCcw, Mail, AlertCircle, XCircle, Video, Loader2, Timer, History } from "lucide-react";
 import io from "socket.io-client";
-import VideoCall from "@/components/video/VideoCall";
+// import VideoCall from "@/components/video/VideoCall";
 
 interface Booking {
   id: string;
@@ -47,26 +47,26 @@ export default function CompanyBookings() {
   const itemsPerPage = 6;
 
   // Video Call State
-  const [currentCompany, setCurrentCompany] = useState<{ id: string, name: string } | null>(null);
-  const [videoCallData, setVideoCallData] = useState<{
+  // const [currentCompany, setCurrentCompany] = useState<{ id: string, name: string } | null>(null);
+  /* const [videoCallData, setVideoCallData] = useState<{
     targetId: string;
     targetName: string;
     isIncoming: boolean;
     offer?: RTCSessionDescriptionInit;
-  } | null>(null);
+  } | null>(null); */
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
       const user = JSON.parse(userStr);
-      setCurrentCompany({ id: user.id, name: user.name });
+      // setCurrentCompany({ id: user.id, name: user.name });
       
       const socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000");
       socket.emit("join", { userId: user.id, type: "company" });
 
-      socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
+      /* socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
         // Handled by GlobalVideoCallListener
-      });
+      }); */
 
       return () => {
         socket.disconnect();
@@ -112,8 +112,8 @@ export default function CompanyBookings() {
       const slots = await getAvailableSlots(booking.companyId, dateStr);
       setAvailableSlots(slots.slice(0, 5));
     } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast.error(err.message || "Failed to fetch available slots");
+      const message = (error as Error).message || "Failed to fetch available slots";
+      toast.error(message);
       setReschedulingId(null);
     } finally {
       setIsFetchingSlots(false);

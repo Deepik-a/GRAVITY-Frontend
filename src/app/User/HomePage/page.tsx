@@ -18,7 +18,7 @@ import { ArrowRight, Building2, CheckCircle, Users, Award, Clock, Star, Sparkles
 const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, threshold: 0.3 });
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
   const controls = useAnimation();
 
   useEffect(() => {
@@ -60,7 +60,7 @@ const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?
 // Animated Stat Card Component
 const StatCard = ({ stat, index }: { stat: { icon: React.ReactNode; label: string; value: number; suffix: string; color: string }; index: number }) => {
   const cardRef = useRef(null);
-  const isInView = useInView(cardRef, { once: true, threshold: 0.2 });
+  const isInView = useInView(cardRef, { once: true, amount: 0.2 });
   
   return (
     <motion.div 

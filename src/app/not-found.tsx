@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, ArrowLeft, Construction, Search, AlertTriangle } from 'lucide-react';
+import { Home, ArrowLeft, Construction, Search } from 'lucide-react';
 
 export default function NotFound() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function NotFound() {
           <div className="space-y-2">
             <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight uppercase">Lost in Space?</h2>
             <p className="text-gray-500 font-bold text-lg max-w-md mx-auto leading-relaxed">
-              We couldn't find the architectural masterpiece you were looking for. It might have been moved or doesn't exist.
+              We couldn&apos;t find the architectural masterpiece you were looking for. It might have been moved or doesn&apos;t exist.
             </p>
           </div>
 
