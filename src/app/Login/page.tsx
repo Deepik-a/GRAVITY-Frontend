@@ -7,6 +7,7 @@ import { LoginData, Profile } from "@/types/AuthTypes";
 import { loginAdmin } from "@/services/AuthService";
 import { toast } from "react-toastify";
 import { useAuth } from '@/context/AuthContext';
+import { Shield, Users, BarChart3, Settings, Quote, Mail, Lock, Eye, EyeOff, Loader2, Info } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
     const router = useRouter();
@@ -109,44 +110,45 @@ const handleLogin = async (e: React.FormEvent) => {
   <div className="min-h-screen bg-white flex items-center justify-center p-4 font-inter">
   <div className="w-full max-w-4xl flex flex-col md:flex-row rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
     {/* Left Side - Graphics */}
-    <div className="bg-gradient-to-br from-[#081C45] to-[#1E40AF] text-white p-8 md:p-12 md:w-1/2 flex flex-col justify-center relative hidden md:flex">
-      <div className="absolute top-4 right-4 bg-yellow-500 bg-opacity-20 text-yellow-300 px-4 py-2 rounded-full text-sm font-semibold flex items-center">
-        <i className="fas fa-shield-alt mr-2"></i>
-        <span>Secure Admin Portal</span>
+    <div className="bg-gradient-to-br from-[#020D2E] to-[#0F2FA8] text-white p-8 md:p-12 md:w-1/2 flex flex-col justify-center relative hidden md:flex min-h-[600px]">
+    
+
+      <div className="mb-10">
+        <h1 className="text-4xl font-extrabold mb-3 tracking-tight">Admin Dashboard</h1>
+        <div className="h-1 w-20 bg-yellow-400 rounded-full mb-4"></div>
+        <p className="text-lg text-blue-100 font-medium">Manage your platform with powerful, professional tools</p>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="opacity-90">Manage your platform with powerful tools</p>
-      </div>
-
-      <div className="space-y-6 mb-8">
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
-            <i className="fas fa-users text-yellow-300"></i>
+      <div className="space-y-8 mb-10">
+        <div className="flex items-center group transition-transform hover:translate-x-1">
+          <div className="w-12 h-12 rounded-xl bg-white bg-opacity-10 border border-white/20 flex items-center justify-center mr-5 shadow-inner">
+            <Users className="text-yellow-400" size={24} />
           </div>
-          <p>Manage users & permissions</p>
+          <p className="font-semibold text-lg">Manage users & permissions</p>
         </div>
 
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
-            <i className="fas fa-chart-line text-yellow-300"></i>
+        <div className="flex items-center group transition-transform hover:translate-x-1">
+          <div className="w-12 h-12 rounded-xl bg-white bg-opacity-10 border border-white/20 flex items-center justify-center mr-5 shadow-inner">
+            <BarChart3 className="text-yellow-400" size={24} />
           </div>
-          <p>View analytics & reports</p>
+          <p className="font-semibold text-lg">View analytics & reports</p>
         </div>
 
-        <div className="flex items-center">
-          <div className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center mr-4">
-            <i className="fas fa-cog text-yellow-300"></i>
+        <div className="flex items-center group transition-transform hover:translate-x-1">
+          <div className="w-12 h-12 rounded-xl bg-white bg-opacity-10 border border-white/20 flex items-center justify-center mr-5 shadow-inner">
+            <Settings className="text-yellow-400" size={24} />
           </div>
-          <p>Configure system settings</p>
+          <p className="font-semibold text-lg">Configure system settings</p>
         </div>
       </div>
 
-      <div className="bg-white bg-opacity-10 p-6 rounded-xl mt-4">
+      <div className="bg-white/10 border border-white/10 p-6 rounded-2xl mt-4 backdrop-blur-md relative overflow-hidden">
+        <div className="absolute -right-4 -bottom-4 opacity-5">
+          <Quote size={100} />
+        </div>
         <div className="flex items-start">
-          <i className="fas fa-quote-left text-xl text-yellow-300 mr-4 mt-1"></i>
-          <p className="text-sm">
+          <Quote size={28} className="text-yellow-400 mr-4 mt-1 flex-shrink-0" />
+          <p className="text-base leading-relaxed font-medium text-white/95">
             The admin portal provides comprehensive control over your platform with enhanced security measures to
             protect sensitive data.
           </p>
@@ -167,20 +169,20 @@ const handleLogin = async (e: React.FormEvent) => {
             Email Address
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i className="fas fa-envelope text-gray-400"></i>
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Mail className="text-gray-400" size={18} />
             </div>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => handleEmailChange(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all text-gray-900 ${
+              className={`w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-gray-900 font-medium ${
                 errors.email 
-                  ? 'border-red-500 focus:ring-red-200 bg-red-50' 
-                  : 'border-gray-300 focus:border-[#1E40AF] focus:ring-blue-200'
+                  ? 'border-red-500 focus:ring-red-100 bg-red-50' 
+                  : 'border-gray-200 focus:border-[#0F2FA8] focus:ring-blue-100'
               }`}
-              placeholder="admin@example.com"
+              placeholder="admin@gravity.com"
               required
             />
           </div>
@@ -197,18 +199,18 @@ const handleLogin = async (e: React.FormEvent) => {
             Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i className="fas fa-lock text-gray-400"></i>
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Lock className="text-gray-400" size={18} />
             </div>
             <input
               type={showPassword ? 'text' : 'password'}
               id="password"
               value={password}
               onChange={(e) => handlePasswordChange(e.target.value)}
-              className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all text-gray-900 ${
+              className={`w-full pl-12 pr-12 py-4 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-gray-900 font-medium ${
                 errors.password 
-                  ? 'border-red-500 focus:ring-red-200 bg-red-50' 
-                  : 'border-gray-300 focus:border-[#1E40AF] focus:ring-blue-200'
+                  ? 'border-red-500 focus:ring-red-100 bg-red-50' 
+                  : 'border-gray-200 focus:border-[#0F2FA8] focus:ring-blue-100'
               }`}
               placeholder="••••••••"
               required
@@ -216,14 +218,14 @@ const handleLogin = async (e: React.FormEvent) => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 transition-colors"
             >
-              <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-gray-600`}></i>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-sm mt-1 flex items-center">
-              <i className="fas fa-exclamation-circle mr-1"></i>
+            <p className="text-red-500 text-sm mt-1 flex items-center font-medium">
+              <Info size={14} className="mr-1" />
               {errors.password}
             </p>
           )}
@@ -232,13 +234,13 @@ const handleLogin = async (e: React.FormEvent) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-4 bg-gradient-to-r from-[#081C45] to-[#1E40AF] hover:from-[#1E40AF] hover:to-[#081C45] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-70"
+          className="w-full py-4 bg-[#0F2FA8] hover:bg-[#020D2E] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2"
         >
           {isLoading ? (
-            <span className="flex items-center justify-center">
-              <i className="fas fa-spinner fa-spin mr-2"></i>
+            <>
+              <Loader2 className="animate-spin" size={20} />
               SIGNING IN...
-            </span>
+            </>
           ) : (
             'SIGN IN'
           )}
@@ -252,11 +254,8 @@ const handleLogin = async (e: React.FormEvent) => {
   </div>
 
   <style jsx>{`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-    
     .font-inter {
-      font-family: 'Inter', sans-serif;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
     }
     
     /* Add custom styles for better visibility */

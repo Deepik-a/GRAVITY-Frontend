@@ -176,53 +176,44 @@ function CompanyListingContent() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20 transition-all duration-700"></div>
 
         {/* Hero Content */}
-        <div className={`relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white text-shadow mb-6 leading-tight">
-              <span className="text-white bg-clip-text bg-gradient-to-r from-white to-gray-300">Find </span>
-              <span className="text-[#FFD700] drop-shadow-lg animate-pulse">Premium</span>
-              <span className="text-white bg-clip-text bg-gradient-to-r from-gray-300 to-white"> Construction</span>
-            </h1>
-            <p className="text-xl md:text-2xl font-medium text-[#FFD700] mb-8 max-w-2xl mx-auto drop-shadow-lg">
-              Discover exceptional construction companies and architectural services for your dream project
-            </p>
-
-            {/* Search Bar */}
-            <div className="max-w-4xl mx-auto animate-fadeInUp">
-              <div className="glass-effect rounded-2xl p-6 shadow-2xl transform transition-all duration-500 hover:shadow-3xl">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-3">
-                    <div className="relative group">
-                      <input 
-                        type="text" 
-                        placeholder="Search companies by name or services..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-12 py-4 rounded-xl border-2 border-transparent bg-white/95 text-gray-800 focus:ring-4 focus:ring-[#FFD700]/30 focus:border-[#FFD700] outline-none transition-all duration-300 group-hover:border-[#FFD700]/50"
-                      />
-                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="group">
-                    <button 
-                      onClick={() => fetchCompanies()}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-[#0F1E50] via-[#1A3A8F] to-[#0F1E50] text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform transition-all duration-300 hover:scale-105 hover:from-[#1A3A8F] hover:via-[#0F1E50] hover:to-[#1A3A8F] group-hover:shadow-[0_0_30px_rgba(238,178,27,0.4)]"
-                    >
-                      <span className="flex items-center justify-center gap-2">
-                        Search
-                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                        </svg>
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+      <div className={`relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+  <div className="flex items-center justify-center min-h-[400px]">
+    {/* Search Bar Centered */}
+    <div className="max-w-4xl w-full mx-auto animate-fadeInUp">
+      <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 shadow-2xl transform transition-all duration-500 hover:shadow-3xl border border-white/20">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-3">
+            <div className="relative group">
+              <input 
+                type="text" 
+                placeholder="Search companies by name or services..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-12 py-4 rounded-xl bg-white/95 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-[#FFD700]/30 focus:outline-none transition-all duration-300 group-hover:shadow-lg"
+              />
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
             </div>
           </div>
+          <div className="group">
+            <button 
+              onClick={() => fetchCompanies()}
+              className="w-full px-6 py-4 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#0F1E50] font-bold rounded-xl shadow-lg hover:shadow-2xl transform transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 animate-shimmer"
+            >
+              <span className="flex items-center justify-center gap-2">
+                Search
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                </svg>
+              </span>
+            </button>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

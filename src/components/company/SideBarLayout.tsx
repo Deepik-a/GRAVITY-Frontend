@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { resolveImageUrl } from '@/utils/urlHelper';
 import styles from './style.module.css';
 import { useAuth } from '@/context/AuthContext';
 
@@ -11,6 +13,7 @@ export interface SidebarProps {
     name: string;
     type: string;
     initials: string;
+    logo?: string;
   };
 }
 
@@ -150,7 +153,7 @@ export default function Sidebar({
       ]
     },
     {
-      title: 'Settings',
+      title: 'Account',
       items: [
         { 
           section: 'profile', 
@@ -158,25 +161,6 @@ export default function Sidebar({
           icon: (
             <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          )
-        },
-        { 
-          section: 'settings', 
-          label: 'Settings', 
-          icon: (
-            <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          )
-        },
-        { 
-          section: 'help', 
-          label: 'Help & Support', 
-          icon: (
-            <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           )
         },
@@ -208,13 +192,24 @@ export default function Sidebar({
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
+          {userInfo.logo ? (
+            <Image 
+              src={resolveImageUrl(userInfo.logo) || ""} 
+              alt="Logo" 
+              width={40} 
+              height={40} 
+              className="rounded-lg object-cover" 
+              unoptimized
+            />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          )}
         </div>
         <div className={styles.logoText}>
-          <h2>PropConsult</h2>
-          <p>Company Portal</p>
+          <h2 className="line-clamp-1">{userInfo.name}</h2>
+          <p>GRAVITY PRO</p>
         </div>
       </div>
 

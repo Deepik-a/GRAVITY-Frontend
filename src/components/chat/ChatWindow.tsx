@@ -285,7 +285,10 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
   return (
     <div className={className || "fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-gray-200 overflow-hidden animate-fade-in-up"}>
       {/* Header */}
-      <div className="p-4 bg-gradient-to-r from-blue-900 to-blue-700 text-white flex items-center justify-between">
+      <div 
+        className="p-4 text-white flex items-center justify-between"
+        style={{ background: 'linear-gradient(135deg, #020D2E 0%, #0F2FA8 50%, #020D2E 100%)' }}
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center relative">
             {otherParticipant.role === 'company' ? <Building2 size={20} /> : <User size={20} />}
@@ -390,8 +393,24 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
       {/* Input */}
       <div className="relative">
         {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2 z-50">
-            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          <div className="absolute bottom-full right-0 mb-4 z-50 bg-white rounded-3xl shadow-2xl border-4 border-blue-50 overflow-hidden flex flex-col w-72 animate-fade-in-up">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+               <div className="flex items-center gap-2">
+                  <Smile size={16} className="text-blue-600" />
+                  <span className="text-[11px] font-black text-blue-900 uppercase tracking-[0.2em]">Select Emoji</span>
+               </div>
+               <button 
+                type="button"
+                onClick={() => setShowEmojiPicker(false)}
+                className="p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm"
+                title="Close Emoji Picker"
+               >
+                 <X size={18} strokeWidth={3} />
+               </button>
+            </div>
+            <div className="max-h-72 overflow-y-auto">
+               <EmojiPicker onEmojiClick={handleEmojiClick} width="100%" />
+            </div>
           </div>
         )}
       </div>
@@ -429,11 +448,12 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
         <button 
           type="submit"
           disabled={!newMessage.trim()}
-          className={`p-2 rounded-full transition-colors shadow-lg active:scale-95 ${
+          className={`p-2.5 rounded-full transition-all duration-300 shadow-xl active:scale-95 flex items-center justify-center ${
             newMessage.trim() 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              ? 'text-white' 
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
+          style={newMessage.trim() ? { background: 'linear-gradient(135deg, #020D2E 0%, #0F2FA8 50%, #020D2E 100%)' } : {}}
         >
           <Send size={18} />
         </button>

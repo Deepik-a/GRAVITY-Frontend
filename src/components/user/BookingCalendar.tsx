@@ -41,7 +41,14 @@ export default function BookingCalendar({ selectedDate, onDateChange, config }: 
     const isWeekdayMatch = config.weekdays.map(d => d.toLowerCase()).includes(dayName);
 
     // Check exceptional days (unavailable days)
-    const isExceptional = config.exceptionalDays?.some(ed => ed.date === dStr);
+    const isExceptional = config.exceptionalDays?.some(ed => {
+       try {
+         const exDate = format(new Date(ed.date), "yyyy-MM-dd");
+         return exDate === dStr;
+       } catch (e) {
+         return false;
+       }
+    });
 
     return isWeekdayMatch && !isExceptional;
   };

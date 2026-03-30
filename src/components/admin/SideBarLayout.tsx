@@ -3,7 +3,7 @@
 import React, { useState } from 'react'; // Added useState
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-
+import { useAuth } from '@/context/AuthContext';
 interface SidebarProps {
   onItemClick?: (item: string) => void;
 }
@@ -11,6 +11,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false); // State for mobile menu
 
   const menuItems = [
@@ -18,12 +19,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
     { name: 'User Management', icon: 'fas fa-users', route: '/Admin/UserManagment' },
     { name: 'Companies', icon: 'fas fa-building', route: '/Admin/CompanyManagment' },
     { name: 'Bookings', icon: 'fas fa-calendar-check', route: '/Admin/Bookings' },
-    { name: 'Chat', icon: 'fas fa-comments', route: '/Admin/Chat' },
     { name: 'Subscriptions', icon: 'fas fa-crown', route: '/Admin/SubscriptionManagement' },
     { name: 'Revenue', icon: 'fas fa-money-bill-wave', route: '/Admin/Revenue' },
     { name: 'Finance', icon: 'fas fa-wallet', route: '/Admin/Finance' },
-    { name: 'Verifications', icon: 'fas fa-id-card', route: '/Admin/Verifications' },
-    { name: 'Settings', icon: 'fas fa-cog', route: '/Admin/Settings' },
     { name: 'Logout', icon: 'fas fa-sign-out-alt', route: '/Login' },
   ];
 
@@ -73,12 +71,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onItemClick }) => {
                       ? 'active text-[#1E40AF] bg-gradient-to-r from-[#081C45]/20 to-[#1E40AF]/20 border-l-4 border-[#1E40AF]'
                       : 'text-gray-800 hover:bg-[#081C45]/10'
                   }`}
-                  onClick={() => {
+                  onClick={async () => {
                     if (item.name === 'Logout') {
-                      localStorage.removeItem("user");
-                      localStorage.removeItem("token");
-                      localStorage.removeItem("role");
-                      router.push("/Login");
+                      await logout();
                       return;
                     }
                     onItemClick?.(item.name);

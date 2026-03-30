@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getCompanyBookings, rescheduleBooking } from "@/services/CompanyService";
+import { useRouter } from "next/navigation";
+import { getCompanyBookings, rescheduleBooking, cancelBooking } from "@/services/CompanyService";
 import { getAvailableSlots } from "@/services/UserService";
 import { toast } from "react-toastify";
-import { Calendar, Clock, User, Mail, CheckCircle, XCircle, AlertCircle, Loader2, History, Timer, Ban, RefreshCcw, Video } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, Ban, RefreshCcw, Mail, AlertCircle, XCircle, Video, Loader2, Timer, History } from "lucide-react";
 import io from "socket.io-client";
 import VideoCall from "@/components/video/VideoCall";
 
@@ -19,6 +20,7 @@ interface Booking {
   paymentStatus: string;
   isRescheduled?: boolean;
   userId: string;
+  createdAt: string;
   userDetails?: {
     name: string;
     email: string;
@@ -27,6 +29,7 @@ interface Booking {
 }
 
 export default function CompanyBookings() {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "cancelled">("upcoming");
@@ -62,12 +65,7 @@ export default function CompanyBookings() {
       socket.emit("join", { userId: user.id, type: "company" });
 
       socket.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
-        setVideoCallData({
-          targetId: data.callerId,
-          targetName: data.callerName,
-          isIncoming: true,
-          offer: data.offer,
-        });
+        // Handled by GlobalVideoCallListener
       });
 
       return () => {
@@ -112,7 +110,7 @@ export default function CompanyBookings() {
       // Ensure date is in YYYY-MM-DD format
       const dateStr = new Date(booking.date).toISOString().split('T')[0];
       const slots = await getAvailableSlots(booking.companyId, dateStr);
-      setAvailableSlots(slots.slice(0, 5).map(s => s.startTime));
+      setAvailableSlots(slots.slice(0, 5));
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast.error(err.message || "Failed to fetch available slots");
@@ -134,6 +132,19 @@ export default function CompanyBookings() {
       toast.error(err.message || "Rescheduling failed");
     } finally {
       setIsRescheduling(false);
+    }
+  };
+
+  const handleCancelClick = async (booking: Booking) => {
+    if (!window.confirm("Are you sure you want to cancel this booking? This will refund the user if paid.")) return;
+    
+    try {
+      await cancelBooking(booking.id);
+      toast.success("Booking cancelled successfully!");
+      fetchBookings();
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Failed to cancel booking");
     }
   };
 
@@ -293,11 +304,9 @@ export default function CompanyBookings() {
                       <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                         {booking.status === "confirmed" && (
                           <button 
-                            onClick={() => setVideoCallData({
-                              targetId: booking.userId,
-                              targetName: booking.userDetails?.name || "Client",
-                              isIncoming: false
-                            })}
+                            onClick={() => {
+                              router.push(`/VideoCall?targetId=${booking.userId}&targetName=${booking.userDetails?.name || "Client"}&targetType=user`);
+                            }}
                             className="flex-1 lg:flex-none px-6 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 animate-pulse"
                           >
                             <Video size={18} />
@@ -310,6 +319,13 @@ export default function CompanyBookings() {
                         >
                           <RefreshCcw size={18} className={reschedulingId === booking.id ? 'animate-spin' : ''} />
                           {reschedulingId === booking.id ? 'Close' : 'Reschedule'}
+                        </button>
+
+                        <button 
+                          onClick={() => handleCancelClick(booking)}
+                          className="flex-1 lg:flex-none px-6 py-4 bg-white text-red-600 border-2 border-red-100 rounded-2xl text-sm font-black hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Ban size={18} /> Cancel
                         </button>
                       </div>
                     )}
@@ -405,18 +421,7 @@ export default function CompanyBookings() {
         </div>
       )}
 
-      {videoCallData && currentCompany && (
-        <VideoCall
-          currentUserId={currentCompany.id}
-          currentUserType="company"
-          currentUserName={currentCompany.name}
-          targetUserId={videoCallData.targetId}
-          targetUserType="user"
-          onClose={() => setVideoCallData(null)}
-          isIncoming={videoCallData.isIncoming}
-          incomingOffer={videoCallData.offer}
-        />
-      )}
+      {/* VideoCall is now global and on separate page */}
     </div>
   );
 }

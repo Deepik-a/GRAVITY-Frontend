@@ -163,6 +163,15 @@ export const getRevenue = async () => {
   }
 };
 
+export const refundBooking = async (bookingId: string) => {
+  try {
+    const response = await api.patch(`admin/bookings/${bookingId}/refund`, {}, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, "Failed to refund booking"));
+  }
+};
+
 export const initiatePayout = async (bookingId: string) => {
   try {
     const response = await api.post(`admin/bookings/${bookingId}/payout`, {}, { withCredentials: true });
