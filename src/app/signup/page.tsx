@@ -15,6 +15,7 @@ import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { SignupData, Profile } from "@/types/AuthTypes";
 import { useAuth } from "@/context/AuthContext";
 import Cookies from "js-cookie";
+import { Home, Briefcase } from "lucide-react";
 
 
 function SignupContent() {
@@ -31,15 +32,15 @@ function SignupContent() {
      const [role, setRole] = useState<'user' | 'company' | null>(null);
 
   useEffect(() => {
-  const userType = searchParams.get('userType');
-  if (userType === 'user' || userType === 'company') {
-    setRole(userType);
-    console.log("🎯 Role detected from URL:", userType);
-  } else if (isSignup) {
-    // Only warn during signup phase; login doesn't strictly need it as backend detects it
-    console.warn("⚠️ No valid role found in URL params for Signup");
-  }
-}, [searchParams, isSignup]);
+    const userType = searchParams.get('userType');
+    if (userType === 'user' || userType === 'company') {
+      setRole(userType);
+      console.log("🎯 Role detected from URL:", userType);
+    } else if (isSignup && !role) {
+      // Set a default role if none found in URL and we are signing up
+      setRole('user');
+    }
+  }, [searchParams, isSignup, role]);
 
   // ... formData and other states ...
   const [formData, setFormData] = useState({
@@ -540,6 +541,34 @@ console.log(res,"res from signup")
                   }`}
                 >
                   SIGN IN
+                </button>
+              </div>
+
+              {/* User Type Selection (Always visible for clarity) */}
+              <div className="grid grid-cols-2 gap-3 mb-6 p-1 bg-gray-50 rounded-2xl border border-gray-100 animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
+                <button
+                  type="button"
+                  onClick={() => setRole("user")}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                    role === "user"
+                      ? "bg-white text-[#1E40AF] shadow-sm ring-1 ring-gray-200"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Home size={14} className={role === "user" ? "text-[#1E40AF]" : "text-gray-400"} />
+                  HOMEOWNER
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("company")}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                    role === "company"
+                      ? "bg-white text-[#1E40AF] shadow-sm ring-1 ring-gray-200"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Briefcase size={14} className={role === "company" ? "text-[#1E40AF]" : "text-gray-400"} />
+                  PROFESSIONAL
                 </button>
               </div>
 
