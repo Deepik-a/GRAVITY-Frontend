@@ -35,10 +35,11 @@ function SignupContent() {
   if (userType === 'user' || userType === 'company') {
     setRole(userType);
     console.log("🎯 Role detected from URL:", userType);
-  } else {
-    console.warn("⚠️ No valid role found in URL params");
+  } else if (isSignup) {
+    // Only warn during signup phase; login doesn't strictly need it as backend detects it
+    console.warn("⚠️ No valid role found in URL params for Signup");
   }
-}, [searchParams]);
+}, [searchParams, isSignup]);
 
   // ... formData and other states ...
   const [formData, setFormData] = useState({
@@ -290,7 +291,8 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     // 🔥 Role-based redirect (same behavior as Google Auth)
     if (response.role === "user") {
-      router.replace("/User/HomePage");
+      const nextPath = searchParams.get('next') || "/User/HomePage";
+      router.replace(nextPath);
 
     } else if (response.role === "company") {
         const docStatus = response.documentStatus;
@@ -299,6 +301,7 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
            router.replace(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else if (docStatus === "pending") {
            toast.info("Company verification is pending approval by admin. Please wait.");
+           router.replace(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else if (!docStatus) {
            router.push(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else {
@@ -428,7 +431,8 @@ console.log(res,"res from signup")
     if (res.user.role === "user") {
     console.log("res.user.role ", res.user.role) // ✅ correct
        
-      router.replace("/User/HomePage");
+      const nextPath = searchParams.get('next') || "/User/HomePage";
+      router.replace(nextPath);
     } else if (res.user.role === "company") {
         const docStatus = res.documentStatus;
         if (docStatus === "rejected") {
@@ -436,6 +440,7 @@ console.log(res,"res from signup")
            router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else if (docStatus === "pending") {
            toast.info("Company verification is pending approval by admin. Please wait.");
+           router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else if (docStatus==='not_submitted') {
            router.push(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else {

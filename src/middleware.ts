@@ -70,11 +70,13 @@ export function middleware(req: NextRequest) {
   }
 
   // 🔥 RESTRICTION: Redirect companies away from Dashboard if they are not verified
-  if (isAuthed && role === "company" && pathname.startsWith("/Company/CompanyDashBoard")) {
-     if (docStatus === "pending" || docStatus === "rejected" || !docStatus) {
+  if (isAuthed && role === "company" && 
+      (pathname.startsWith("/Company/CompanyDashBoard") || pathname.startsWith("/Company/CompanyDetail"))) {
+     if (docStatus === "pending" || docStatus === "rejected" || !docStatus || docStatus === "not_submitted") {
         const url = req.nextUrl.clone();
-        url.pathname = "/signup";
-        url.searchParams.set("show", "login");
+        url.pathname = "/Company/VerificationPage";
+        url.searchParams.set("role", "company");
+        // We might not have email here easily, but the page can get it from context
         return NextResponse.redirect(url);
      }
   }

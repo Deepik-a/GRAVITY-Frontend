@@ -78,20 +78,15 @@ export default function DashboardPage() {
       const user = JSON.parse(storedUser);
       
       // 🔥 Verification Check: Only allow verified companies to stay on Dashboard
-      // Note: We'll also rely on the profile API call below for the most up-to-date status
       if (user.role === 'company' && user.documentStatus !== 'verified') {
+         const email = user.email || "";
          if (user.documentStatus === 'pending') {
             toast.info("admin approval pending");
-            router.replace('/signup?show=login');
-            return;
          } else if (user.documentStatus === 'rejected') {
             toast.error("document rejected by admin");
-            router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(user.email || "")}`);
-            return;
-         } else {
-            router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(user.email || "")}`);
-            return;
          }
+         router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
+         return;
       }
 
       setUserInfo(prev => ({
