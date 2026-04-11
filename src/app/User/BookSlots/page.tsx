@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { toast } from "react-toastify";
 import { getAvailableSlots, bookSlot, getCompanyById, getSlotConfig } from "@/services/UserService";
-import { Clock, Calendar, CheckCircle2, Building2, Timer, CreditCard, AlertCircle, ChevronRight, Share2, Heart, Star, MapPin, Phone, Info } from "lucide-react";
+import { Clock, Calendar, CheckCircle2, Building2, Timer, CreditCard, AlertCircle, ChevronRight, Star, MapPin, Phone, Info } from "lucide-react";
 import { format } from "date-fns";
 import { useSearchParams, useRouter } from "next/navigation";
 import BookingCalendar from "@/components/user/BookingCalendar";
@@ -68,7 +68,21 @@ function BookSlotsContent() {
     if (!companyId || !selectedDate) return;
     setLoading(true);
     try {
-      const availableSlots = await getAvailableSlots(companyId, selectedDate);
+      let availableSlots = await getAvailableSlots(companyId, selectedDate);
+      
+      // Filter out past slots for today (using user's local time)
+      const now = new Date();
+      const isToday = selectedDate === format(now, "yyyy-MM-dd");
+      
+      if (isToday) {
+        const currentTimeInMins = now.getHours() * 60 + now.getMinutes();
+        availableSlots = availableSlots.filter((slotTime) => {
+          const [hours, minutes] = slotTime.split(":").map(Number);
+          const slotTimeInMins = hours * 60 + minutes;
+          return slotTimeInMins > currentTimeInMins;
+        });
+      }
+
       setSlots(availableSlots);
       setSelectedSlot("");
     } catch (error: unknown) {
@@ -280,13 +294,8 @@ function BookSlotsContent() {
               
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
-                <button className="flex-1 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
-                  <Share2 size={18} />
-                  <span>Share</span>
-                </button>
-                <button className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-gray-400 flex items-center justify-center hover:text-red-500 transition-all group">
-                  <Heart size={20} className="group-active:fill-red-500 transition-colors" />
-                </button>
+               
+             
               </div>
 
               {/* Booking Receipt Card */}

@@ -6,6 +6,7 @@ import { Star, MessageSquare, Plus, X, Loader2, User as UserIcon } from "lucide-
 import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 import { useCallback } from "react";
+import { getUserBookings } from "@/services/UserService";
 
 interface Review {
   id: string;
@@ -30,6 +31,8 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
   const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
   const [submitting, setSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [canWriteReview, setCanWriteReview] = useState(false);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -47,6 +50,42 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
   useEffect(() => {
     if (companyId) fetchReviews();
   }, [companyId, fetchReviews]);
+
+  useEffect(() => {
+    if (!isUser || !companyId) return;
+
+    let cancelled = false;
+    const checkEligibility = async () => {
+      setEligibilityLoading(true);
+      try {
+        // Best-effort check using existing paged bookings API.
+        // Backend also enforces this rule (see ReviewController).
+        const pageSize = 25;
+        for (let page = 1; page <= 5; page++) {
+          const res = await getUserBookings(page, pageSize);
+          const bookings = res.bookings || [];
+          const eligible = bookings.some(
+            (b) => b.companyId === companyId && b.serviceStatus === "completed" && b.paymentStatus === "paid"
+          );
+          if (eligible) {
+            if (!cancelled) setCanWriteReview(true);
+            return;
+          }
+          if (bookings.length < pageSize) break;
+        }
+        if (!cancelled) setCanWriteReview(false);
+      } catch {
+        if (!cancelled) setCanWriteReview(false);
+      } finally {
+        if (!cancelled) setEligibilityLoading(false);
+      }
+    };
+
+    checkEligibility();
+    return () => {
+      cancelled = true;
+    };
+  }, [isUser, companyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,8 +130,15 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
         
         {isUser && (
           <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95"
+            onClick={() => {
+              if (!canWriteReview) {
+                toast.error("You can review only after completing a paid consultation.");
+                return;
+              }
+              setShowModal(true);
+            }}
+            disabled={eligibilityLoading || !canWriteReview}
+            className="flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus size={18} /> Write Review
           </button>

@@ -27,7 +27,7 @@ export interface AuthResponse {
     isProfileFilled?: boolean;
     isSubscribed?: boolean;
   };
-  documentStatus?: "pending" | "verified" | "rejected";
+  documentStatus?: "pending" | "verified" | "rejected" | "not_submitted";
   rejectionReason?: string;
 }
 
@@ -44,7 +44,7 @@ export interface GoogleAuthResponse {
     isSubscribed?: boolean;
   };
   isNewUser: boolean;
- documentStatus?:"pending"|"verified"|"rejected";
+  documentStatus?:"pending"|"verified"|"rejected"|"not_submitted";
 }
 
 
@@ -58,6 +58,8 @@ export type Profile = {
   profileImage?: string;
   isBlocked?: boolean;
   role?: string;
+  documentStatus?: "pending" | "verified" | "rejected" | "not_submitted";
+  isProfileFilled?: boolean;
   bookingCount?:number;
   walletBalance?: number;
 };
@@ -71,7 +73,7 @@ export interface CompanyProfile {
   location?: string;
   role: string;
   status: "pending" | "verified" | "blocked";
-  documentStatus: "pending" | "verified" | "rejected";  // <-- THIS MUST EXIST
+  documentStatus: "pending" | "verified" | "rejected" | "not_submitted";  // <-- THIS MUST EXIST
     rejectReason?: string;  // <-- NEW FIELD
   documents: {
     GST_Certificate?: string;

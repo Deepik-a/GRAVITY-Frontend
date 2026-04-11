@@ -289,7 +289,7 @@ export default function AdminDashboard() {
       descriptionColor: 'text-blue-100'
     },
     {
-      title: 'Feature Companies',
+      title: 'Feature Companies can be seen',
       description: 'Manage featured listings',
       icon: StarIcon,
       bgColor: 'gold-bg',
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
       descriptionColor: 'text-yellow-100'
     },
     {
-      title: 'Manage Users',
+      title: 'User Management',
       description: 'User administration',
       icon: UsersIcon,
       bgColor: 'bg-gray-800',
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
       hover: 'hover:bg-gray-700'
     },
     {
-      title: 'View Reports',
+      title: 'View stats in dashboard',
       description: 'Detailed analytics',
       icon: ChartBarIcon,
       bgColor: 'bg-green-500',
@@ -443,14 +443,11 @@ export default function AdminDashboard() {
                     <UsersIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-semibold text-gray-800 text-sm sm:text-base truncate">User Subscriptions</h4>
+                    <h4 className="font-semibold text-gray-800 text-sm sm:text-base truncate">User Subscriptions will be coming soon...</h4>
                     <p className="text-xs sm:text-sm text-gray-500 truncate">Premium homeowner plans</p>
                   </div>
                 </div>
-                <div className="text-left sm:text-right ml-13 sm:ml-0">
-                  <p className="text-xl sm:text-2xl font-bold text-gray-800">{data?.activeSubscriptions?.users || 0}</p>
-                  <p className="text-xs sm:text-sm text-gray-400">Total active</p>
-                </div>
+             
               </div>
 
               {/* Company Subscriptions */}
@@ -526,9 +523,7 @@ export default function AdminDashboard() {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">Recent Activity</h2>
                 <p className="text-gray-600 text-sm sm:text-base">Latest platform activities</p>
               </div>
-              <button className="custom-gradient text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity w-full sm:w-auto" suppressHydrationWarning={true}>
-                View All
-              </button>
+             
             </div>
 
             <div className="space-y-3 sm:space-y-4">
@@ -556,7 +551,7 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 custom-shadow">
             <div className="mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">Quick Actions</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-1">Quick Views</h2>
               <p className="text-gray-600 text-sm sm:text-base">Common administrative tasks</p>
             </div>
 

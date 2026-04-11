@@ -59,8 +59,9 @@ class ChatService {
     receiverId: string;
     receiverType: "user" | "company" | "admin";
     content: string;
-    attachmentUrl?: string; // add this
-    attachmentType?: "image" | "file"; // add this
+    attachmentUrl?: string;
+    attachmentKey?: string; // add this
+    attachmentType?: "image" | "file";
   }) {
     if (this.socket) {
       this.socket.emit("send_message", data);

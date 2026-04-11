@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { resolveImageUrl } from '@/utils/urlHelper';
 import CompanyMessagesPage from '../Messages/page';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 import { Booking } from '@/types/BookingTypes';
 
 // Register ChartJS components
@@ -75,6 +76,24 @@ export default function DashboardPage() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
+      
+      // 🔥 Verification Check: Only allow verified companies to stay on Dashboard
+      // Note: We'll also rely on the profile API call below for the most up-to-date status
+      if (user.role === 'company' && user.documentStatus !== 'verified') {
+         if (user.documentStatus === 'pending') {
+            toast.info("admin approval pending");
+            router.replace('/signup?show=login');
+            return;
+         } else if (user.documentStatus === 'rejected') {
+            toast.error("document rejected by admin");
+            router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(user.email || "")}`);
+            return;
+         } else {
+            router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(user.email || "")}`);
+            return;
+         }
+      }
+
       setUserInfo(prev => ({
         ...prev,
         id: user.id || '',
@@ -103,17 +122,30 @@ export default function DashboardPage() {
           setWalletInfo(data);
         }).catch(_err => console.error("Fetch wallet failed", _err));
 
-        // Sync profile for isSubscribed and Logo
+        // Sync profile for name/isSubscribed/logo (source of truth: /company/me)
         getMyProfile().then(profile => {
           if (profile) {
+            const displayName = profile.profile?.companyName || profile.name;
+            
+            // 🔥 Refresh verification status from DB
+            if (profile.documentStatus !== 'verified') {
+               // Update local storage and redirect if it changed to non-verified
+               const updatedUser = { ...user, documentStatus: profile.documentStatus };
+               localStorage.setItem('user', JSON.stringify(updatedUser));
+               router.replace('/signup?show=login');
+               return;
+            }
+
             setUserInfo(prev => ({ 
               ...prev, 
+              name: displayName || prev.name,
+              initials: (displayName || prev.name || "E").charAt(0).toUpperCase(),
               isSubscribed: !!profile.isSubscribed,
               logo: (profile.profile?.brandIdentity?.logo || profile.profileImage || '') as string
             }));
             // Update localStorage if changed
-            if (profile.isSubscribed !== user.isSubscribed) {
-              const newUser = { ...user, isSubscribed: !!profile.isSubscribed };
+            if (displayName !== user.name || profile.isSubscribed !== user.isSubscribed) {
+              const newUser = { ...user, name: displayName, isSubscribed: !!profile.isSubscribed };
               localStorage.setItem('user', JSON.stringify(newUser));
             }
           }

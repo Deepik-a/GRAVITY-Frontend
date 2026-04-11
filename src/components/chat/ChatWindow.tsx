@@ -191,7 +191,7 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
 
     try {
       setIsUploading(true);
-      const { url, type } = await chatService.uploadAttachment(file);
+      const { url, key, type } = await chatService.uploadAttachment(file);
       
       const senderRole = currentUser.role || "user";
       const receiverRole = otherParticipant.role || "company";
@@ -203,6 +203,7 @@ export default function ChatWindow({ isOpen, onClose, currentUser, otherParticip
         receiverType: receiverRole,
         content: `Attached ${type}: ${file.name}`,
         attachmentUrl: url,
+        attachmentKey: key,
         attachmentType: type
       };
 

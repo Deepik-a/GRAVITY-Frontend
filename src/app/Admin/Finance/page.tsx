@@ -42,15 +42,14 @@ const FinancePage = () => {
   const [payoutLoading, setPayoutLoading] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: "",
-    status: "",
     startDate: "",
     endDate: "",
   });
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (overrideFilters?: typeof filters) => {
     try {
       setLoading(true);
-      const response = await getTransactions(filters);
+      const response = await getTransactions(overrideFilters || filters);
 
       if (response.success) {
         setData(response.data);
@@ -114,13 +113,31 @@ const FinancePage = () => {
   };
 
   const handleApplyFilters = () => {
+    const { startDate, endDate } = filters;
+    const today = new Date().toISOString().split("T")[0];
+
+    if (startDate && startDate > today) {
+      toast.error("Start date cannot be in the future");
+      return;
+    }
+    if (endDate && endDate > today) {
+      toast.error("End date cannot be in the future");
+      return;
+    }
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      toast.error("Start date cannot be after end date");
+      return;
+    }
+
+    setCurrentPage(1);
     fetchTransactions();
   };
 
   const handleResetFilters = () => {
-    setFilters({ type: "", status: "", startDate: "", endDate: "" });
+    const clearedFilters = { type: "", startDate: "", endDate: "" };
+    setFilters(clearedFilters);
     setCurrentPage(1);
-    setTimeout(() => fetchTransactions(), 100);
+    fetchTransactions(clearedFilters);
   };
 
   const getTypeLabel = (type: string) => {
@@ -206,58 +223,45 @@ const FinancePage = () => {
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold mb-4 text-gray-800">Filters</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
             <select
               name="type"
               value={filters.type}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all"
               suppressHydrationWarning={true}
             >
-              <option value="">All Types</option>
-              <option value="booking_payment">Booking Payment</option>
-              <option value="subscription_payment">Subscription Payment</option>
-              <option value="admin_commission">Admin Commission</option>
-              <option value="company_payout">Company Payout</option>
+              <option value="" className="bg-white text-gray-900">All Transactions</option>
+              <option value="booking_payment" className="bg-white text-gray-900">Booking Payments</option>
+              <option value="subscription_payment" className="bg-white text-gray-900">Subscriptions</option>
+              <option value="admin_commission" className="bg-white text-gray-900">Commissions</option>
+              <option value="company_payout" className="bg-white text-gray-900">Pay-outs</option>
             </select>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              name="status"
-              value={filters.status}
-              onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              suppressHydrationWarning={true}
-            >
-              <option value="">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending Checkout</option>
-              <option value="pending_transfer">Ready for Payout</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">From Date</label>
             <input
               type="date"
               name="startDate"
               value={filters.startDate}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              max={new Date().toISOString().split("T")[0]}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all"
               suppressHydrationWarning={true}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">To Date</label>
             <input
               type="date"
               name="endDate"
               value={filters.endDate}
               onChange={handleFilterChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              max={new Date().toISOString().split("T")[0]}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 shadow-sm transition-all"
               suppressHydrationWarning={true}
             />
           </div>

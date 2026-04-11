@@ -6,6 +6,8 @@ interface IncomingCallData {
   offer: RTCSessionDescriptionInit;
   receiverId: string;
   receiverType: "user" | "company";
+  bookingId?: string;
+  scheduledDuration?: number;
 }
 
 interface VideoCallState {

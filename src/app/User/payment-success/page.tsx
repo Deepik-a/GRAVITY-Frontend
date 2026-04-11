@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, ArrowRight, Calendar, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { verifyPaymentSession } from "@/services/UserService";
 import { toast } from "react-toastify";
 
@@ -12,15 +12,40 @@ function PaymentSuccessContent() {
   const sessionId = searchParams.get("session_id");
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState(false);
+  const [invoice, setInvoice] = useState<{
+    bookingId?: string;
+    sessionId?: string;
+    booking?: {
+      id?: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      price?: number;
+      companyId: string;
+      companyDetails?: { name: string };
+      paymentStatus: string;
+      status: string;
+    };
+  } | null>(null);
   const verificationStarted = useRef(false);
+
 
   useEffect(() => {
     if (sessionId && !verificationStarted.current) {
       verificationStarted.current = true;
       const verify = async () => {
         try {
-          await verifyPaymentSession(sessionId);
-          toast.success("Booking confirmed successfully!");
+          const res = await verifyPaymentSession(sessionId);
+          if (!res.success) {
+            setError(true);
+          } else {
+            toast.success(res.message || "Booking confirmed successfully!");
+          }
+          setInvoice({
+            bookingId: res.bookingId,
+            sessionId: res.sessionId,
+            booking: res.booking,
+          });
         } catch (err) {
           console.error("Verification failed", err);
           setError(true);
@@ -75,6 +100,19 @@ function PaymentSuccessContent() {
               </div>
             </div>
 
+            {invoice?.booking && (
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 text-left">
+                <h3 className="font-bold text-gray-900 mb-3">Payment details</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex justify-between gap-4"><span className="text-gray-500">Company</span><span className="font-semibold">{invoice.booking.companyDetails?.name || "Company"}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-gray-500">Date</span><span className="font-semibold">{new Date(invoice.booking.date).toLocaleDateString()}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-gray-500">Time</span><span className="font-semibold">{invoice.booking.startTime} - {invoice.booking.endTime}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-gray-500">Amount</span><span className="font-semibold">₹{(invoice.booking.price || 0).toLocaleString()}</span></div>
+                  <div className="flex justify-between gap-4"><span className="text-gray-500">Status</span><span className="font-semibold">{invoice.booking.paymentStatus}</span></div>
+                </div>
+              </div>
+            )}
+
             <div className="pt-4 space-y-3">
               <Link 
                 href="/User/HomePage" 
@@ -84,19 +122,19 @@ function PaymentSuccessContent() {
                 <ArrowRight size={18} />
               </Link>
               
-              <button 
-                onClick={() => window.print()}
+              {/* <button 
+                onClick={handleDownloadInvoice}
                 className="w-full flex items-center justify-center gap-2 py-4 bg-white text-gray-700 border-2 border-gray-100 rounded-2xl font-bold hover:bg-gray-50 transition-all active:scale-95"
               >
                 <ExternalLink size={18} />
                 <span>Download Invoice</span>
-              </button>
+              </button> */}
             </div>
           </>
         )}
 
         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest pt-4">
-          Antigravity Gravity Reservation System
+         Gravity Reservation System
         </p>
       </div>
     </div>

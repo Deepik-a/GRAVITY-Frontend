@@ -37,6 +37,11 @@ function VideoCallContent() {
     );
   }
 
+  const bookingId = searchParams.get("bookingId") || incomingCall?.bookingId;
+  const scheduledDuration = searchParams.get("scheduledDuration") 
+    ? parseInt(searchParams.get("scheduledDuration")!) 
+    : incomingCall?.scheduledDuration;
+  
   return (
     <div className="min-h-screen bg-black">
       <VideoCall
@@ -48,6 +53,8 @@ function VideoCallContent() {
         onClose={handleClose}
         isIncoming={!!incomingCall}
         incomingOffer={incomingCall?.offer}
+        bookingId={bookingId || undefined}
+        scheduledDuration={scheduledDuration || undefined}
       />
     </div>
   );

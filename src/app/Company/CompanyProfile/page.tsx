@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { getProfile as apiGetProfile, saveProfile as apiSaveProfile, uploadCompanyImage } from '@/services/CompanyService';
 import { resolveImageUrl } from '@/utils/urlHelper';
 import { toast } from 'react-toastify';
+import { useAuth } from '@/context/AuthContext';
 
 interface CompanyProfile {
   id: string;
@@ -131,6 +132,7 @@ const defaultCompanyProfile: CompanyProfile = {
 };
 
 export default function CompanyProfilePage() {
+  const { login: contextLogin } = useAuth();
   const [profile, setProfile] = useState<CompanyProfile>(defaultCompanyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState<CompanyProfile>(defaultCompanyProfile);
@@ -231,6 +233,12 @@ export default function CompanyProfilePage() {
       setProfile(tempProfile);
       setIsEditing(false);
       setImageVersion(prev => prev + 1);
+
+      // Sync the session user name so company sidebar/topbar updates immediately.
+      const updatedUser = { ...user, name: tempProfile.name, role: user.role || "company" };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      contextLogin(updatedUser, "company");
+
       toast.success('Profile updated successfully!');
     } catch (error: unknown) {
       console.error("Update profile failed:", error);

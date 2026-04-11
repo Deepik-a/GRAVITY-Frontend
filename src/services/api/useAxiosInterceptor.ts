@@ -56,7 +56,6 @@ export const useAxiosInterceptor = () => {
       
       // Clear all auth-related local storage
       localStorage.removeItem("user");
-      localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("companyProfile");
       

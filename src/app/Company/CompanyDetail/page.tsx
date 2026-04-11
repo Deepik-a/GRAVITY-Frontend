@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import Cropper, { ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import { resolveImageUrl } from '@/utils/urlHelper';
+import { useAuth } from '@/context/AuthContext';
 
 interface TeamMember {
   id: number;
@@ -100,6 +101,7 @@ const validateYear = (year: string) => {
 
 export default function CompanyProfileManagement() {
   const router = useRouter();
+  const { login: contextLogin } = useAuth();
   
   // Form state
   const [companyName, setCompanyName] = useState('');
@@ -116,8 +118,9 @@ export default function CompanyProfileManagement() {
   const [happyCustomers, setHappyCustomers] = useState('');
   const [awardsWon, setAwardsWon] = useState('');
   const [awardsRecognition, setAwardsRecognition] = useState('');
-  const [chatSupport, setChatSupport] = useState(true);
-  const [videoCalls, setVideoCalls] = useState(false);
+  
+  // Contact options are always true and non-editable
+  // (kept inline where used to avoid unused vars)
   
   // Dynamic content state
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
@@ -133,6 +136,7 @@ export default function CompanyProfileManagement() {
   const [uploadSuccess, setUploadSuccess] = useState<{ [key: string]: boolean }>({});
   const [showPreview, setShowPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [profileAlreadyCompleted, setProfileAlreadyCompleted] = useState(false);
   
   // Cropper state
   const [cropState, setCropState] = useState<CropState>({
@@ -805,10 +809,6 @@ export default function CompanyProfileManagement() {
         happyCustomers?: number;
         awardsWon?: number;
         awardsRecognition?: string;
-        contactOptions?: {
-          chatSupport?: boolean;
-          videoCalls?: boolean;
-        };
         teamMembers?: TeamMember[];
         projects?: Project[];
         brandIdentity?: {
@@ -821,6 +821,10 @@ export default function CompanyProfileManagement() {
     }) => {
       if (company && company.profile) {
         const p = company.profile;
+        // If the backend already has a profile object, treat this step as completed
+        // and prevent navigating back to this page via browser history.
+        setProfileAlreadyCompleted(true);
+
         setCompanyName(company.name || '');
         setCategories(p.categories || []);
         setServices(p.services || []);
@@ -835,8 +839,6 @@ export default function CompanyProfileManagement() {
         setHappyCustomers(String(p.happyCustomers || ''));
         setAwardsWon(String(p.awardsWon || ''));
         setAwardsRecognition(p.awardsRecognition || '');
-        setChatSupport(p.contactOptions?.chatSupport ?? true);
-        setVideoCalls(p.contactOptions?.videoCalls ?? false);
         if (p.teamMembers && p.teamMembers.length > 0) setTeamMembers(p.teamMembers);
         if (p.projects && p.projects.length > 0) setProjects(p.projects);
         
@@ -899,7 +901,12 @@ export default function CompanyProfileManagement() {
     }
   }, []);
 
-  // Main action functions
+  useEffect(() => {
+    if (!profileAlreadyCompleted) return;
+    // Once profile exists, this page should not be reachable (Back button, direct nav).
+    router.replace("/Company/CompanyDashBoard");
+  }, [profileAlreadyCompleted, router]);
+
   // Main action functions
   const previewProfile = () => {
     if (!isFormValid) {
@@ -999,7 +1006,7 @@ export default function CompanyProfileManagement() {
         happyCustomers: Number(happyCustomers),
         awardsWon: Number(awardsWon),
         awardsRecognition,
-        contactOptions: { chatSupport, videoCalls },
+        contactOptions: { chatSupport: true, videoCalls: true }, // Always true
         teamMembers: updatedTeamMembers,
         projects: updatedProjects,
         brandIdentity: {
@@ -1056,11 +1063,23 @@ export default function CompanyProfileManagement() {
         location
       };
       localStorage.setItem("companyProfile", JSON.stringify(storageProfile));
-    
+
+      // Keep session user (used by sidebar/topbar) in sync with updated company name.
+      const storedUserRaw = localStorage.getItem("user");
+      if (storedUserRaw) {
+        try {
+          const storedUser = JSON.parse(storedUserRaw);
+          const updatedUser = { ...storedUser, name: companyName, role: storedUser.role || "company" };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          contextLogin(updatedUser, "company");
+        } catch {
+          // ignore parse errors
+        }
+      }
       
       // Redirect to CompanyDashboard
       setTimeout(() => {
-        router.push('/Company/CompanyDashBoard');
+        router.replace('/Company/CompanyDashBoard');
       }, 1500);
       
     } catch (error: unknown) {
@@ -1795,17 +1814,17 @@ return (
             </div>
           </div>
 
-          {/* Contact Options */}
+          {/* Contact Options - Non-editable section */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
             <SectionHeader 
               icon="fa-comments"
               title="Contact Options"
-              subtitle="Choose how clients can contact you"
+              subtitle="These options are enabled for all companies and cannot be changed"
             />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 opacity-75 cursor-not-allowed">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                       <i className="fas fa-comments text-blue-600"></i>
@@ -1815,40 +1834,32 @@ return (
                       <p className="text-sm text-gray-600">Enable instant messaging</p>
                     </div>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => setChatSupport(!chatSupport)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${chatSupport ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${chatSupport ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
+                  <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 opacity-75">
+                    <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
+                  </div>
                 </div>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200 opacity-75 cursor-not-allowed">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                       <i className="fas fa-video text-purple-600"></i>
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">Video Calls</h3>
-                      <p className="text-sm text-gray-600">Admin verification required</p>
+                      <p className="text-sm text-gray-600">Available for all companies</p>
                     </div>
                   </div>
-                  <button 
-                    type="button"
-                    onClick={() => setVideoCalls(!videoCalls)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${videoCalls ? 'bg-purple-600' : 'bg-gray-300'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${videoCalls ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
+                  <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-purple-600 opacity-75">
+                    <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
+                  </div>
                 </div>
               </div>
               
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 flex items-center justify-center">
                 <div className="text-center">
-                  <i className="fas fa-headset text-4xl text-blue-500 mb-4"></i>
-                  <h4 className="font-bold text-gray-900 mb-2">24/7 Support Available</h4>
-                  <p className="text-sm text-gray-600">Clients can reach you through enabled contact methods</p>
+                  <i className="fas fa-check-circle text-4xl text-green-500 mb-4"></i>
+                  <h4 className="font-bold text-gray-900 mb-2">Always Available</h4>
+                  <p className="text-sm text-gray-600">Chat and Video Call features are enabled for all companies to ensure seamless client communication</p>
                 </div>
               </div>
             </div>
@@ -2446,7 +2457,7 @@ return (
                   {/* Company Header */}
                   <div className="flex flex-col md:flex-row items-center gap-8 bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl border border-gray-200">
                     <div className="relative">
-                      {fileUploadState.logoPreview && (fileUploadState.logoPreview.startsWith('http') || fileUploadState.logoPreview.startsWith('/')) ? (
+                      {fileUploadState.logoPreview ? (
                         <Image 
                           src={resolveImageUrl(fileUploadState.logoPreview) || ""} 
                           alt="Logo" 
@@ -2535,10 +2546,28 @@ return (
                     </div>
                   </div>
 
+                  {/* Contact Options Preview */}
+                  <div className="bg-white p-6 rounded-xl border border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <i className="fas fa-headset text-blue-500"></i>
+                      Contact Options
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                        <i className="fas fa-comments text-blue-600 text-xl"></i>
+                        <span className="text-gray-700">Chat Support Available</span>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                        <i className="fas fa-video text-purple-600 text-xl"></i>
+                        <span className="text-gray-700">Video Calls Available</span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Awards & Recognition */}
                   <div className="bg-white p-6 rounded-xl border border-gray-200">
                     <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-  <i className="fas fa-medal text-blue-500"></i>
+                      <i className="fas fa-medal text-blue-500"></i>
                       Awards & Recognition
                     </h3>
                     <p className="text-gray-700 leading-relaxed whitespace-pre-line">{awardsRecognition || 'No awards or recognition listed.'}</p>
@@ -2554,13 +2583,14 @@ return (
                       {teamMembers.map(member => (
                         <div key={member.id} className="text-center">
                           <div className="relative mx-auto mb-4">
-                            {member.photoPreview && (member.photoPreview.startsWith('http') || member.photoPreview.startsWith('/')) ? (
+                            {member.photoPreview ? (
                               <Image 
-                                src={member.photoPreview} 
+                                src={resolveImageUrl(member.photoPreview) || ""} 
                                 alt={member.name} 
                                 width={96} 
                                 height={96} 
                                 className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                                unoptimized
                               />
                             ) : (
                               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-4 border-white shadow-lg">
@@ -2590,13 +2620,14 @@ return (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <div className="text-sm font-medium text-gray-900 mb-2">Before</div>
-                              {project.beforeImagePreview && (project.beforeImagePreview.startsWith('http') || project.beforeImagePreview.startsWith('/')) ? (
+                              {project.beforeImagePreview ? (
                                 <Image 
-                                  src={project.beforeImagePreview} 
+                                  src={resolveImageUrl(project.beforeImagePreview) || ""} 
                                   alt="Before" 
                                   width={400} 
                                   height={300} 
                                   className="w-full h-48 rounded-lg object-cover"
+                                  unoptimized
                                 />
                               ) : (
                                 <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
@@ -2606,13 +2637,14 @@ return (
                             </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900 mb-2">After</div>
-                              {project.afterImagePreview && (project.afterImagePreview.startsWith('http') || project.afterImagePreview.startsWith('/')) ? (
+                              {project.afterImagePreview ? (
                                 <Image 
-                                  src={project.afterImagePreview} 
+                                  src={resolveImageUrl(project.afterImagePreview) || ""} 
                                   alt="After" 
                                   width={400} 
                                   height={300} 
                                   className="w-full h-48 rounded-lg object-cover"
+                                  unoptimized
                                 />
                               ) : (
                                 <div className="w-full h-48 bg-gradient-to-br from-emerald-50 to-green-100 rounded-lg flex items-center justify-center">

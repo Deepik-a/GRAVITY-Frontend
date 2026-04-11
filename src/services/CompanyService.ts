@@ -24,6 +24,7 @@ export interface CompanyServiceProfile {
   bio?: string;
   profileImage?: string;
   isSubscribed?: boolean;
+  documentStatus: "pending" | "verified" | "rejected";
   profile?: CompanyProfile['profile'];
 }
 

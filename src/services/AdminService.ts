@@ -145,9 +145,9 @@ export const toggleCompanyBlockStatus = async (companyId: string, isBlocked: boo
   }
 };
 
-export const getAllBookings = async (page: number = 1, limit: number = 10) => {
+export const getAllBookings = async (page: number = 1, limit: number = 10, search: string = "") => {
   try {
-    const response = await api.get(`admin/bookings?page=${page}&limit=${limit}`, { withCredentials: true });
+    const response = await api.get(`admin/bookings?page=${page}&limit=${limit}&search=${search}`, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw new Error(extractErrorMessage(error, "Failed to fetch bookings"));

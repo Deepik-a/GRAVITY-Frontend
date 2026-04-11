@@ -5,6 +5,8 @@ import { toast } from "react-toastify";
 import AuthLayout from "../../../components/auth/AuthLayout";
 import { uploadCompanyDocuments } from "@/services/CompanyService";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
+import { useAuth } from "@/context/AuthContext";
+import Cookies from "js-cookie";
 
 interface DocumentState {
   file: File | null;
@@ -16,6 +18,7 @@ function DocumentUploadContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<{
     rera: DocumentState;
     gst: DocumentState;
@@ -94,15 +97,20 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     // --- Create FormData and append files ---
     const formData = new FormData();
-    files.forEach((file, index) => {
-      formData.append("documents", file); // your backend expects "documents"
-      console.log(`📎 Added file ${index + 1}:`, file.name);
+    files.forEach((file) => {
+      formData.append("documents", file); // backend expects "documents"
     });
 
-    // --- Append email from query params ---
-    const email = searchParams.get("email");
-    if (!email) throw new Error("Email not found in query params");
-    formData.append("email", email);
+    // Extract email from searchParams or user context
+    const emailFromParams = searchParams.get("email");
+    const email = emailFromParams || user?.email;
+
+    if (email) {
+      formData.append("email", email);
+      console.log("📧 Added email to upload:", email);
+    }
+
+
 
     // --- Call API ---
     const result = await uploadCompanyDocuments(formData);
@@ -110,11 +118,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     toast.success("Documents uploaded successfully!");
     console.log("📥 Backend response:", result);
 
-   // include email so the login form can be pre-filled (optional)
-const emailParam = encodeURIComponent(email);
+    // 🔥 Update docStatus cookie to pending so middleware knows
+    Cookies.set("documentStatus", "pending", { expires: 7 });
 
-// use replace so back button won't return to upload-success
-router.replace(`/signup?show=login&email=${emailParam}`);
+    // use replace so back button won't return to upload-success
+    router.replace(`/signup?show=login`);
 return;
 
   } catch (error: unknown) {

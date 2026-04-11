@@ -122,6 +122,8 @@ const ProfileContent = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState({ newPassword: "", confirmPassword: "" });
   const [showPasswords, setShowPasswords] = useState({ old: false, new: false, confirm: false });
+  const isGoogleAuthUser =
+    typeof window !== "undefined" && localStorage.getItem("authProvider") === "google";
   
   // Edit form state
   const [editForm, setEditForm] = useState<Partial<Profile>>({});
@@ -786,7 +788,6 @@ const ProfileContent = () => {
             <button
               onClick={() => {
                 localStorage.removeItem("user");
-                localStorage.removeItem("token");
                 localStorage.removeItem("role");
                 window.location.href = "/signup?show=login&userType=user";
               }}
@@ -1029,6 +1030,18 @@ const ProfileContent = () => {
                             <h3 className="text-xl font-black text-[#081c45] mb-1 group-hover:text-[rgb(210,152,4)] transition-colors">
                               {booking.companyDetails?.name || "Premium Company"}
                             </h3>
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold text-gray-600">
+                              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
+                                <span className="uppercase tracking-widest text-[10px] text-gray-400">Amount</span>
+                                <span className="text-gray-800">₹{(booking.price || 0).toLocaleString()}</span>
+                              </div>
+                              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
+                                <span className="uppercase tracking-widest text-[10px] text-gray-400">Paid</span>
+                                <span className={booking.paymentStatus === "paid" ? "text-green-700" : "text-yellow-700"}>
+                                  {booking.paymentStatus === "paid" ? "Yes" : "No"}
+                                </span>
+                              </div>
+                            </div>
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 font-medium">
                               <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4" />
@@ -1076,7 +1089,10 @@ const ProfileContent = () => {
                                 <button 
                                   className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200"
                                   onClick={() => {
-                                    router.push(`/VideoCall?targetId=${booking.companyId}&targetName=${booking.companyDetails?.name || "Company"}&targetType=company`);
+                                    const [h1, m1] = booking.startTime.split(":").map(Number);
+                                    const [h2, m2] = booking.endTime.split(":").map(Number);
+                                    const duration = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                    router.push(`/VideoCall?targetId=${booking.companyId}&targetName=${booking.companyDetails?.name || "Company"}&targetType=company&bookingId=${booking.id}&scheduledDuration=${duration}`);
                                   }}
                                 >
                                   <Video size={14} /> Video Call
@@ -1379,7 +1395,7 @@ const ProfileContent = () => {
 
                 <div className="space-y-4">
                   {[
-                    { label: "Full Name", field: "name", icon: User, required: true },
+                    { label: "Full Name", value: profileData.name, field: "name", icon: User, required: true },
                     { label: "Email", value: profileData.email, icon: Mail, field: "email" },
                     { label: "Phone", value: profileData.phone, icon: Phone, field: "phone" },
                     { label: "Location", value: profileData.location, icon: MapPin, field: "location" },
@@ -1419,6 +1435,11 @@ const ProfileContent = () => {
                    Security and Login
                  </h3>
                  
+                  {isGoogleAuthUser ? (
+                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-medium max-w-lg">
+                      Password reset is disabled for Google sign-in accounts.
+                    </div>
+                  ) : (
                   <form onSubmit={handlePasswordChange} className="space-y-4 max-w-lg">
                     <div>
                       <label className="text-sm font-semibold text-[#081c45] mb-1 block">Current Password</label>
@@ -1518,6 +1539,7 @@ const ProfileContent = () => {
                       )}
                     </button>
                   </form>
+                  )}
               </div>
             </div>
           )}

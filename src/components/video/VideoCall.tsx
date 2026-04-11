@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff } from "lucide-react";
+import { Phone, PhoneOff, Video, VideoOff, Mic, MicOff, Timer, CheckCircle2 } from "lucide-react";
 import io, { Socket } from "socket.io-client";
 import { toast } from "react-toastify";
+import { completeBooking } from "@/services/UserService";
 
 const configuration = {
   iceServers: [
@@ -21,6 +22,8 @@ interface VideoCallProps {
   onClose: () => void;
   isIncoming?: boolean;
   incomingOffer?: RTCSessionDescriptionInit | null;
+  bookingId?: string;
+  scheduledDuration?: number;
 }
 
 const VideoCall: React.FC<VideoCallProps> = ({
@@ -32,17 +35,25 @@ const VideoCall: React.FC<VideoCallProps> = ({
   onClose,
   isIncoming = false,
   incomingOffer = null,
+  bookingId = null,
+  scheduledDuration = null,
 }) => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [callStatus, setCallStatus] = useState<"calling" | "ringing" | "connected" | "ended">("calling");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const completionRef = useRef(false);
+  
+  // Set a default duration if none provided (e.g., 30 mins)
+  const totalDurationSeconds = (scheduledDuration || 30) * 60;
+  const thresholdSeconds = totalDurationSeconds * 0.5;
 
 
 
@@ -102,6 +113,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
             receiverId: targetUserId,
             receiverType: targetUserType,
             offer,
+            bookingId,
+            scheduledDuration,
           });
         }
       } catch (err) {
@@ -146,7 +159,49 @@ const VideoCall: React.FC<VideoCallProps> = ({
       peerConnection.current?.close();
       socketRef.current?.disconnect();
     };
-  }, [currentUserId, currentUserType, currentUserName, targetUserId, targetUserType, isIncoming, incomingOffer, onClose, createPeerConnection]);
+  }, [currentUserId, currentUserType, currentUserName, targetUserId, targetUserType, isIncoming, incomingOffer, onClose, createPeerConnection, bookingId, scheduledDuration]);
+
+  // Timer and Auto-completion Logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (callStatus === "connected") {
+      interval = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [callStatus]);
+
+  useEffect(() => {
+    const handleAutoCompletion = async () => {
+      if (bookingId && elapsedSeconds >= thresholdSeconds && !completionRef.current) {
+        completionRef.current = true;
+        try {
+          await completeBooking(bookingId);
+          console.log("✅ Consultation auto-completed successfully");
+          toast.success("Consultation recorded as completed based on call duration.");
+        } catch (error) {
+          console.error("❌ Failed to auto-complete consultation:", error);
+          completionRef.current = false; // allow retry if needed
+        }
+      }
+    };
+
+    handleAutoCompletion();
+  }, [elapsedSeconds, bookingId, thresholdSeconds]);
+
+  const progressPercent = Math.min(100, (elapsedSeconds / thresholdSeconds) * 100);
+  const isThresholdMet = elapsedSeconds >= thresholdSeconds;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
 
 
@@ -253,7 +308,34 @@ const VideoCall: React.FC<VideoCallProps> = ({
           )}
 
           {callStatus === "connected" && (
-            <div className="flex justify-center items-center gap-6">
+            <div className="flex flex-col items-center gap-6 w-full max-w-md mx-auto">
+              {/* Progress Tracker */}
+              {bookingId && (
+                <div className="w-full bg-white/10 rounded-full h-2 mb-2 relative overflow-hidden">
+                  <div 
+                    className={`absolute inset-y-0 left-0 transition-all duration-1000 ${isThresholdMet ? 'bg-green-500' : 'bg-indigo-500'}`}
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                  {isThresholdMet && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full h-full bg-green-500/20 animate-pulse" />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-4 text-white/90 text-sm font-bold bg-black/40 px-4 py-2 rounded-full border border-white/10 mb-4">
+                <Timer size={16} className={isThresholdMet ? "text-green-500" : "animate-pulse text-indigo-400"} />
+                <span>Session Time: {formatTime(elapsedSeconds)}</span>
+                {isThresholdMet && bookingId && (
+                  <span className="flex items-center gap-1.5 text-green-400 ml-2 border-l border-white/20 pl-4">
+                    <CheckCircle2 size={16} />
+                    Verified
+                  </span>
+                )}
+              </div>
+
+              <div className="flex justify-center items-center gap-6">
               <button
                 onClick={toggleMute}
                 className={`p-4 rounded-full transition-all ${isMuted ? 'bg-red-500 text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -273,7 +355,8 @@ const VideoCall: React.FC<VideoCallProps> = ({
                 <PhoneOff size={24} fill="currentColor" />
               </button>
             </div>
-          )}
+          </div>
+        )}
 
           {callStatus === "ended" && (
             <div className="flex flex-col items-center mb-8">

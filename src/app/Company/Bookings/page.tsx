@@ -109,7 +109,20 @@ export default function CompanyBookings() {
     try {
       // Ensure date is in YYYY-MM-DD format
       const dateStr = new Date(booking.date).toISOString().split('T')[0];
-      const slots = await getAvailableSlots(booking.companyId, dateStr);
+      let slots = await getAvailableSlots(booking.companyId, dateStr);
+      
+      // Filter out past slots if rescheduling to today
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      if (dateStr === todayStr) {
+        const currentTimeInMins = now.getHours() * 60 + now.getMinutes();
+        slots = slots.filter((slotTime) => {
+          const [hours, minutes] = slotTime.split(":").map(Number);
+          const slotTimeInMins = hours * 60 + minutes;
+          return slotTimeInMins > currentTimeInMins;
+        });
+      }
+
       setAvailableSlots(slots.slice(0, 5));
     } catch (error: unknown) {
       const message = (error as Error).message || "Failed to fetch available slots";
@@ -305,7 +318,10 @@ export default function CompanyBookings() {
                         {booking.status === "confirmed" && (
                           <button 
                             onClick={() => {
-                              router.push(`/VideoCall?targetId=${booking.userId}&targetName=${booking.userDetails?.name || "Client"}&targetType=user`);
+                              const [h1, m1] = booking.startTime.split(":").map(Number);
+                              const [h2, m2] = booking.endTime.split(":").map(Number);
+                              const duration = (h2 * 60 + m2) - (h1 * 60 + m1);
+                              router.push(`/VideoCall?targetId=${booking.userId}&targetName=${booking.userDetails?.name || "Client"}&targetType=user&bookingId=${booking.id}&scheduledDuration=${duration}`);
                             }}
                             className="flex-1 lg:flex-none px-6 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 animate-pulse"
                           >
