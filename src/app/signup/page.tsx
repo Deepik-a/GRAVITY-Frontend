@@ -14,12 +14,13 @@ import {
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { SignupData, Profile } from "@/types/AuthTypes";
 import { useAuth } from "@/context/AuthContext";
+import Cookies from "js-cookie";
 
 
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login: contextLogin, isAuthenticated, role: currentRole, isLoading: authLoading } = useAuth();
+  const { login: contextLogin, isAuthenticated, role: currentRole, isLoading: authLoading, user } = useAuth();
   
   const [isSignup, setIsSignup] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -68,7 +69,23 @@ function SignupContent() {
       if (currentRole === "user") {
         router.replace("/User/HomePage");
       } else if (currentRole === "company") {
-        router.replace("/Company/CompanyDashBoard");
+        // Only redirect to VerificationPage if documents are missing or rejected
+        const docStatus = user?.documentStatus;
+        const email = user?.email || localStorage.getItem("otpEmail") || "";
+        
+        if (docStatus === "rejected") {
+           toast.error("Documents rejected. Please upload again.");
+           router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
+        } else if (docStatus === "pending") {
+           toast.info("Company verification is pending approval by admin. Please wait.");
+        } else if (!docStatus) {
+           router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
+        } else {
+           // Verified - handled by middleware primarily, but watchdog can assist
+           if (!user?.isProfileFilled) {
+             router.replace("/Company/CompanyDetail");
+           }
+        }
       } else if (currentRole === "admin") {
         router.replace("/Admin/AdminDashBoard");
       }
@@ -92,7 +109,7 @@ function SignupContent() {
     if (show === 'login') {
       setIsSignup(false);
     }
-  }, [searchParams, router, isAuthenticated, currentRole, authLoading]);
+  }, [searchParams, router, isAuthenticated, currentRole, authLoading, user]);
 
   // ✅ Signup input change with validation
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,7 +265,16 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     // ⭐ Store session in context
     contextLogin(response.user as Profile, response.role as "user" | "company" | "admin");
-    localStorage.setItem("token", response.token); 
+    localStorage.setItem("authProvider", "password");
+    localStorage.removeItem("otpEmail");
+    localStorage.removeItem("otpPurpose");
+    
+    // 🔥 Store docStatus in cookie for middleware to see
+    if (response.documentStatus) {
+      Cookies.set("documentStatus", response.documentStatus, { expires: 7 });
+    } else {
+      Cookies.remove("documentStatus");
+    }
 
     // 🔥 If company, fetch profile to prefill
     if (response.role === "company") {
@@ -267,20 +293,17 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       router.replace("/User/HomePage");
 
     } else if (response.role === "company") {
-        
         const docStatus = response.documentStatus;
         if (docStatus === "rejected") {
            toast.error("Documents rejected. Please upload again.");
-           router.replace(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
+           router.replace(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else if (docStatus === "pending") {
            toast.info("Company verification is pending approval by admin. Please wait.");
         } else if (!docStatus) {
-           // No docs found (unexpected for existing user but safe fallback)
-           router.push(`/Company/VerificationPage?role=${response.role}&email=${finalLoginData.email}`);
+           router.push(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else {
            // Verified
-           const isProfileFilled = response.user.isProfileFilled;
-           if (isProfileFilled) {
+           if (response.user.isProfileFilled) {
              router.replace("/Company/CompanyDashBoard");
            } else {
              router.replace("/Company/CompanyDetail");
@@ -288,10 +311,10 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         }
 
     } else if (response.role === "admin") {
-      router.replace("/Admin/AdminDashboard");
+      router.replace("/Admin/AdminDashBoard");
 
     } else {
-      router.push("/");
+      router.replace("/");
     }
 
   } catch (error: unknown) {
@@ -367,7 +390,16 @@ console.log(res,"res from signup")
 
     // ⭐ Store session in context
     contextLogin(userData, res.user.role as "user" | "company");
-    localStorage.setItem("token", res.user.token);
+    localStorage.setItem("authProvider", "google");
+    localStorage.removeItem("otpEmail");
+    localStorage.removeItem("otpPurpose");
+
+    // 🔥 Store docStatus in cookie for middleware
+    if (res.documentStatus) {
+       Cookies.set("documentStatus", res.documentStatus, { expires: 7 });
+    } else {
+       Cookies.remove("documentStatus");
+    }
 
     // 🔥 If company, fetch profile to prefill
     if (res.user.role === "company") {
@@ -398,33 +430,30 @@ console.log(res,"res from signup")
        
       router.replace("/User/HomePage");
     } else if (res.user.role === "company") {
-       // Logic for Rejected, Pending, New
-       const docStatus = res.documentStatus;
-       console.log(docStatus,"docStataus")
-       if (docStatus === "rejected") {
-         toast.error("Documents rejected. Please upload again.");
-         router.push(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
-       } else if (docStatus === "pending") {
-         // Admin approval pending
-         toast.info("Company verification is pending approval by admin. Please wait.");
-         // User requested: "don't redirect to the any page"
-         // Do nothing or maybe clear loading state?
-       } else if (!docStatus || res.isNewUser) {
-          // New company or no docs
-          router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${res.user.email}`);
-       } else {
-         // Verified
-         const isProfileFilled = res.user.isProfileFilled;
-         if (isProfileFilled) {
-           router.push("/Company/CompanyDashBoard");
-         } else {
-           router.push("/Company/CompanyDetail");
-         }
-       }
+        const docStatus = res.documentStatus;
+        if (docStatus === "rejected") {
+           toast.error("Documents rejected. Please upload again.");
+           router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+        } else if (docStatus === "pending") {
+           toast.info("Company verification is pending approval by admin. Please wait.");
+        } else if (docStatus==='not_submitted') {
+           router.push(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+        } else {
+           // Verified
+           if (res.user.isProfileFilled) {
+             router.replace("/Company/CompanyDashBoard");
+           } else {
+             router.replace("/Company/CompanyDetail");
+           }
+        }
     } else {
       // Fallback for unknown roles
       router.replace("/");
     }
+  } catch (error: unknown) {
+    console.error("Google Auth error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Google authentication failed";
+    toast.error(errorMessage);
   } finally {
     setGoogleAuthLoading(false); // spinners added
   }

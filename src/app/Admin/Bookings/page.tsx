@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { getAllBookings, refundBooking } from "@/services/AdminService";
 import { toast } from "react-toastify";
-import { Calendar, Clock, Loader2, Search, Filter, AlertCircle, User, Building2, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
+import { Calendar, Clock, Loader2, Search, Filter, AlertCircle, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
 import Image from "next/image";
 
@@ -38,18 +38,20 @@ export default function AdminBookingsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 8;
 
-  useEffect(() => {
-    fetchBookings(currentPage);
-  }, [currentPage]);
-  
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchBookings = async (page = 1) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchBookings = useCallback(async (page = 1, search = debouncedSearch) => {
     setLoading(true);
     try {
-      const result = await getAllBookings(page, itemsPerPage);
+      const result = await getAllBookings(page, itemsPerPage, search);
       setBookings(result.bookings || []);
       setTotalItems(result.total || 0);
       setTotalPages(Math.ceil((result.total || 0) / itemsPerPage));
@@ -58,7 +60,21 @@ export default function AdminBookingsPage() {
       toast.error(err.message || "Failed to fetch bookings");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
+  }, [debouncedSearch, itemsPerPage]);
+
+  useEffect(() => {
+    fetchBookings(currentPage, debouncedSearch);
+  }, [currentPage, debouncedSearch, fetchBookings]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchBookings(1, debouncedSearch);
   };
 
   const handleRefund = async (bookingId: string) => {
@@ -97,14 +113,8 @@ export default function AdminBookingsPage() {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      (booking.userDetails?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (booking.companyDetails?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   if (loading) {
@@ -155,18 +165,19 @@ export default function AdminBookingsPage() {
           <input 
             type="text" 
             placeholder="Search by client, company or booking ID..."
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm font-medium text-gray-900"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             suppressHydrationWarning={true}
           />
         </div>
         <button 
-          onClick={() => fetchBookings(currentPage)}
-          className="bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95"
+          onClick={handleRefresh}
+          className="bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          disabled={loading || isRefreshing}
         >
-          <Loader2 size={18} className={loading ? "animate-spin" : ""} />
-          Refresh Registry
+          <RefreshCcw size={18} className={isRefreshing ? "animate-spin" : ""} />
+          {isRefreshing ? "Updating..." : "Refresh Registry"}
         </button>
       </div>
 
@@ -192,7 +203,14 @@ export default function AdminBookingsPage() {
                           {booking.userDetails?.profileImage ? (
                             <Image src={resolveImageUrl(booking.userDetails.profileImage) || ""} alt="" width={40} height={40} className="object-cover w-full h-full" unoptimized />
                           ) : (
-                            <User size={18} />
+                            <Image 
+                              src="https://cdn-icons-png.flaticon.com/512/147/147144.png" 
+                              alt="Avatar" 
+                              width={40} 
+                              height={40} 
+                              className="object-cover opacity-80" 
+                              unoptimized 
+                            />
                           )}
                         </div>
                         <div>
@@ -207,7 +225,14 @@ export default function AdminBookingsPage() {
                           {booking.companyDetails?.logo ? (
                             <Image src={resolveImageUrl(booking.companyDetails.logo) || ""} alt="" width={40} height={40} className="object-cover w-full h-full" unoptimized />
                           ) : (
-                            <Building2 size={18} />
+                            <Image 
+                              src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" 
+                              alt="Company" 
+                              width={40} 
+                              height={40} 
+                              className="object-cover opacity-80 p-1" 
+                              unoptimized 
+                            />
                           )}
                         </div>
                         <div>

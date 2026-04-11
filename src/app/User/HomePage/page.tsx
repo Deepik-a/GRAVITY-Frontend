@@ -11,8 +11,7 @@ import { CompanyCardSkeleton } from '@/components/ui/Skeleton'
 import HeroCarousel from '@/components/user/HeroCarousel'
 import { motion, useInView, useAnimation } from 'framer-motion'
 import { useCallback, Suspense } from 'react'
-import Link from 'next/link'
-import { ArrowRight, Building2, CheckCircle, Users, Award, Clock, Star, Sparkles, TrendingUp, Calendar, Home as HomeIcon, Castle } from 'lucide-react'
+import { Building2, CheckCircle, Users, Award, Clock, Star, Sparkles, TrendingUp, Calendar, Home as HomeIcon, Castle } from 'lucide-react'
 
 // CountUp Animation Component with enhanced animation
 const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) => {

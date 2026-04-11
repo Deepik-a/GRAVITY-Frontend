@@ -26,7 +26,7 @@ export default function GlobalVideoCallListener() {
       
       socketRef.current.emit("join", { userId: user.id, type: role });
 
-      socketRef.current.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit }) => {
+      socketRef.current.on("incoming_call", (data: { callerId: string, callerName: string, offer: RTCSessionDescriptionInit, bookingId?: string, scheduledDuration?: number }) => {
         if (pathname === "/VideoCall") return;
         console.log("☎️ Incoming call received:", data);
         
@@ -36,7 +36,9 @@ export default function GlobalVideoCallListener() {
            callerName: data.callerName,
            offer: data.offer,
            receiverId: user.id,
-           receiverType: role
+           receiverType: role,
+           bookingId: data.bookingId,
+           scheduledDuration: data.scheduledDuration
         }));
 
         // Play sound

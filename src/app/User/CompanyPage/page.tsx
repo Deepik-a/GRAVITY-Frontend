@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import ReviewsSection from '@/components/ReviewsSection';
 import ChatWindow from '@/components/chat/ChatWindow';
 import { Sparkles, MapPin, Users as UsersIcon, Globe, Layers } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 type CompanyTab = {
   id: 'overview' | 'projects' | 'team' | 'reviews' | 'gallery';
@@ -26,7 +27,7 @@ function CompanyProfileContent() {
   const [isFavourite, setIsFavourite] = useState(false);
   const [togglingFav, setTogglingFav] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "user" | "company" } | null>(null);
+  const { user: authUser, role: authRole } = useAuth();
   const [sliderPositions, setSliderPositions] = useState<Record<string, number>>({});
   const sliderDragging = useRef<string | null>(null);
 
@@ -101,12 +102,6 @@ function CompanyProfileContent() {
 
     loadCompany();
 
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setCurrentUser({ ...user, role: user.role || 'user' });
-    }
-
     if (companyId) {
       getFavourites()
         .then((favs) => {
@@ -150,7 +145,7 @@ function CompanyProfileContent() {
   }, []);
 
   const handleLiveChat = () => {
-    if (!currentUser) { toast.error("Please login to chat with the company"); return; }
+    if (!authUser) { toast.error("Please login to chat with the company"); return; }
     setIsChatOpen(true);
   };
 
@@ -1039,11 +1034,11 @@ function CompanyProfileContent() {
         </section>
       </div>
 
-      {isChatOpen && currentUser && company && (
+      {isChatOpen && authUser && company && (
         <ChatWindow
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
-          currentUser={{ id: currentUser.id, name: currentUser.name, role: currentUser.role as "user" | "company" }}
+          currentUser={{ id: authUser.id, name: authUser.name, role: (authRole as "user" | "company") || "user" }}
           otherParticipant={{ id: companyId || '', name: company.name, role: 'company' }}
         />
       )}

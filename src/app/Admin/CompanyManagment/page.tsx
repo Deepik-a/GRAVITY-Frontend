@@ -16,7 +16,7 @@ const CompanyManagementPage = () => {
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "verified" | "rejected">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "verified" | "rejected" | "not_submitted">("all");
   // 🔹 DEBOUNCING STATE
 const [debouncedSearch, setDebouncedSearch] = useState(searchTerm)
 
@@ -141,9 +141,10 @@ useEffect(() => {
             ${company.documentStatus === "verified" ? "bg-green-100 text-green-700" : ""}
             ${company.documentStatus === "rejected" ? "bg-red-100 text-red-700" : ""}
             ${company.documentStatus === "pending" ? "bg-yellow-100 text-yellow-700" : ""}
+            ${company.documentStatus === "not_submitted" ? "bg-gray-100 text-gray-700" : ""}
           `}
         >
-          {company.documentStatus}
+          {company.documentStatus === "not_submitted" ? "Not Uploaded" : company.documentStatus}
         </span>
       ),
     },
@@ -247,6 +248,7 @@ useEffect(() => {
             suppressHydrationWarning={true}
           >
             <option value="all">Filter: All Status</option>
+            <option value="not_submitted">Status: Not Uploaded</option>
             <option value="pending">Status: Pending</option>
             <option value="verified">Status: Verified</option>
             <option value="rejected">Status: Rejected</option>

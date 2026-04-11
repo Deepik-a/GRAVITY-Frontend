@@ -4,6 +4,7 @@ import React from "react";
 import UserNavbar from "@/components/user/UserNavbar";
 import UserFooter from "@/components/user/UserFooter";
 import { usePathname } from "next/navigation";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function UserLayout({
   children,
@@ -24,12 +25,14 @@ export default function UserLayout({
   const skipPadding = noPaddingPages.some(page => pathname === page || pathname.startsWith(page + "?"));
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <UserNavbar />
-      <main className={`flex-grow ${!skipPadding ? "pt-16 sm:pt-20 lg:pt-24" : ""}`}>
-        {children}
-      </main>
-      <UserFooter />
-    </div>
+    <ProtectedRoute allowedRoles={["user"]}>
+      <div className="flex flex-col min-h-screen">
+        <UserNavbar />
+        <main className={`flex-grow ${!skipPadding ? "pt-16 sm:pt-20 lg:pt-24" : ""}`}>
+          {children}
+        </main>
+        <UserFooter />
+      </div>
+    </ProtectedRoute>
   );
 }

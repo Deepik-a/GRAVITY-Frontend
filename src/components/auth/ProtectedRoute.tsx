@@ -16,7 +16,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.replace("/signup?show=login");
+        if (allowedRoles?.includes("admin")) {
+          router.replace("/Login");
+        } else {
+          router.replace("/signup?show=login");
+        }
       } else if (allowedRoles && role && !allowedRoles.includes(role)) {
         router.replace("/unauthorized");
       }

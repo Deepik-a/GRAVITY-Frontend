@@ -234,7 +234,7 @@ export default function CompanyMessages() {
 
     try {
       setIsUploading(true);
-      const { url, type } = await chatService.uploadAttachment(file);
+      const { url, key, type } = await chatService.uploadAttachment(file);
       
       const otherParticipant = selectedConversation?.participants.find(p => p.participantId !== currentUser?.id);
       if (!otherParticipant || !currentUser) return;
@@ -246,6 +246,7 @@ export default function CompanyMessages() {
         receiverType: otherParticipant.participantType as "user" | "company",
         content: `Attached ${type}: ${file.name}`,
         attachmentUrl: url,
+        attachmentKey: key,
         attachmentType: type as 'image' | 'file'
       };
 

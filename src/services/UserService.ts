@@ -99,9 +99,23 @@ export const createCheckoutSession = async (bookingId: string) => {
   }
 };
 
-export const verifyPaymentSession = async (sessionId: string): Promise<{ success: boolean; bookingId: string }> => {
+export const verifyPaymentSession = async (
+  sessionId: string
+): Promise<{
+  success: boolean;
+  message?: string;
+  bookingId?: string;
+  sessionId?: string;
+  booking?: Booking;
+}> => {
   try {
-    const response = await api.get<{ success: boolean; bookingId: string }>("/payments/verify-session", {
+    const response = await api.get<{
+      success: boolean;
+      message?: string;
+      bookingId?: string;
+      sessionId?: string;
+      booking?: Booking;
+    }>("/payments/verify-session", {
       params: { sessionId }
     });
     return response.data;

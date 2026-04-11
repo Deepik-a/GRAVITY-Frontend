@@ -8,6 +8,7 @@ import { getMyProfile as getCompanyProfile } from "@/services/CompanyService";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { setUserProfile, clearUserProfile } from "@/redux/slices/userSlice";
+import Cookies from "js-cookie";
 
 interface AuthContextType {
   user: Profile | null;
@@ -36,20 +37,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Always clear local state
       localStorage.removeItem("user");
       localStorage.removeItem("role");
-      localStorage.removeItem("token");
       localStorage.removeItem("companyProfile");
       localStorage.removeItem("adminId");
       
+      Cookies.remove("documentStatus");
+
       setUser(null);
       setRole(null);
       
       toast.success("Logged out successfully");
       
-      // Redirect based on previous role if needed, or to home
+      // Redirect based on role
       if (role === "admin") {
-        router.push("/Admin/login");
+        router.replace("/Login");
+      } else if (role === "company") {
+        router.replace("/signup?show=login");
       } else {
-        router.push("/signup?show=login");
+        // Default for users or others
+        router.replace("/signup?show=login");
       }
     }
   }, [router, role]);
@@ -78,8 +83,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileData = await getProfile();
       }
 
-      setUser(profileData);
+      // For companies, display the profile's companyName (if present) in UI elements
+      // that rely on `user.name` (sidebar/topbar).
+      const normalizedProfile =
+        storedRole === "company"
+          ? ({
+              ...profileData,
+              name: (profileData as { profile?: { companyName?: string } }).profile?.companyName || (profileData as { name?: string }).name,
+            } as Profile)
+          : (profileData as Profile);
+
+      setUser(normalizedProfile);
       setRole(storedRole);
+
+      // Keep localStorage `user` in sync so non-context consumers update correctly.
+      localStorage.setItem("user", JSON.stringify(normalizedProfile));
     } catch (error: unknown) {
       console.error("Auth check failed:", error);
       // If unauthorized, clear session
@@ -89,7 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isUnauthorized) {
           localStorage.removeItem("user");
           localStorage.removeItem("role");
-          localStorage.removeItem("token");
           setUser(null);
           setRole(null);
       }
@@ -101,6 +118,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    const onPageShow = async (event: PageTransitionEvent) => {
+      // When a page is restored from the browser back/forward cache, React state can be stale.
+      if (!event.persisted) return;
+
+      await checkAuth();
+
+      // If the session is gone, ensure we don't keep showing protected UI.
+      const path = window.location.pathname;
+      const isProtected =
+        path.startsWith("/User") || path.startsWith("/Company") || path.startsWith("/Admin");
+
+      const storedRole = localStorage.getItem("role") as
+        | "user"
+        | "company"
+        | "admin"
+        | null;
+
+      if (isProtected && !storedRole) {
+        if (path.startsWith("/Admin")) {
+          router.replace("/Login");
+        } else if (path.startsWith("/Company")) {
+          router.replace("/signup?show=login");
+        } else {
+          router.replace("/signup?show=login");
+        }
+      }
+    };
+
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [checkAuth, router]);
 
   const login = (userData: Profile, userRole: "user" | "company" | "admin") => {
     setUser(userData);

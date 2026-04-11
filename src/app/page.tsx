@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
 
 const GravityLandingPage = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [userType, setUserType] = useState<'user' | 'company' | null>(null);
   const router = useRouter();
+  useAuth();
   const words = ["HomeOwner", "HomeDreamer"];
 
   const [index, setIndex] = useState(0);
@@ -20,6 +22,8 @@ const GravityLandingPage = () => {
     }, 2000);
     return () => clearInterval(interval);
   }, [words.length]);
+
+  // Removed automatic redirection to dashboards to keep landing page publicly accessible
 
 
   

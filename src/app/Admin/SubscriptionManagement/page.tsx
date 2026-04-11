@@ -41,6 +41,21 @@ export default function SubscriptionManagementPage() {
       return;
     }
 
+    if (newPlan.price <= 0) {
+      toast.error("Price must be a positive number");
+      return;
+    }
+
+    if (newPlan.description.trim().length < 10) {
+      toast.error("Description should be at least 10 characters long");
+      return;
+    }
+
+    if (newPlan.features.length === 0) {
+      toast.error("Please add at least one feature to the plan");
+      return;
+    }
+
     try {
       await createSubscriptionPlan(newPlan);
       toast.success("Subscription plan created successfully");
