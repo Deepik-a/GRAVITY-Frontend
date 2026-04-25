@@ -29,9 +29,9 @@ api.interceptors.response.use(
           const role = localStorage.getItem("role");
           
           // Show toast notification before redirecting
-          if (typeof window !== "undefined") {
-            toast.error("Session expired. Please log in again.");
-          }
+          // if (typeof window !== "undefined") {
+          //   // toast.error("Session expired. Please log in again.");
+          // }
           
           // Clear session on Unauthorized
           console.warn("Session expired or unauthorized. Clearing session.");
