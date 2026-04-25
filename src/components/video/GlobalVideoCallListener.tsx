@@ -41,13 +41,8 @@ export default function GlobalVideoCallListener() {
            scheduledDuration: data.scheduledDuration
         }));
 
-        // Play sound
-        try {
-           const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
-            audio.play().catch(() => console.warn("Call sound failed"));
-         } catch {
-            // ignore
-         }
+        // Ring tone disabled here — same Mixkit URL was also commented in UserNavbar / NotificationBell.
+        // If you re-enable, keep it only for true incoming_call and consider user gesture / browser autoplay rules.
 
         // Immediate Redirect/Notification
         toast.info(

@@ -16,6 +16,9 @@ import { SignupData, Profile } from "@/types/AuthTypes";
 import { useAuth } from "@/context/AuthContext";
 import Cookies from "js-cookie";
 import { Home, Briefcase } from "lucide-react";
+import { ROUTES } from "@/shared/constants/AppRoutes";
+import { DOCUMENT_STATUS } from "@/shared/constants/StatusConstants";
+import { MESSAGES } from "@/shared/constants/Messages";
 
 
 function SignupContent() {
@@ -35,7 +38,7 @@ function SignupContent() {
     const userType = searchParams.get('userType');
     if (userType === 'user' || userType === 'company') {
       setRole(userType);
-      console.log("🎯 Role detected from URL:", userType);
+      console.log(" Role detected from URL:", userType);
     } else if (isSignup && !role) {
       // Set a default role if none found in URL and we are signing up
       setRole('user');
@@ -69,27 +72,29 @@ function SignupContent() {
 
     if (!authLoading && isAuthenticated && currentRole) {
       if (currentRole === "user") {
-        router.replace("/User/HomePage");
+        router.replace(ROUTES.USER.HOME_PAGE);
       } else if (currentRole === "company") {
         // Only redirect to VerificationPage if documents are missing or rejected
         const docStatus = user?.documentStatus;
         const email = user?.email || localStorage.getItem("otpEmail") || "";
         
-        if (docStatus === "rejected") {
-           toast.error("Documents rejected. Please upload again.");
-           router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
-        } else if (docStatus === "pending") {
-           toast.info("Company verification is pending approval by admin. Please wait.");
-        } else if (!docStatus) {
-           router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
+        if (docStatus === DOCUMENT_STATUS.REJECTED) {
+           toast.error(MESSAGES.TOAST.DOCUMENTS_REJECTED);
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=company&email=${encodeURIComponent(email)}`);
+        } else if (docStatus === DOCUMENT_STATUS.PENDING) {
+           toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
+        } else if (!docStatus || docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=company&email=${encodeURIComponent(email)}`);
         } else {
            // Verified - handled by middleware primarily, but watchdog can assist
            if (!user?.isProfileFilled) {
-             router.replace("/Company/CompanyDetail");
+             router.replace(ROUTES.COMPANY.DETAIL);
+           } else {
+             router.replace(ROUTES.COMPANY.DASHBOARD);
            }
         }
       } else if (currentRole === "admin") {
-        router.replace("/Admin/AdminDashBoard");
+        router.replace(ROUTES.ADMIN.DASHBOARD);
       }
     }
 
@@ -99,7 +104,7 @@ function SignupContent() {
     const show = searchParams.get('show');
     
     if (verified === 'true') {
-      toast.success("🎉 Email verified successfully! Please log in to continue.");
+      toast.success("Email verified successfully! Please log in to continue.");
     }
       
     // Pre-fill email in login form if provided
@@ -113,7 +118,7 @@ function SignupContent() {
     }
   }, [searchParams, router, isAuthenticated, currentRole, authLoading, user]);
 
-  // ✅ Signup input change with validation
+  //  Signup input change with validation
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -146,13 +151,13 @@ function SignupContent() {
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
-  // ✅ Login input handler
+  //  Login input handler
   const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setLoginData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Signup submit handler
+  //  Signup submit handler
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
 
@@ -190,7 +195,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
   const signupData: SignupData = {
     ...formData,
-    role, // ✅ correct role
+    role, //  correct role
   };
   console.log(signupData, "signupData from frontend");
 
@@ -198,13 +203,13 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     const response = await signupUser(signupData);
     toast.success(response.message || "Signup successful!");
 
-    // ⭐ Save OTP purpose, email, and role
+    //  Save OTP purpose, email, and role
     localStorage.setItem("otpPurpose", "signup");
     localStorage.setItem("otpEmail", formData.email);
     //role is stored because after otp verification go to company verification page for company and login for user
-    localStorage.setItem("role", role); // ✅ store role
+    localStorage.setItem("role", role); //  store role
 
-    // ⭐ Store draft profile info if company
+    //  Store draft profile info if company
     if (role === "company") {
       const draftProfile = {
         name: formData.name,
@@ -215,7 +220,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       localStorage.setItem("companyProfile", JSON.stringify(draftProfile));
     }
 
-    router.push(`/otp?email=${encodeURIComponent(formData.email)}&action=signup`);
+    router.replace(`${ROUTES.OTP}?email=${encodeURIComponent(formData.email)}&action=signup`);
   } catch (error: unknown) {
     const err = error as Error;
     // Handle cross-role registration errors
@@ -233,8 +238,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
 
 
-  // ✅ Login submit handler
-// ✅ Login submit handler (role added)
+  //  Login submit handler
+// Login submit handler (role added)
 const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
   if (loading) return;
@@ -247,7 +252,7 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       password: loginData.password,
     };
 
-    console.log("📤 Sending Login Payload:", finalLoginData);
+    console.log("Sending Login Payload:", finalLoginData);
 
     const response = await loginUser(finalLoginData);
 
@@ -265,20 +270,20 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       toast.success(response.message || "Login successful!");
     }
 
-    // ⭐ Store session in context
+    //  Store session in context
     contextLogin(response.user as Profile, response.role as "user" | "company" | "admin");
     localStorage.setItem("authProvider", "password");
     localStorage.removeItem("otpEmail");
     localStorage.removeItem("otpPurpose");
     
-    // 🔥 Store docStatus in cookie for middleware to see
+    //  Store docStatus in cookie for middleware to see
     if (response.documentStatus) {
       Cookies.set("documentStatus", response.documentStatus, { expires: 7 });
     } else {
       Cookies.remove("documentStatus");
     }
 
-    // 🔥 If company, fetch profile to prefill
+    //  If company, fetch profile to prefill
     if (response.role === "company") {
       try {
         const profileData = await apiGetProfile(response.user.id);
@@ -290,35 +295,35 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       }
     }
 
-    // 🔥 Role-based redirect (same behavior as Google Auth)
+    //  Role-based redirect (same behavior as Google Auth)
     if (response.role === "user") {
-      const nextPath = searchParams.get('next') || "/User/HomePage";
+      const nextPath = searchParams.get('next') || ROUTES.USER.HOME_PAGE;
       router.replace(nextPath);
 
     } else if (response.role === "company") {
         const docStatus = response.documentStatus;
-        if (docStatus === "rejected") {
-           toast.error("Documents rejected. Please upload again.");
-           router.replace(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
-        } else if (docStatus === "pending") {
-           toast.info("Company verification is pending approval by admin. Please wait.");
-           router.replace(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
-        } else if (!docStatus) {
-           router.push(`/Company/VerificationPage?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
+        console.log("Document status on login:", docStatus);
+        if (docStatus === DOCUMENT_STATUS.REJECTED) {
+           toast.error(MESSAGES.TOAST.DOCUMENTS_REJECTED);
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
+        } else if (docStatus === DOCUMENT_STATUS.PENDING) {
+           toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
+        } else if (!docStatus || docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else {
            // Verified
            if (response.user.isProfileFilled) {
-             router.replace("/Company/CompanyDashBoard");
+             router.replace(ROUTES.COMPANY.DASHBOARD);
            } else {
-             router.replace("/Company/CompanyDetail");
+             router.replace(ROUTES.COMPANY.DETAIL);
            }
         }
 
     } else if (response.role === "admin") {
-      router.replace("/Admin/AdminDashBoard");
+      router.replace(ROUTES.ADMIN.DASHBOARD);
 
     } else {
-      router.replace("/");
+      router.replace(ROUTES.HOME);
     }
 
   } catch (error: unknown) {
@@ -332,23 +337,23 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
 
 
-  // ✅ Forgot Password handler
+  //  Forgot Password handler
   const handleForgotPassword = () => {
     if (!loginData.email) {
       toast.info("Please enter your email address first");
       return;
     }
 
-      // ⭐ Save OTP purpose + email
+      //  Save OTP purpose + email
   localStorage.setItem("otpPurpose", "forgot-password");
   localStorage.setItem("otpEmail", loginData.email);
 
     // Redirect to forgot password page with email pre-filled
-    router.push(`/ForgotPassword?email=${encodeURIComponent(loginData.email)}`);
+    router.push(`${ROUTES.FORGOT_PASSWORD}?email=${encodeURIComponent(loginData.email)}`);
   };
 
 
-// ✅ Unified Google Auth handler
+// Unified Google Auth handler
 const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
   if (!credentialResponse.credential) {
     toast.error("Google authentication failed");
@@ -364,13 +369,13 @@ const handleGoogleAuth = async (credentialResponse: CredentialResponse) => {
   setGoogleAuthLoading(true); // spinners added
 
   try {
-    console.log(`🚀 Google ${isSignup ? "Signup" : "Login"} for role:`, role);
+    console.log(` Google ${isSignup ? "Signup" : "Login"} for role:`, role);
 
-    // 1️⃣ Call backend Google login/signup
+    // 1️ Call backend Google login/signup
     // Pass role if selected; backend handles "role required" for new users
     const res = await googleLogin(credentialResponse.credential, role || undefined);
 console.log(res,"res from signup")
-    // 2️⃣ Handling Role Mismatch & Success Messages
+    // 2️ Handling Role Mismatch & Success Messages
     const uiRole = role || 'user';
     const returnedRole = res.user.role;
     
@@ -383,7 +388,7 @@ console.log(res,"res from signup")
       toast.success(res.message || `Google ${action} successful!`);
     }
 
-    // ⭐ Store basic user info
+    //     Store basic user info
     const userData: Profile = {
       id: res.user.id,
       name: res.user.name,
@@ -392,20 +397,20 @@ console.log(res,"res from signup")
       phone: (res.user as { phone?: string }).phone || ""
     };
 
-    // ⭐ Store session in context
+    //  Store session in context
     contextLogin(userData, res.user.role as "user" | "company");
     localStorage.setItem("authProvider", "google");
     localStorage.removeItem("otpEmail");
     localStorage.removeItem("otpPurpose");
 
-    // 🔥 Store docStatus in cookie for middleware
+    //  Store docStatus in cookie for middleware
     if (res.documentStatus) {
        Cookies.set("documentStatus", res.documentStatus, { expires: 7 });
     } else {
        Cookies.remove("documentStatus");
     }
 
-    // 🔥 If company, fetch profile to prefill
+    //  If company, fetch profile to prefill
     if (res.user.role === "company") {
       try {
         if (userData.id) {
@@ -430,31 +435,31 @@ console.log(res,"res from signup")
 
     // 3️⃣ Decide redirect based on role & status
     if (res.user.role === "user") {
-    console.log("res.user.role ", res.user.role) // ✅ correct
+    console.log("res.user.role ", res.user.role) // correct
        
-      const nextPath = searchParams.get('next') || "/User/HomePage";
+      const nextPath = searchParams.get('next') || ROUTES.USER.HOME_PAGE;
       router.replace(nextPath);
     } else if (res.user.role === "company") {
         const docStatus = res.documentStatus;
-        if (docStatus === "rejected") {
-           toast.error("Documents rejected. Please upload again.");
-           router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
-        } else if (docStatus === "pending") {
-           toast.info("Company verification is pending approval by admin. Please wait.");
-           router.replace(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
-        } else if (docStatus==='not_submitted') {
-           router.push(`/Company/VerificationPage?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+        if (docStatus === DOCUMENT_STATUS.REJECTED) {
+           toast.error(MESSAGES.TOAST.DOCUMENTS_REJECTED);
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+        } else if (docStatus === DOCUMENT_STATUS.PENDING) {
+           toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+        } else if (docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
+           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else {
            // Verified
            if (res.user.isProfileFilled) {
-             router.replace("/Company/CompanyDashBoard");
+             router.replace(ROUTES.COMPANY.DASHBOARD);
            } else {
-             router.replace("/Company/CompanyDetail");
+             router.replace(ROUTES.COMPANY.DETAIL);
            }
         }
     } else {
       // Fallback for unknown roles
-      router.replace("/");
+      router.replace(ROUTES.HOME);
     }
   } catch (error: unknown) {
     console.error("Google Auth error:", error);
@@ -574,7 +579,7 @@ console.log(res,"res from signup")
 
               {/* Signup & Login Forms */}
               <div className="relative min-h-[480px] flex items-center">
-                {/* ✅ Signup Form */}
+                {/* Signup Form */}
                 <div
                   className={`w-full transition-all duration-700 ${
                     isSignup
@@ -772,7 +777,7 @@ console.log(res,"res from signup")
                   </form>
                 </div>
 
-                {/* ✅ Login Form */}
+                {/*  Login Form */}
                 <div
                   className={`w-full transition-all duration-700 ${
                     !isSignup

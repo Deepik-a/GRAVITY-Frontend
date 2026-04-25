@@ -50,12 +50,12 @@ export default function PaymentSuccessPage() {
             >
               Go to Dashboard
             </Link>
-             <Link 
+             {/* <Link 
               href="/Company/CompanyProfile" 
               className="block w-full bg-white text-gray-900 border-2 border-gray-200 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all"
             >
               View Profile
-            </Link>
+            </Link> */}
         </div>
       </div>
     </div>

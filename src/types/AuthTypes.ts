@@ -49,12 +49,12 @@ export interface GoogleAuthResponse {
 
 
 export type Profile = {
-  id: string;         // ✅ matches backend field name
+  id: string;         // matches backend field name
   name: string;
   email: string;
   phone?: string;
   location?: string;
-  bio?: string;           // ✅ lowercase 'bio'
+  bio?: string;           // lowercase 'bio'
   profileImage?: string;
   isBlocked?: boolean;
   role?: string;

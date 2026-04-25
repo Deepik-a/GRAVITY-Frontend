@@ -37,7 +37,7 @@ function OtpContent() {
       }
     }
 
-    // 🟡 If no timer is saved, this is the FIRST OTP send — set it now!
+    //  If no timer is saved, this is the FIRST OTP send — set it now!
     const expireTime = Date.now() + 30 * 1000; // 30 seconds
     localStorage.setItem("otpExpireTime", expireTime.toString());
     setTimeLeft(30);
@@ -142,7 +142,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   setIsLoading(true);
 
   try {
-    // ⭐ Get purpose and email from localStorage
+    //  Get purpose and email from localStorage
     const purpose = localStorage.getItem("otpPurpose");
     const emailFromStorage = localStorage.getItem("otpEmail");
 
@@ -158,12 +158,12 @@ const handleSubmit = async (e: React.FormEvent) => {
     await verifyOtp(emailToVerify, otpValue, purpose);
 
     if (purpose === "forgot-password") {
-      toast.success("✅ OTP verified! You can now reset your password.");
+      toast.success(" OTP verified! You can now reset your password.");
       setTimeout(() => {
         router.push(`/ResetPassword?email=${encodeURIComponent(emailToVerify)}`);
       }, 1500);
     } else if (purpose === "signup") {
-     toast.success("✅ Email verified successfully!");
+     toast.success(" Email verified successfully!");
   setTimeout(() => {
     if (roleFromStorage === "company") {
        router.push(`/Company/VerificationPage?email=${encodeURIComponent(emailToVerify)}`);

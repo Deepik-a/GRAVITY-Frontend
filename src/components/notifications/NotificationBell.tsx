@@ -39,13 +39,13 @@ export default function NotificationBell({ currentUser, scrolled }: Notification
         if (notification.recipientType === currentUser.role) {
           setNotifications((prev) => [notification, ...prev]);
           setUnreadCount((prev) => prev + 1);
-          try {
-            // Using a clearer bell ring sound
-            const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
-            audio.play().catch((e) => console.warn("Audio play failed", e));
-          } catch (e) {
-            console.warn("Audio play error", e);
-          }
+          // try {
+          //   // Using a clearer bell ring sound
+          //   const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
+          //   audio.play().catch((e) => console.warn("Audio play failed", e));
+          // } catch (e) {
+          //   console.warn("Audio play error", e);
+          // }
           toast.info(notification.title, {
             onClick: () => setIsOpen(true),
             icon: <Bell className="text-blue-500" />,

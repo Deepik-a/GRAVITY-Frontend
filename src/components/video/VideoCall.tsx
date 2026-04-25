@@ -182,10 +182,10 @@ const VideoCall: React.FC<VideoCallProps> = ({
         completionRef.current = true;
         try {
           await completeBooking(bookingId);
-          console.log("✅ Consultation auto-completed successfully");
+          console.log("Consultation auto-completed successfully");
           toast.success("Consultation recorded as completed based on call duration.");
         } catch (error) {
-          console.error("❌ Failed to auto-complete consultation:", error);
+          console.error(" Failed to auto-complete consultation:", error);
           completionRef.current = false; // allow retry if needed
         }
       }

@@ -25,7 +25,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     await forgotPassword(email);
     toast.success("OTP has been sent to your email!");
 
-    // ✅ Redirect to OTP verification page after successful request
+    //  Redirect to OTP verification page after successful request
     setTimeout(() => {
       router.push(`/otp?email=${encodeURIComponent(email)}&action=forgot`);
     }, 2000);

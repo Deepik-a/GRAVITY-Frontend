@@ -6,6 +6,11 @@ import { setSlotConfig, deleteSlotConfig, getSlotConfigs, getCompanyBookings } f
 import { Plus, Trash2, Calendar, Clock, Save, AlertCircle, Edit2, X } from "lucide-react";
 
 const weekdaysList = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const MAX_SLOT_RULES = 3;
+
+function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return aStart <= bEnd && bStart <= aEnd;
+}
 
 interface SlotConfig {
   id?: string;
@@ -52,7 +57,15 @@ export default function SlotManagement() {
   const fetchConfigs = async () => {
     try {
       const data = await getSlotConfigs();
-      setConfigs(data);
+      const normalized = data.map((r: SlotConfig) => ({
+        ...r,
+        exceptionalDays: Array.isArray(r.exceptionalDays)
+          ? (r.exceptionalDays as (string | { toString?: () => string })[]).map((ex) =>
+              typeof ex === "string" ? ex.split("T")[0] : String(ex).split("T")[0]
+            )
+          : [],
+      }));
+      setConfigs(normalized);
     } catch (error) {
       console.error("Failed to fetch configs:", error);
     }
@@ -119,9 +132,77 @@ export default function SlotManagement() {
     if (config.weekdays.length === 0) {
       newErrors.weekdays = "Select at least one weekday";
     }
+
+    if (config.startDate && config.endDate) {
+      for (const c of configs) {
+        if (editingId && c.id === editingId) continue;
+        if (!c.startDate || !c.endDate) continue;
+        if (rangesOverlap(config.startDate, config.endDate, c.startDate, c.endDate)) {
+          newErrors.endDate = "This date range overlaps another slot rule";
+          break;
+        }
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Real-time validation handlers
+  const handleStartDateChange = (value: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (value && value < today) {
+      toast.error("Start date must be today or later");
+    }
+    setConfig({ ...config, startDate: value });
+    if (errors.startDate) setErrors(prev => ({ ...prev, startDate: "" }));
+  };
+
+  const handleEndDateChange = (value: string) => {
+    if (value && config.startDate && value <= config.startDate) {
+      toast.error("End date must be after start date");
+    }
+    if (value && config.startDate) {
+      for (const c of configs) {
+        if (editingId && c.id === editingId) continue;
+        if (!c.startDate || !c.endDate) continue;
+        if (rangesOverlap(config.startDate, value, c.startDate, c.endDate)) {
+          toast.error(`This date range overlaps with existing rule: ${formatDate(c.startDate)} - ${formatDate(c.endDate)}`);
+          break;
+        }
+      }
+    }
+    setConfig({ ...config, endDate: value });
+    if (errors.endDate) setErrors(prev => ({ ...prev, endDate: "" }));
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    setConfig({ ...config, startTime: value });
+    if (errors.startTime) setErrors(prev => ({ ...prev, startTime: "" }));
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    if (value && config.startTime && value <= config.startTime) {
+      toast.error("End time must be after start time");
+    }
+    setConfig({ ...config, endTime: value });
+    if (errors.endTime) setErrors(prev => ({ ...prev, endTime: "" }));
+  };
+
+  const handleSlotDurationChange = (value: number) => {
+    if (value < 15) {
+      toast.error("Slot duration must be at least 15 minutes");
+    }
+    setConfig({ ...config, slotDuration: value });
+    if (errors.slotDuration) setErrors(prev => ({ ...prev, slotDuration: "" }));
+  };
+
+  const handleBufferTimeChange = (value: number) => {
+    if (value < 10) {
+      toast.error("Buffer time must be at least 10 minutes");
+    }
+    setConfig({ ...config, bufferTime: value });
+    if (errors.bufferTime) setErrors(prev => ({ ...prev, bufferTime: "" }));
   };
 
   const handleWeekdayToggle = (day: string) => {
@@ -143,6 +224,16 @@ export default function SlotManagement() {
     // Validate date is within range
     if (newExDate < config.startDate || newExDate > config.endDate) {
       toast.error("Exceptional date must be within the date range");
+      return;
+    }
+
+    const [yy, mm, dd] = newExDate.split("-").map(Number);
+    const picked = new Date(yy, mm - 1, dd);
+    const weekdayName = picked.toLocaleDateString("en-US", { weekday: "long" });
+    if (!config.weekdays.includes(weekdayName)) {
+      toast.error(
+        `${weekdayName} is not an available weekday in this rule. Add it under available weekdays first, or choose another date.`
+      );
       return;
     }
 
@@ -192,7 +283,7 @@ export default function SlotManagement() {
         setEditingId(null);
       } else {
         // Create new config
-        await setSlotConfig({ ...config, createdAt: new Date() });
+        await setSlotConfig({ ...config });
         toast.success("Slot configuration created successfully!");
       }
       
@@ -228,13 +319,13 @@ export default function SlotManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = () => {
-    // Custom toast with confirmation
-    const resolveDelete = async (toastId: string | number) => {
+  const handleDeleteRule = (ruleId: string) => {
+    const toastId = `delete-slot-rule-${ruleId}`;
+    const resolveDelete = async () => {
       toast.dismiss(toastId);
       setLoading(true);
       try {
-        await deleteSlotConfig();
+        await deleteSlotConfig(ruleId);
         toast.success("Rule deleted successfully");
         await fetchConfigs();
       } catch (error: unknown) {
@@ -251,16 +342,18 @@ export default function SlotManagement() {
           <p className="font-semibold text-gray-800">Are you sure you want to delete this rule?</p>
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={() => {
-                if (typeof closeToast === 'function') closeToast();
-                resolveDelete(123456); // specific ID or just let it be
+                closeToast?.();
+                void resolveDelete();
               }}
               className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
             >
               Confirm Delete
             </button>
             <button
-              onClick={closeToast}
+              type="button"
+              onClick={() => closeToast?.()}
               className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-300 transition-colors"
             >
               Cancel
@@ -273,7 +366,7 @@ export default function SlotManagement() {
         autoClose: false,
         closeOnClick: false,
         draggable: false,
-        toastId: 123456, // Unique ID to target for dismissal
+        toastId,
       }
     );
   };
@@ -294,6 +387,10 @@ export default function SlotManagement() {
   };
 
   const openCreateModal = () => {
+    if (configs.length >= MAX_SLOT_RULES) {
+      toast.error(`You can have at most ${MAX_SLOT_RULES} slot rules.`);
+      return;
+    }
     resetForm();
     setShowModal(true);
   };
@@ -322,7 +419,7 @@ export default function SlotManagement() {
     return config.startDate || getMinDate();
   };
 
-  const hasActiveRule = configs.length > 0 && new Date(configs[0].endDate) >= new Date(new Date().setHours(0,0,0,0));
+  const atMaxRules = configs.length >= MAX_SLOT_RULES;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -334,13 +431,13 @@ export default function SlotManagement() {
         </div>
         <button
           onClick={openCreateModal}
-          disabled={hasActiveRule}
+          disabled={atMaxRules}
           className={`px-6 py-3 rounded-xl font-semibold transition-all shadow-lg flex items-center gap-2 ${
-            hasActiveRule 
+            atMaxRules
               ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none" 
               : "bg-gradient-to-r from-[#081C45] to-[#1E40AF] text-white hover:opacity-90 hover:shadow-xl"
           }`}
-          title={hasActiveRule ? "A rule is already active. You can create a new one after the current rule expires." : "Create a new slot rule"}
+          title={atMaxRules ? `You can have at most ${MAX_SLOT_RULES} slot rules. Delete one to add another.` : "Create a new slot rule"}
         >
           <Plus size={20} />
           Create New Rule
@@ -353,8 +450,8 @@ export default function SlotManagement() {
     <div>
       <p className="text-sm text-yellow-800 font-medium">Editing Policy</p>
       <p className="text-xs text-yellow-700">
-        When editing an existing rule, only exceptional days (holidays) can be modified. 
-        Editing is disabled if any day in the rule&apos;s range has more than 5 bookings.
+        You can define up to {MAX_SLOT_RULES} rules with non-overlapping date ranges. Exceptional days are optional and must fall on a weekday you already offer.
+        For an active rule, only holidays (exceptional days) can be changed unless the rule has ended. Editing is disabled if any day in the range has more than 5 bookings.
       </p>
     </div>
   </div>
@@ -392,19 +489,19 @@ export default function SlotManagement() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Slot Duration:</span>
-                  <span className="font-medium">{config.slotDuration} mins</span>
+                  <span className="font-medium text-black">{config.slotDuration} mins</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Buffer Time:</span>
-                  <span className="font-medium">{config.bufferTime} mins</span>
+                  <span className="ffont-medium text-neutral-950">{config.bufferTime} mins</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Days:</span>
-                  <span className="font-medium">{config.weekdays.length} days/week</span>
+                  <span className="font-medium text-black">{config.weekdays.length} days/week</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Holidays:</span>
-                  <span className="font-medium">{config.exceptionalDays.length} days</span>
+                  <span className="font-medium text-black">{config.exceptionalDays.length} days</span>
                 </div>
               </div>
               
@@ -422,7 +519,8 @@ export default function SlotManagement() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete()}
+                  type="button"
+                  onClick={() => config.id && handleDeleteRule(config.id)}
                   className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} />
@@ -480,11 +578,9 @@ export default function SlotManagement() {
         min={getMinDate()}
         value={config.startDate}
         disabled={!!editingId}
-        onChange={(e) => {
-          setConfig({ ...config, startDate: e.target.value });
-          if (errors.startDate) setErrors(prev => ({ ...prev, startDate: "" }));
-        }}
+        onChange={(e) => handleStartDateChange(e.target.value)}
         className={`w-full p-3 rounded-xl border ${errors.startDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+        style={{ colorScheme: 'normal' }}
       />
       {/* Always show calendar icon even when disabled */}
       <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
@@ -503,14 +599,11 @@ export default function SlotManagement() {
       <input
         type="date"
         required
-        min={getMinEndDate()}
         value={config.endDate}
         disabled={!!editingId}
-        onChange={(e) => {
-          setConfig({ ...config, endDate: e.target.value });
-          if (errors.endDate) setErrors(prev => ({ ...prev, endDate: "" }));
-        }}
+        onChange={(e) => handleEndDateChange(e.target.value)}
         className={`w-full p-3 rounded-xl border ${errors.endDate ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
+        style={{ colorScheme: 'normal' }}
       />
       {/* Always show calendar icon even when disabled */}
       <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
@@ -536,10 +629,7 @@ export default function SlotManagement() {
         required
         value={config.startTime}
         disabled={!!editingId}
-        onChange={(e) => {
-          setConfig({ ...config, startTime: e.target.value });
-          if (errors.startTime) setErrors(prev => ({ ...prev, startTime: "" }));
-        }}
+        onChange={(e) => handleStartTimeChange(e.target.value)}
         className={`w-full p-3 rounded-xl border ${errors.startTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
       />
       <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
@@ -560,10 +650,7 @@ export default function SlotManagement() {
         required
         value={config.endTime}
         disabled={!!editingId}
-        onChange={(e) => {
-          setConfig({ ...config, endTime: e.target.value });
-          if (errors.endTime) setErrors(prev => ({ ...prev, endTime: "" }));
-        }}
+        onChange={(e) => handleEndTimeChange(e.target.value)}
         className={`w-full p-3 rounded-xl border ${errors.endTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''} pr-10`}
       />
       <div className="absolute right-3 top-3 text-gray-400 pointer-events-none">
@@ -579,17 +666,15 @@ export default function SlotManagement() {
           {/* Duration and Buffer */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Slot Duration (minutes) *</label>
+              <label className="text-sm font-semibold text-black">Slot Duration (minutes) *</label>
               <input
                 type="number"
                 required
                 min="15"
+                max="360"
                 value={config.slotDuration}
                 disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, slotDuration: Number(e.target.value) });
-                  if (errors.slotDuration) setErrors(prev => ({ ...prev, slotDuration: "" }));
-                }}
+                onChange={(e) => handleSlotDurationChange(Number(e.target.value))}
                 className={`w-full p-3 rounded-xl border ${errors.slotDuration ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.slotDuration && (
@@ -605,10 +690,7 @@ export default function SlotManagement() {
                 min="10"
                 value={config.bufferTime}
                 disabled={!!editingId}
-                onChange={(e) => {
-                  setConfig({ ...config, bufferTime: Number(e.target.value) });
-                  if (errors.bufferTime) setErrors(prev => ({ ...prev, bufferTime: "" }));
-                }}
+                onChange={(e) => handleBufferTimeChange(Number(e.target.value))}
                 className={`w-full p-3 rounded-xl border ${errors.bufferTime ? 'border-red-300' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-black ${editingId ? 'bg-gray-50' : ''}`}
               />
               {errors.bufferTime && (
@@ -645,7 +727,10 @@ export default function SlotManagement() {
 
           {/* Exceptional Days */}
           <div className="space-y-4">
-            <label className="text-sm font-semibold text-gray-700 block">Exceptional Days (Holidays)</label>
+            <label className="text-sm font-semibold text-gray-700 block">Exceptional days (optional holidays)</label>
+            <p className="text-xs text-gray-500">
+              Leave empty if you have none. Each date must be within the range above and land on an available weekday.
+            </p>
             <div className="flex gap-2">
               <input
                 type="date"

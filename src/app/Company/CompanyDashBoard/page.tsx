@@ -59,6 +59,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
   const [userInfo, setUserInfo] = useState({ 
     id: '', 
     name: 'Elite Properties Ltd.', 
@@ -99,26 +101,40 @@ export default function DashboardPage() {
 
       // Fetch data
       import('@/services/CompanyService').then(({ getDashboardStats, getMyProfile, getCompanyBookings, getWallet }) => {
-        getDashboardStats().then(stats => {
-          setDashboardStats(stats);
-          if (stats.isSubscribed !== undefined) {
-            setUserInfo(prev => ({ ...prev, isSubscribed: stats.isSubscribed }));
+        Promise.all([
+          getDashboardStats().catch(_err => {
+            console.error("Fetch dashboard stats failed", _err);
+            return null;
+          }),
+          getCompanyBookings(1, 5).catch(_err => {
+            console.error("Fetch recent activities failed", _err);
+            return { bookings: [] };
+          }),
+          getWallet().catch(_err => {
+            console.error("Fetch wallet failed", _err);
+            return null;
+          }),
+          getMyProfile().catch(_err => {
+            console.error("Sync profile failed", _err);
+            return null;
+          })
+        ]).then(([stats, bookingsData, walletData, profile]) => {
+          if (stats) {
+            setDashboardStats(stats);
+            if (stats.isSubscribed !== undefined) {
+              setUserInfo(prev => ({ ...prev, isSubscribed: stats.isSubscribed }));
+            }
           }
-        }).catch(_err => {
-          console.error("Fetch dashboard stats failed", _err);
-        });
-
-        getCompanyBookings(1, 5).then(data => {
-          const bookings = Array.isArray(data) ? data : (data?.bookings || []);
-          setRealtimeActivities(bookings);
-        }).catch(_err => console.error("Fetch recent activities failed", _err));
-
-        getWallet().then(data => {
-          setWalletInfo(data);
-        }).catch(_err => console.error("Fetch wallet failed", _err));
-
-        // Sync profile for name/isSubscribed/logo (source of truth: /company/me)
-        getMyProfile().then(profile => {
+          
+          if (bookingsData) {
+            const bookings = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.bookings || []);
+            setRealtimeActivities(bookings);
+          }
+          
+          if (walletData) {
+            setWalletInfo(walletData);
+          }
+          
           if (profile) {
             const displayName = profile.profile?.companyName || profile.name;
             
@@ -144,8 +160,12 @@ export default function DashboardPage() {
               localStorage.setItem('user', JSON.stringify(newUser));
             }
           }
+          
+          setIsLoading(false);
         }).catch(_err => {
-          console.error("Sync profile failed", _err);
+          console.error("Dashboard data fetch failed", _err);
+          setAuthError(true);
+          setIsLoading(false);
         });
       });
     } else {
@@ -155,13 +175,13 @@ export default function DashboardPage() {
 
   // Chart data
   const earningsData = {
-    labels: dashboardStats?.revenueTrends?.length 
+    labels: dashboardStats?.revenueTrends && dashboardStats.revenueTrends.length > 0
       ? dashboardStats.revenueTrends.map(t => t.month) 
       : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
       {
         label: 'Earnings (₹)',
-        data: dashboardStats?.revenueTrends?.length 
+        data: dashboardStats?.revenueTrends && dashboardStats.revenueTrends.length > 0
           ? dashboardStats.revenueTrends.map(t => t.amount) 
           : [0, 0, 0, 0, 0, 0],
         backgroundColor: 'rgba(30, 64, 175, 0.8)',
@@ -171,12 +191,12 @@ export default function DashboardPage() {
   };
 
   const bookingStatusData = {
-    labels: dashboardStats?.statusBreakdown?.length 
+    labels: dashboardStats?.statusBreakdown && dashboardStats.statusBreakdown.length > 0
       ? dashboardStats.statusBreakdown.map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)) 
       : ['Completed', 'Pending', 'Cancelled'],
     datasets: [
       {
-        data: dashboardStats?.statusBreakdown?.length 
+        data: dashboardStats?.statusBreakdown && dashboardStats.statusBreakdown.length > 0
           ? dashboardStats.statusBreakdown.map(s => s.count) 
           : [0, 0, 0],
         backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6'],
@@ -300,6 +320,41 @@ export default function DashboardPage() {
   }
 
   const finalRecentActivities: ActivityItem[] = processedActivities.length > 0 ? processedActivities : [];
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Authentication Error</h2>
+          <p className="text-gray-600 mb-4">Unable to load dashboard. Please log in again.</p>
+          <button
+            onClick={() => router.push('/signup?show=login&userType=company')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

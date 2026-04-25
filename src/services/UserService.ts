@@ -2,7 +2,7 @@ import api from "./api/useApi";
 import { extractAxiosError } from "@/utils/HandleAxiosError";
 import { CompanyProfile } from "@/types/AuthTypes";
 import { Booking } from "@/types/BookingTypes";
-import { API_ROUTES } from "@/shared/constants/routes";
+import { API_ROUTES } from "@/shared/constants/AppRoutes";
 
 export interface Slot {
   id: string;
@@ -23,7 +23,7 @@ export interface SlotConfig {
   startDate: string;
   endDate: string;
   weekdays: string[];
-  exceptionalDays: ExceptionalDay[];
+  exceptionalDays: ExceptionalDay[] | string[];
 }
 
 export const getAllCompanies = async (params: Record<string, unknown> = {}): Promise<{ companies: CompanyProfile[]; total: number; totalPages: number }> => {
@@ -52,20 +52,23 @@ export const getAvailableSlots = async (companyId: string, date: string): Promis
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get available slots failed", error);
+    console.error("// Get available slots failed", error);
     throw new Error(extractAxiosError(error));
   }
 };
 
-export const getSlotConfig = async (companyId: string): Promise<SlotConfig> => {
+/** Public slot rules for a company (0–3 non-overlapping ranges). */
+export const getSlotConfigsForCompany = async (companyId: string): Promise<SlotConfig[]> => {
   try {
-    const response = await api.get<SlotConfig>(`${API_ROUTES.USER.COMPANIES}/${companyId}/slots/config`, {
+    const response = await api.get<SlotConfig[] | SlotConfig>(`${API_ROUTES.USER.COMPANIES}/${companyId}/slots/config`, {
       params: { _t: Date.now() },
       withCredentials: true,
     });
-    return response.data;
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    return data ? [data as SlotConfig] : [];
   } catch (error) {
-    console.error("❌ Get slot config failed", error);
+    console.error("// Get slot config failed", error);
     throw new Error(extractAxiosError(error));
   }
 };
@@ -92,7 +95,7 @@ export const getUserBookings = async (page?: number, limit?: number): Promise<{ 
 
 export const createCheckoutSession = async (bookingId: string) => {
   try {
-    const response = await api.post("/payments/create-checkout-session", { bookingId });
+    const response = await api.post(API_ROUTES.PAYMENTS.CREATE_CHECKOUT, { bookingId });
     return response.data;
   } catch (error) {
     throw new Error(extractAxiosError(error));
@@ -115,7 +118,7 @@ export const verifyPaymentSession = async (
       bookingId?: string;
       sessionId?: string;
       booking?: Booking;
-    }>("/payments/verify-session", {
+    }>(API_ROUTES.PAYMENTS.VERIFY_SESSION, {
       params: { sessionId }
     });
     return response.data;

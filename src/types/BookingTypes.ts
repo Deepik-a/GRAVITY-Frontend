@@ -1,3 +1,5 @@
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
+
 export interface Booking {
   id: string;
   date: string;
@@ -5,7 +7,7 @@ export interface Booking {
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
   price?: number;
-  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  paymentStatus: PaymentStatus;
   serviceStatus: "pending" | "completed";
   isRescheduled?: boolean;
   companyDetails?: {

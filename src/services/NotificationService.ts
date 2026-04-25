@@ -1,5 +1,6 @@
 import api from "./api/useApi";
 import chatService from "./ChatService";
+import { API_ROUTES } from "@/shared/constants/AppRoutes";
 
 export interface INotification {
   id: string;
@@ -14,17 +15,19 @@ export interface INotification {
 
 class NotificationService {
   async getNotifications() {
-    const response = await api.get("/notifications");
+    const response = await api.get(API_ROUTES.NOTIFICATIONS.BASE);
     return response.data;
   }
 
   async markAsRead(notificationId: string) {
-    const response = await api.patch(`/notifications/${notificationId}/read`);
+    const response = await api.patch(
+      API_ROUTES.NOTIFICATIONS.READ_BY_ID.replace(":notificationId", notificationId)
+    );
     return response.data;
   }
 
   async markAllAsRead() {
-    const response = await api.patch("/notifications/read-all");
+    const response = await api.patch(API_ROUTES.NOTIFICATIONS.READ_ALL);
     return response.data;
   }
 

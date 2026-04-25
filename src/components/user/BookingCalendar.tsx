@@ -4,20 +4,60 @@ import React, { useState, useMemo } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, addMonths, subMonths, isBefore, startOfToday } from "date-fns";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 
-interface SlotConfig {
+interface SlotRule {
   startDate: string;
   endDate: string;
   weekdays: string[];
-  exceptionalDays: { date: string; reason: string }[];
+  exceptionalDays: { date: string; reason: string }[] | string[];
 }
 
 interface BookingCalendarProps {
   selectedDate: string;
   onDateChange: (date: string) => void;
-  config: SlotConfig | null;
+  /** One or more slot rules; a day is selectable if any rule marks it available */
+  configs: SlotRule[] | null;
 }
 
-export default function BookingCalendar({ selectedDate, onDateChange, config }: BookingCalendarProps) {
+function isDayExceptional(rule: SlotRule, dStr: string): boolean {
+  const eds = rule.exceptionalDays ?? [];
+  if (eds.length === 0) return false;
+  if (typeof eds[0] === "string") {
+    return (eds as string[]).some((s) => {
+      try {
+        return format(new Date(s), "yyyy-MM-dd") === dStr;
+      } catch {
+        return false;
+      }
+    });
+  }
+  return (eds as { date: string }[]).some((ed) => {
+    try {
+      return format(new Date(ed.date), "yyyy-MM-dd") === dStr;
+    } catch {
+      return false;
+    }
+  });
+}
+
+function isAvailableInRule(rule: SlotRule, day: Date, dStr: string, todayStart: Date): boolean {
+  // Check if day is strictly before today (past dates are not available)
+  // Today itself should be allowed if it's within the slot rule range
+  const dayStart = new Date(day);
+  dayStart.setHours(0, 0, 0, 0);
+  if (dayStart < todayStart) return false;
+  // Check if day is within the rule's date range
+  if (rule.startDate && dStr < rule.startDate) return false;
+  if (rule.endDate && dStr > rule.endDate) return false;
+  // Check if the day's weekday is in the rule's available weekdays
+  const dayName = format(day, "EEEE");
+  const isWeekdayMatch = rule.weekdays.includes(dayName);
+  if (!isWeekdayMatch) return false;
+  // Check if the day is marked as exceptional (holiday)
+  if (isDayExceptional(rule, dStr)) return false;
+  return true;
+}
+
+export default function BookingCalendar({ selectedDate, onDateChange, configs }: BookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = useMemo(() => startOfToday(), []);
 
@@ -28,30 +68,10 @@ export default function BookingCalendar({ selectedDate, onDateChange, config }: 
   }, [currentMonth]);
 
   const isAvailable = useMemo(() => (day: Date) => {
-    if (!config) return false;
-    if (isBefore(day, today)) return false;
-
-    // Check date range
+    if (!configs?.length) return false;
     const dStr = format(day, "yyyy-MM-dd");
-    if (config.startDate && dStr < config.startDate) return false;
-    if (config.endDate && dStr > config.endDate) return false;
-
-    // Check weekdays
-    const dayName = format(day, "EEEE").toLowerCase();
-    const isWeekdayMatch = config.weekdays.map(d => d.toLowerCase()).includes(dayName);
-
-    // Check exceptional days (unavailable days)
-    const isExceptional = config.exceptionalDays?.some(ed => {
-       try {
-         const exDate = format(new Date(ed.date), "yyyy-MM-dd");
-         return exDate === dStr;
-       } catch {
-         return false;
-       }
-    });
-
-    return isWeekdayMatch && !isExceptional;
-  }, [config, today]);
+    return configs.some((rule) => isAvailableInRule(rule, day, dStr, today));
+  }, [configs, today]);
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));

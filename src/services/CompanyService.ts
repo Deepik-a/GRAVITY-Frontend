@@ -1,7 +1,8 @@
 import api from "./api/useApi";
 import { AxiosError } from "axios";
-import { API_ROUTES } from "@/shared/constants/routes";
+import { API_ROUTES } from "@/shared/constants/AppRoutes";
 import { CompanyProfile } from "@/types/AuthTypes";
+import { MESSAGES } from "@/shared/constants/Messages";
 
 export interface DashboardStats {
   totalConsultations: number;
@@ -39,19 +40,19 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
 
 export const uploadCompanyDocuments = async (formData: FormData) => {
   try {
-    console.log("📤 uploadCompanyDocuments called");
+    console.log(" uploadCompanyDocuments called");
 
     const response = await api.post(API_ROUTES.COMPANY.VERIFICATION, formData, {
       withCredentials: true,
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    console.log("✅ Upload successful!");
+    console.log("Upload successful!");
     return response.data;
 
   } catch (error) {
-    console.error("❌ Upload failed", error);
-    throw new Error(extractErrorMessage(error, "Upload failed"));
+    console.error(" Upload failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.UPLOAD_FAILED));
   }
 };
 
@@ -67,8 +68,8 @@ export const uploadCompanyImage = async (file: File) => {
 
     return response.data.url;
   } catch (error) {
-    console.error("❌ Upload image failed", error);
-    throw new Error(extractErrorMessage(error, "Upload image failed"));
+    console.error(" Upload image failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.UPLOAD_IMAGE_FAILED));
   }
 };
 
@@ -79,8 +80,8 @@ export const getProfile = async (companyId: string): Promise<CompanyServiceProfi
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get profile failed", error);
-    throw new Error(extractErrorMessage(error, "Get profile failed"));
+    console.error(" Get profile failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.GET_PROFILE_FAILED));
   }
 };
 
@@ -91,8 +92,8 @@ export const getMyProfile = async (): Promise<CompanyServiceProfile> => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get my profile failed", error);
-    throw new Error(extractErrorMessage(error, "Get my profile failed"));
+    console.error(" Get my profile failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.GET_MY_PROFILE_FAILED));
   }
 };
 
@@ -103,8 +104,8 @@ export const saveProfile = async (companyId: string, profileData: Record<string,
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Save profile failed", error);
-    throw new Error(extractErrorMessage(error, "Save profile failed"));
+    console.error(" Save profile failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.SAVE_PROFILE_FAILED));
   }
 };
 
@@ -116,8 +117,8 @@ export const deleteProfile = async (companyId: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Delete profile failed", error);
-    throw new Error(extractErrorMessage(error, "Delete profile failed"));
+    console.error(" Delete profile failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.DELETE_PROFILE_FAILED));
   }
 };
 
@@ -128,8 +129,8 @@ export const setSlotConfig = async (config: Record<string, unknown>) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Set slot config failed", error);
-    throw new Error(extractErrorMessage(error, "Set slot config failed"));
+    console.error(" Set slot config failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.SET_SLOT_CONFIG_FAILED));
   }
 };
 
@@ -138,23 +139,25 @@ export const getSlotConfigs = async () => {
     const response = await api.get(API_ROUTES.COMPANY.SLOTS_CONFIG, {
       withCredentials: true,
     });
-    // Return as array - backend returns single config, wrap in array for consistency
-    return response.data ? [response.data] : [];
+    const data = response.data;
+    if (Array.isArray(data)) return data;
+    return data ? [data] : [];
   } catch (error) {
-    console.error("❌ Get slot configs failed", error);
-    throw new Error(extractErrorMessage(error, "Get slot configs failed"));
+    console.error(" Get slot configs failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.GET_SLOT_CONFIGS_FAILED));
   }
 };
 
-export const deleteSlotConfig = async () => {
+export const deleteSlotConfig = async (ruleId: string) => {
   try {
     const response = await api.delete(API_ROUTES.COMPANY.SLOTS_CONFIG, {
+      params: { ruleId },
       withCredentials: true,
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Delete slot config failed", error);
-    throw new Error(extractErrorMessage(error, "Delete slot config failed"));
+    console.error("Delete slot config failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.DELETE_SLOT_CONFIG_FAILED));
   }
 };
 
@@ -166,8 +169,8 @@ export const getCompanyBookings = async (page?: number, limit?: number) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get company bookings failed", error);
-    throw new Error(extractErrorMessage(error, "Get company bookings failed"));
+    console.error(" Get company bookings failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.GET_COMPANY_BOOKINGS_FAILED));
   }
 };
 
@@ -178,8 +181,8 @@ export const getWallet = async () => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get wallet failed", error);
-    throw new Error(extractErrorMessage(error, "Failed to fetch wallet data"));
+    console.error(" Get wallet failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.FETCH_WALLET_FAILED));
   }
 };
 
@@ -190,11 +193,14 @@ export const rescheduleBooking = async (bookingId: string, newDate: string, newS
       newStartTime
     }, {
       withCredentials: true,
+      headers: {
+        'x-role': 'company'
+      }
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Reschedule booking failed", error);
-    throw new Error(extractErrorMessage(error, "Reschedule booking failed"));
+    console.error(" Reschedule booking failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.RESCHEDULE_BOOKING_FAILED));
   }
 };
 
@@ -205,8 +211,24 @@ export const cancelBooking = async (bookingId: string) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Cancel booking failed", error);
-    throw new Error(extractErrorMessage(error, "Cancel booking failed"));
+    console.error(" Cancel booking failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.CANCEL_BOOKING_FAILED));
+  }
+};
+
+export const getCompanyAvailableSlots = async (companyId: string, date: string): Promise<string[]> => {
+  try {
+    const response = await api.get<string[]>(API_ROUTES.USER.SLOTS_AVAILABLE, {
+      params: { companyId, date, _t: Date.now() },
+      withCredentials: true,
+      headers: {
+        'x-role': 'company'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error(" Get available slots failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.GET_SLOT_CONFIGS_FAILED));
   }
 };
 
@@ -217,7 +239,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ Get dashboard stats failed", error);
-    throw new Error(extractErrorMessage(error, "Get dashboard stats failed"));
+    console.error(" Get dashboard stats failed", error);
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.FETCH_DASHBOARD_STATS_FAILED));
   }
 };
