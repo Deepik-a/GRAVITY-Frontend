@@ -9,7 +9,7 @@ function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
-   // const otp = searchParams.get("otp") || ""; // ✅ Comes from previous step
+   // const otp = searchParams.get("otp") || ""; //  Comes from previous step
 
   const [formData, setFormData] = useState({
     password: "",
@@ -70,7 +70,7 @@ function ResetPasswordContent() {
     setIsLoading(true);
     try {
     await resetPassword(email, formData.password);
-      toast.success("✅ Password reset successfully!");
+      toast.success(" Password reset successfully!");
       setTimeout(() => router.push("/signup?message=password_reset_success"), 1500);
     } catch (error) {
       toast.error((error as Error).message);

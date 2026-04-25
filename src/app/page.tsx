@@ -5,13 +5,14 @@ import Head from 'next/head';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
+import { ROUTES } from '@/shared/constants/AppRoutes';
 
 const GravityLandingPage = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [userType, setUserType] = useState<'user' | 'company' | null>(null);
   const router = useRouter();
-  useAuth();
+  const { isAuthenticated, role, isLoading } = useAuth();
   const words = ["HomeOwner", "HomeDreamer"];
 
   const [index, setIndex] = useState(0);
@@ -23,7 +24,23 @@ const GravityLandingPage = () => {
     return () => clearInterval(interval);
   }, [words.length]);
 
-  // Removed automatic redirection to dashboards to keep landing page publicly accessible
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !role) return;
+
+    if (role === "user") {
+      router.replace(ROUTES.USER.HOME_PAGE);
+      return;
+    }
+
+    if (role === "company") {
+      router.replace(ROUTES.COMPANY.DASHBOARD);
+      return;
+    }
+
+    if (role === "admin") {
+      router.replace(ROUTES.ADMIN.DASHBOARD);
+    }
+  }, [isLoading, isAuthenticated, role, router]);
 
 
   

@@ -217,6 +217,7 @@ export default function CompanyProfilePage() {
         consultationFee: Number(tempProfile.consultationFee),
         establishedYear: Number(tempProfile.establishedYear),
         companySize: tempProfile.companySize,
+        phone:tempProfile.phone,
         location: tempProfile.location,
         overview: tempProfile.overview,
         projectsCompleted: Number(tempProfile.projectsCompleted),
@@ -996,7 +997,7 @@ export default function CompanyProfilePage() {
                     <input
                       type="tel"
                       value={tempProfile.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900"
                     />
                   ) : (

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCompanyBookings, rescheduleBooking, cancelBooking } from "@/services/CompanyService";
-import { getAvailableSlots } from "@/services/UserService";
+import { getCompanyBookings, rescheduleBooking, cancelBooking, getCompanyAvailableSlots } from "@/services/CompanyService";
 import { toast } from "react-toastify";
 import { Calendar, Clock, User, CheckCircle, Ban, RefreshCcw, Mail, AlertCircle, XCircle, Video, Loader2, Timer, History } from "lucide-react";
 import io from "socket.io-client";
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
 // import VideoCall from "@/components/video/VideoCall";
 
 interface Booking {
@@ -17,7 +17,7 @@ interface Booking {
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
   price: number;
-  paymentStatus: string;
+  paymentStatus: PaymentStatus;
   isRescheduled?: boolean;
   userId: string;
   createdAt: string;
@@ -109,19 +109,17 @@ export default function CompanyBookings() {
     try {
       // Ensure date is in YYYY-MM-DD format
       const dateStr = new Date(booking.date).toISOString().split('T')[0];
-      let slots = await getAvailableSlots(booking.companyId, dateStr);
+      let slots = await getCompanyAvailableSlots(booking.companyId, dateStr);
       
-      // Filter out past slots if rescheduling to today
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      if (dateStr === todayStr) {
-        const currentTimeInMins = now.getHours() * 60 + now.getMinutes();
-        slots = slots.filter((slotTime) => {
-          const [hours, minutes] = slotTime.split(":").map(Number);
-          const slotTimeInMins = hours * 60 + minutes;
-          return slotTimeInMins > currentTimeInMins;
-        });
-      }
+      // Filter slots that are after the current booking's time
+      const [bookingHours, bookingMinutes] = booking.startTime.split(":").map(Number);
+      const bookingTimeInMins = bookingHours * 60 + bookingMinutes;
+      
+      slots = slots.filter((slotTime) => {
+        const [hours, minutes] = slotTime.split(":").map(Number);
+        const slotTimeInMins = hours * 60 + minutes;
+        return slotTimeInMins > bookingTimeInMins;
+      });
 
       setAvailableSlots(slots.slice(0, 5));
     } catch (error: unknown) {
@@ -149,16 +147,46 @@ export default function CompanyBookings() {
   };
 
   const handleCancelClick = async (booking: Booking) => {
-    if (!window.confirm("Are you sure you want to cancel this booking? This will refund the user if paid.")) return;
-    
-    try {
-      await cancelBooking(booking.id);
-      toast.success("Booking cancelled successfully!");
-      fetchBookings();
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast.error(err.message || "Failed to cancel booking");
-    }
+    const confirmToast = toast(
+      ({ closeToast }) => (
+        <div className="flex flex-col gap-3 p-2">
+          <p className="font-medium text-gray-800">Are you sure you want to cancel this booking? This will refund the user if paid.</p>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => {
+                closeToast();
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              No
+            </button>
+            <button
+              onClick={async () => {
+                closeToast();
+                try {
+                  await cancelBooking(booking.id);
+                  toast.success("Booking cancelled successfully!");
+                  fetchBookings();
+                } catch (error: unknown) {
+                  const err = error as { message?: string };
+                  toast.error(err.message || "Failed to cancel booking");
+                }
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Yes, Cancel
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        position: "top-center",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+      }
+    );
   };
 
   const categorizedBookings = bookings.filter(booking => {

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/shared/constants/AppRoutes";
 
 /* ─── Types ─── */
 interface SlideData {
@@ -110,6 +112,7 @@ const HeroCarousel = () => {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const slide = slides[current];
+  const router = useRouter();
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -223,6 +226,7 @@ const HeroCarousel = () => {
               exit="exit"
             >
               <motion.button
+                onClick={() => router.push(ROUTES.USER.COMPANY_LISTING)}
                 className="group inline-flex items-center gap-3 rounded-full px-5 sm:px-6 py-2.5 sm:py-3 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.1em]"
                 style={{
                   background: "rgba(255,255,255,0.12)",

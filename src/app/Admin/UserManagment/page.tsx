@@ -78,13 +78,13 @@ const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
       const updated = prev.map(u =>
         u.id === userId ? { ...u, isBlocked: !currentStatus } : u
       );
-      console.log('✅ User status updated in UI',updated );
+      console.log('User status updated in UI',updated );
       return updated;
     });
     
     toast.success(`User ${currentStatus ? 'unblocked' : 'blocked'} successfully`);
   } catch (err: unknown) {
-    console.error('❌ Error:', err);
+    console.error(' Error:', err);
     const message = (err as Error).message || 'Failed to update user status';
     toast.error(message);
   }
@@ -218,7 +218,7 @@ const handleToggleBlock = async (userId: string, currentStatus: boolean) => {
             columns={columns}
             data={users}
             currentPage={currentPage}
-            totalPages={totalPages}   // ✅ backend value
+            totalPages={totalPages}   //  backend value
             onPageChange={setCurrentPage}
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}

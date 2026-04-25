@@ -67,15 +67,12 @@ const StatCard = ({ stat, index }: { stat: { icon: React.ReactNode; label: strin
       initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
       transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 150 }}
-      whileHover={{ 
-        y: -5,
-        scale: 1.05,
-        transition: { duration: 0.2 }
-      }}
       className="relative group cursor-pointer"
     >
-      <div className={`p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl bg-gradient-to-br ${stat.color} backdrop-blur-md border border-white/10 shadow-xl sm:shadow-2xl hover:shadow-[#EEB21B]/20 transition-all duration-500 flex flex-col items-center text-center h-full relative z-10 overflow-hidden`}>
-        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+    <div 
+  className="p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border border-[#EEB21B]/10   transition-all duration-500 flex flex-col items-center text-center h-full relative z-10 overflow-hidden"
+  style={{ background: stat.color }}
+>
         <motion.div 
           className="flex justify-center mb-2"
           animate={isInView ? { rotate: [0, 360] } : {}}
@@ -107,6 +104,7 @@ function HomePageContent() {
   });
 
   useEffect(() => {
+
     const fetchCompanies = async () => {
       try {
         const response = await getAllCompanies()
@@ -145,16 +143,16 @@ function HomePageContent() {
     }
   }, []);
 
-  // Gradient for stats section
-  const statsGradient = "linear-gradient(to right, #020D2E, #0F2FA8)";
+  // // Gradient for stats section
+  // const statsGradient = "linear-gradient(to right, #020D2E, #0F2FA8)";
 
-  const statItems = [
-    { label: "SUCCESSFUL PROJECTS", value: stats.successfulProjects, suffix: "+", icon: <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "from-blue-900/40 to-blue-800/20" },
-    { label: "HAPPY CUSTOMERS", value: stats.happyCustomers, suffix: "+", icon: <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "from-blue-900/40 to-blue-800/20" },
-    { label: "EXPERT CONSULTANTS", value: stats.expertConsultants, suffix: "+", icon: <Award className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "from-blue-900/40 to-blue-800/20" },
-    { label: "YEARS OF EXCELLENCE", value: stats.yearsExperience, suffix: "+", icon: <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "from-blue-900/40 to-blue-800/20" },
-    { label: "ONGOING PROJECTS", value: stats.ongoingProjects, suffix: "", icon: <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "from-blue-900/40 to-blue-800/20" }
-  ];
+ const statItems = [
+  { label: "SUCCESSFUL PROJECTS", value: stats.successfulProjects, suffix: "+", icon: <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+  { label: "HAPPY CUSTOMERS", value: stats.happyCustomers, suffix: "+", icon: <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+  { label: "EXPERT CONSULTANTS", value: stats.expertConsultants, suffix: "+", icon: <Award className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+  { label: "YEARS OF EXCELLENCE", value: stats.yearsExperience, suffix: "+", icon: <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+  { label: "ONGOING PROJECTS", value: stats.ongoingProjects, suffix: "", icon: <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+];
 
   const expertiseItems = [
     {
@@ -191,14 +189,11 @@ function HomePageContent() {
         <HeroCarousel />
 
         {/* Stats Section - Reduced Height with Gradient Background */}
-        <div 
-          className="relative z-20 overflow-hidden"
-          style={{ background: statsGradient }}
-        >
+      <div className="relative z-20 overflow-hidden ">
           {/* Animated background elements */}
           <div className="absolute inset-0 overflow-hidden">
             <motion.div 
-              className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl"
+              className="absolute -top-40 -right-40 w-80 h-80 bg-transparent rounded-full blur-3xl"
               animate={{ 
                 scale: [1, 1.2, 1],
                 x: [0, -50, 0],
@@ -207,7 +202,7 @@ function HomePageContent() {
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div 
-              className="absolute -bottom-40 -left-40 w-80 h-80 bg-[#EEB21B]/5 rounded-full blur-3xl"
+              className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl"
               animate={{ 
                 scale: [1, 1.3, 1],
                 x: [0, 50, 0],

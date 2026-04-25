@@ -1,6 +1,7 @@
 import api from "./api/useApi";
-import { API_ROUTES } from "@/shared/constants/routes";
+import { API_ROUTES } from "@/shared/constants/AppRoutes";
 import { AxiosError } from "axios";
+import { MESSAGES } from "@/shared/constants/Messages";
 import {
   SignupData,
   LoginData,
@@ -43,14 +44,14 @@ const post = async (endpoint: string, body: unknown, fallback: string) => {
 // USER / COMPANY SIGNUP
 // --------------------------------------------------
 export const signupUser = async (data: SignupData): Promise<AuthResponse> => {
-  return post(API_ROUTES.AUTH.SIGNUP, data, "Signup failed");
+  return post(API_ROUTES.AUTH.SIGNUP, data, MESSAGES.SERVICE.SIGNUP_FAILED);
 };
 
 // --------------------------------------------------
 // USER / COMPANY LOGIN
 // --------------------------------------------------
 export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
-  return post(API_ROUTES.AUTH.LOGIN, data, "Login failed");
+  return post(API_ROUTES.AUTH.LOGIN, data, MESSAGES.SERVICE.LOGIN_FAILED);
 };
 
 // --------------------------------------------------
@@ -59,32 +60,32 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
 export const loginAdmin = async (
   data: LoginData
 ): Promise<{ accessToken: string; refreshToken: string; message: string; user: { id: string; email: string; name: string } }> => {
-  return post(API_ROUTES.ADMIN.LOGIN, data, "Admin login failed");
+  return post(API_ROUTES.ADMIN.LOGIN, data, MESSAGES.SERVICE.ADMIN_LOGIN_FAILED);
 };
 
 // --------------------------------------------------
 // FORGOT PASSWORD
 // --------------------------------------------------
 export const forgotPassword = (email: string) =>
-  post(API_ROUTES.AUTH.FORGOT_PASSWORD, { email }, "Forgot password failed");
+  post(API_ROUTES.AUTH.FORGOT_PASSWORD, { email }, MESSAGES.SERVICE.FORGOT_PASSWORD_FAILED);
 
 // --------------------------------------------------
 // VERIFY OTP
 // --------------------------------------------------
 export const verifyOtp = (email: string, otp: string, purpose: string) =>
-  post(API_ROUTES.AUTH.VERIFY_OTP, { email, otp, purpose }, "Verify OTP failed");
+  post(API_ROUTES.AUTH.VERIFY_OTP, { email, otp, purpose }, MESSAGES.SERVICE.VERIFY_OTP_FAILED);
 
 // --------------------------------------------------
 // RESEND OTP
 // --------------------------------------------------
 export const resendOtp = (email: string) =>
-  post(API_ROUTES.AUTH.RESEND_OTP, { email }, "Resend OTP failed");
+  post(API_ROUTES.AUTH.RESEND_OTP, { email }, MESSAGES.SERVICE.RESEND_OTP_FAILED);
 
 // --------------------------------------------------
 // RESET PASSWORD
 // --------------------------------------------------
 export const resetPassword = (email: string, newPassword: string) =>
-  post(API_ROUTES.AUTH.RESET_PASSWORD, { email, newPassword }, "Reset password failed");
+  post(API_ROUTES.AUTH.RESET_PASSWORD, { email, newPassword }, MESSAGES.SERVICE.RESET_PASSWORD_FAILED);
 
 // --------------------------------------------------
 // GOOGLE LOGIN
@@ -96,7 +97,7 @@ export const googleLogin = async (
   return post(
     API_ROUTES.AUTH.GOOGLE,
     { token: googleIdToken, role },
-    "Google login failed"
+    MESSAGES.SERVICE.GOOGLE_LOGIN_FAILED
   );
 };
 
@@ -121,9 +122,10 @@ export const getProfile = async (): Promise<Profile> => {
       bio: p.bio || "",
       profileImage: p.profileImage || "",
       isBlocked: p.isBlocked || false,
+      walletBalance: p.walletBalance || 0,
     };
   } catch (error) {
-    throw new Error(extractErrorMessage(error, "Failed to fetch profile"));
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.FETCH_PROFILE_FAILED));
   }
 };
 
@@ -145,7 +147,7 @@ export const updateProfile = async (data: Partial<Profile>): Promise<Profile> =>
       isBlocked: p.isBlocked || false,
      }
   } catch (error) {
-    throw new Error(extractErrorMessage(error, "Failed to update profile"));
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.UPDATE_PROFILE_FAILED));
   }
 };
 
@@ -163,7 +165,7 @@ export const uploadProfileImage = async (file: File): Promise<{ url: string }> =
 
     return response.data;
   } catch (error) {
-    throw new Error(extractErrorMessage(error, "Failed to upload image"));
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.UPLOAD_PROFILE_IMAGE_FAILED));
   }
 };
 
@@ -173,7 +175,7 @@ export const deleteProfileField = async (field: keyof Profile): Promise<void> =>
         withCredentials: true
     });
   } catch (error) {
-    throw new Error(extractErrorMessage(error, "Failed to delete field"));
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.DELETE_FIELD_FAILED));
   }
 };
 
@@ -187,6 +189,6 @@ export const logout = async () => {
     });
     return response.data;
   } catch (error) {
-    throw new Error(extractErrorMessage(error, "Logout failed"));
+    throw new Error(extractErrorMessage(error, MESSAGES.SERVICE.LOGOUT_FAILED));
   }
 };

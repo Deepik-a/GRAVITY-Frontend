@@ -269,12 +269,12 @@ export default function UserNavbar() {
                           icon={Calendar} 
                           label="My Appointments" 
                           onClick={() => {
-                            try {
-                              const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
-                              audio.play().catch(() => console.warn("Call sound failed"));
-                            } catch {
-                              // ignore
-                            }
+                            // try {
+                            //   const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3");
+                            //   audio.play().catch(() => console.warn("Call sound failed"));
+                            // } catch {
+                            //   // ignore
+                            // }
                             setIsDropdownOpen(false);
                           }}
                         />

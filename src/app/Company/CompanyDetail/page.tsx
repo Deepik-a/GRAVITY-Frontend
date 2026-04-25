@@ -6,10 +6,13 @@ import { saveProfile as apiSaveProfile, getProfile as apiGetProfile, uploadCompa
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 import Cropper, { ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import { resolveImageUrl } from '@/utils/urlHelper';
 import { useAuth } from '@/context/AuthContext';
+import { ROUTES } from '@/shared/constants/AppRoutes';
+import { DOCUMENT_STATUS } from '@/shared/constants/StatusConstants';
 
 interface TeamMember {
   id: number;
@@ -712,58 +715,148 @@ export default function CompanyProfileManagement() {
     if (!companyName.trim()) errors.companyName = 'Company name is required';
     if (categories.length === 0) errors.categories = 'Select at least one category';
     if (services.length === 0) errors.services = 'Select at least one service';
-    if (!consultationFee.trim()) errors.consultationFee = 'Consultation fee is required';
-    else if (!validateNumber(consultationFee, 0)) errors.consultationFee = 'Enter a valid fee amount';
+  if (!consultationFee.trim()) {
+    errors.consultationFee = 'Consultation fee is required';
+} else if (!validateNumber(consultationFee, 0)) {
+    errors.consultationFee = 'Enter a valid fee amount';
+} else {
+    const fee = Number(consultationFee);
+    if (fee < 100 || fee > 4000) {
+        errors.consultationFee = 'Consultation fee must be between ₹100 and ₹4000';
+    }
+}
     
     if (!establishedYear.trim()) errors.establishedYear = 'Established year is required';
     else if (!validateYear(establishedYear)) errors.establishedYear = 'Enter a valid year (1900-current)';
     
     if (!companySize.trim()) errors.companySize = 'Company size is required';
-    if (!location.trim()) errors.location = 'Location is required';
+   if (!location.trim()) {
+    errors.location = 'Location is required';
+} else if (!/^[A-Za-z\s]+$/.test(location)) {
+    errors.location = 'Location must contain only alphabets and spaces';
+}
     
     if (!email.trim()) errors.email = 'Email is required';
     else if (!validateEmail(email)) errors.email = 'Enter a valid email address';
     
-    if (!phone.trim()) errors.phone = 'Phone number is required';
-    else if (!validatePhone(phone)) errors.phone = 'Enter a valid phone number';
+if (!phone.trim()) {
+    errors.phone = 'Phone number is required';
+} else if (!/^[6-9]\d{9}$/.test(phone)) {
+    errors.phone = 'Enter a valid 10-digit mobile number starting with 6, 7, 8, or 9';
+}
     
     if (!overview.trim()) errors.overview = 'Company overview is required';
     else if (overview.trim().length < 50) errors.overview = 'Overview should be at least 50 characters';
     
-    // Statistics validation
-    if (!projectsCompleted.trim()) errors.projectsCompleted = 'Projects completed is required';
-    else if (!validateNumber(projectsCompleted, 0)) errors.projectsCompleted = 'Enter a valid number';
-    
-    if (!happyCustomers.trim()) errors.happyCustomers = 'Happy customers count is required';
-    else if (!validateNumber(happyCustomers, 0)) errors.happyCustomers = 'Enter a valid number';
-    
-    if (!awardsWon.trim()) errors.awardsWon = 'Awards won is required';
-    else if (!validateNumber(awardsWon, 0)) errors.awardsWon = 'Enter a valid number';
+  // Statistics validation
+// Projects Completed (max 10,000)
+if (!projectsCompleted.trim()) {
+    errors.projectsCompleted = 'Projects completed is required';
+} else if (!validateNumber(projectsCompleted, 0)) {
+    errors.projectsCompleted = 'Enter a valid number';
+} else {
+    const value = Number(projectsCompleted);
+    if (value < 0) {
+        errors.projectsCompleted = 'Projects completed cannot be negative';
+    } else if (value > 10000) {
+        errors.projectsCompleted = 'Projects completed cannot exceed 10,000';
+    }
+}
+
+// Happy Customers (max 10,000)
+if (!happyCustomers.trim()) {
+    errors.happyCustomers = 'Happy customers count is required';
+} else if (!validateNumber(happyCustomers, 0)) {
+    errors.happyCustomers = 'Enter a valid number';
+} else {
+    const value = Number(happyCustomers);
+    if (value < 0) {
+        errors.happyCustomers = 'Happy customers count cannot be negative';
+    } else if (value > 10000) {
+        errors.happyCustomers = 'Happy customers count cannot exceed 10,000';
+    }
+}
+
+// Awards Won (max 50)
+if (!awardsWon.trim()) {
+    errors.awardsWon = 'Awards won is required';
+} else if (!validateNumber(awardsWon, 0)) {
+    errors.awardsWon = 'Enter a valid number';
+} else {
+    const value = Number(awardsWon);
+    if (value < 0) {
+        errors.awardsWon = 'Awards won cannot be negative';
+    } else if (value > 50) {
+        errors.awardsWon = 'Awards won cannot exceed 50';
+    }
+}
     
     if (!awardsRecognition.trim()) errors.awardsRecognition = 'Awards recognition is required';
     else if (awardsRecognition.trim().length < 20) errors.awardsRecognition = 'Please provide meaningful details';
     
-    // Team members validation
-    const teamMemberErrors: { [key: number]: { name?: string; qualification?: string; role?: string } } = {};
-    teamMembers.forEach(member => {
-      const memberErrors: { name?: string; qualification?: string; role?: string } = {};
-      if (!member.name.trim()) memberErrors.name = 'Name is required';
-      if (!member.qualification.trim()) memberErrors.qualification = 'Qualification is required';
-      if (!member.role.trim()) memberErrors.role = 'Role is required';
-      
-      if (Object.keys(memberErrors).length > 0) {
-        teamMemberErrors[member.id] = memberErrors;
-      }
-    });
-    if (Object.keys(teamMemberErrors).length > 0) {
-      errors.teamMembers = teamMemberErrors;
+  // Helper function for alphabets validation
+const validateAlphabetsWithSpaces = (value: string, fieldName: string, minLength: number = 2, maxLength: number = 50): string | null => {
+    if (!value.trim()) {
+        return `${fieldName} is required`;
     }
+    if (!/^[A-Za-z\s]+$/.test(value)) {
+        return `${fieldName} must contain only alphabets and spaces`;
+    }
+    if (value.trim().length < minLength) {
+        return `${fieldName} must be at least ${minLength} characters`;
+    }
+    if (value.trim().length > maxLength) {
+        return `${fieldName} cannot exceed ${maxLength} characters`;
+    }
+    return null;
+};
+
+// Team members validation
+const teamMemberErrors: { [key: number]: { name?: string; qualification?: string; role?: string } } = {};
+teamMembers.forEach(member => {
+    const memberErrors: { name?: string; qualification?: string; role?: string } = {};
+    
+    // Name validation (2-50 characters, alphabets only)
+    const nameError = validateAlphabetsWithSpaces(member.name, 'Name', 2, 50);
+    if (nameError) memberErrors.name = nameError;
+    
+    // Qualification validation (3-100 characters, alphabets, spaces, commas, periods allowed)
+    if (!member.qualification.trim()) {
+        memberErrors.qualification = 'Qualification is required';
+    } else if (!/^[A-Za-z\s,\.]+$/.test(member.qualification)) {
+        memberErrors.qualification = 'Qualification must contain only alphabets, spaces, commas, and periods';
+    } else if (member.qualification.trim().length < 3) {
+        memberErrors.qualification = 'Qualification must be at least 3 characters';
+    } else if (member.qualification.trim().length > 100) {
+        memberErrors.qualification = 'Qualification cannot exceed 100 characters';
+    }
+    
+    // Role validation (2-50 characters, alphabets only)
+    const roleError = validateAlphabetsWithSpaces(member.role, 'Role', 2, 50);
+    if (roleError) memberErrors.role = roleError;
+    
+    if (Object.keys(memberErrors).length > 0) {
+        teamMemberErrors[member.id] = memberErrors;
+    }
+});
+if (Object.keys(teamMemberErrors).length > 0) {
+    errors.teamMembers = teamMemberErrors;
+}
     
     // Projects validation
     const projectErrors: { [key: number]: { title?: string; description?: string } } = {};
     projects.forEach(project => {
       const projErrors: { title?: string; description?: string } = {};
-      if (!project.title.trim()) projErrors.title = 'Project title is required';
+   // Title validation (alphabets only, 3-100 characters)
+if (!project.title.trim()) {
+    projErrors.title = 'Project title is required';
+} else if (!/^[A-Za-z\s]+$/.test(project.title)) {
+    projErrors.title = 'Project title must contain only alphabets and spaces';
+} else if (project.title.trim().length < 3) {
+    projErrors.title = 'Project title must be at least 3 characters';
+} else if (project.title.trim().length > 100) {
+    projErrors.title = 'Project title cannot exceed 100 characters';
+}
       if (!project.description.trim()) projErrors.description = 'Project description is required';
       else if (project.description.trim().length < 30) projErrors.description = 'Description should be at least 30 characters';
       
@@ -904,7 +997,7 @@ export default function CompanyProfileManagement() {
   useEffect(() => {
     if (!profileAlreadyCompleted) return;
     // Once profile exists, this page should not be reachable (Back button, direct nav).
-    router.replace("/Company/CompanyDashBoard");
+    router.replace(ROUTES.COMPANY.DASHBOARD);
   }, [profileAlreadyCompleted, router]);
 
   // Main action functions
@@ -1001,6 +1094,8 @@ export default function CompanyProfileManagement() {
         establishedYear: Number(establishedYear),
         companySize,
         location,
+        email,
+        phone,
         overview,
         projectsCompleted: Number(projectsCompleted),
         happyCustomers: Number(happyCustomers),
@@ -1019,6 +1114,14 @@ export default function CompanyProfileManagement() {
 
       const result = await apiSaveProfile(companyId, profileData);
       toast.success('Profile saved successfully!');
+      
+      // Update documentStatus cookie to prevent middleware from redirecting to VerificationPage
+      if (result.company?.documentStatus) {
+        Cookies.set("documentStatus", result.company.documentStatus, { expires: 7 });
+      } else if (result.company?.isProfileFilled) {
+        // If documentStatus is not returned but profile is filled, set as verified
+        Cookies.set("documentStatus", DOCUMENT_STATUS.VERIFIED, { expires: 7 });
+      }
       
       const updatedCompany = result.company;
       if (updatedCompany && updatedCompany.profile) {

@@ -2,19 +2,12 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { toast } from "react-toastify";
-import { getAvailableSlots, bookSlot, getCompanyById, getSlotConfig } from "@/services/UserService";
+import { getAvailableSlots, bookSlot, getCompanyById, getSlotConfigsForCompany, type SlotConfig as UserSlotConfig } from "@/services/UserService";
 import { Clock, Calendar, CheckCircle2, Building2, Timer, CreditCard, AlertCircle, ChevronRight, Star, MapPin, Phone, Info } from "lucide-react";
 import { format } from "date-fns";
 import { useSearchParams, useRouter } from "next/navigation";
 import BookingCalendar from "@/components/user/BookingCalendar";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"; // spinners added
-
-interface SlotConfig {
-  startDate: string;
-  endDate: string;
-  weekdays: string[];
-  exceptionalDays: { date: string; reason: string }[];
-}
 
 interface CompanyDetails {
   name: string;
@@ -41,7 +34,7 @@ function BookSlotsContent() {
   const [loading, setLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState("");
-  const [slotConfig, setSlotConfigData] = useState<SlotConfig | null>(null);
+  const [slotConfigs, setSlotConfigs] = useState<UserSlotConfig[] | null>(null);
 
   useEffect(() => {
     if (urlCompanyId) {
@@ -55,10 +48,9 @@ function BookSlotsContent() {
         }
       }).catch(() => {});
 
-      // Fetch slot config for calendar highlighting
-      getSlotConfig(urlCompanyId).then(config => {
-        setSlotConfigData(config);
-      }).catch(err => {
+      getSlotConfigsForCompany(urlCompanyId).then((rules) => {
+        setSlotConfigs(rules);
+      }).catch((err) => {
         console.error("Failed to fetch slot config", err);
       });
     }
@@ -212,7 +204,7 @@ function BookSlotsContent() {
                   <BookingCalendar 
                     selectedDate={selectedDate} 
                     onDateChange={setSelectedDate}
-                    config={slotConfig}
+                    configs={slotConfigs}
                   />
                   <div className="bg-blue-50/50 p-4 rounded-3xl border border-blue-100 flex items-start gap-4">
                     <div className="p-2 bg-white rounded-xl shadow-sm">

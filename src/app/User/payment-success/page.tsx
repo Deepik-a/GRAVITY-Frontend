@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { verifyPaymentSession } from "@/services/UserService";
 import { toast } from "react-toastify";
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
@@ -23,7 +24,7 @@ function PaymentSuccessContent() {
       price?: number;
       companyId: string;
       companyDetails?: { name: string };
-      paymentStatus: string;
+      paymentStatus: PaymentStatus;
       status: string;
     };
   } | null>(null);

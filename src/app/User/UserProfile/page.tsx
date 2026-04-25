@@ -51,6 +51,7 @@ import {
 
 import { resolveImageUrl } from "@/utils/urlHelper";
 import { Booking } from "@/types/BookingTypes";
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
 
 
 
@@ -160,7 +161,7 @@ const ProfileContent = () => {
       })
       .catch((error) => {
         const message = extractAxiosError(error);
-        console.error("❌ Profile Fetch Error:", message);
+        console.error("// Profile Fetch Error:", message);
         toast.error(message);
       })
       .finally(() => setLoading(false));
@@ -422,10 +423,10 @@ const ProfileContent = () => {
         setProfileData(prev => prev ? { ...prev, profileImage: uploadedImage.url } : null);
         setImagePreview(resolveImageUrl(uploadedImage.url));
 
-        // ✅ Update Redux store
+        // Update Redux store
         dispatch(updateProfileImage(uploadedImage.url));
 
-        // ✅ Update localStorage so other components reflect changes
+        //  Update localStorage so other components reflect changes
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
           const user = JSON.parse(storedUser);
@@ -544,10 +545,10 @@ const ProfileContent = () => {
       const updatedProfile = await updateProfile(editForm);
       setProfileData(updatedProfile);
       
-      // ✅ Update Redux store
+      //  Update Redux store
       dispatch(updateName(updatedProfile.name));
 
-      // ✅ Update localStorage so other components reflect changes
+      // Update localStorage so other components reflect changes
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const user = JSON.parse(storedUser);
@@ -879,7 +880,7 @@ const ProfileContent = () => {
                 {[
                   { label: "My Appointments", value: totalBookings, icon: Calendar, color: "text-blue-500", bg: "bg-blue-50" },
                   { label: "Saved Firms", value: favourites.length, icon: Heart, color: "text-rose-500", bg: "bg-rose-50" },
-                  { label: "Total Spent", value: "₹" + bookings.reduce((acc, b) => acc + (b.paymentStatus === 'paid' ? (b.price || 0) : 0), 0), icon: Crown, color: "text-amber-500", bg: "bg-amber-50" },
+                  { label: "Total Spent", value: "₹" + bookings.reduce((acc, b) => acc + (b.paymentStatus === PaymentStatus.PAID ? (b.price || 0) : 0), 0), icon: Crown, color: "text-amber-500", bg: "bg-amber-50" },
                   { label: "Wallet Balance", value: "₹" + (profileData.walletBalance || 0).toLocaleString(), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" }
                 ].map((stat, i) => (
                   <div key={i} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
@@ -1011,9 +1012,9 @@ const ProfileContent = () => {
                                  {booking.status}
                                </span>
                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                 booking.paymentStatus === "paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                 booking.paymentStatus === PaymentStatus.PAID ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                                }`}>
-                                 {booking.paymentStatus === "paid" ? "Paid" : "Payment Pending"}
+                                 {booking.paymentStatus === PaymentStatus.PAID ? "Paid" : "Payment Pending"}
                                </span>
                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                                  booking.serviceStatus === "completed" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"
@@ -1037,8 +1038,8 @@ const ProfileContent = () => {
                               </div>
                               <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
                                 <span className="uppercase tracking-widest text-[10px] text-gray-400">Paid</span>
-                                <span className={booking.paymentStatus === "paid" ? "text-green-700" : "text-yellow-700"}>
-                                  {booking.paymentStatus === "paid" ? "Yes" : "No"}
+                                <span className={booking.paymentStatus === PaymentStatus.PAID ? "text-green-700" : "text-yellow-700"}>
+                                  {booking.paymentStatus === PaymentStatus.PAID ? "Yes" : "No"}
                                 </span>
                               </div>
                             </div>
@@ -1059,7 +1060,7 @@ const ProfileContent = () => {
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center gap-3 mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-50">
-                            {(booking.status === "confirmed" || booking.paymentStatus === "paid") && 
+                            {(booking.status === "confirmed" || booking.paymentStatus === PaymentStatus.PAID) && 
                              booking.serviceStatus === "pending" && 
                              isBookingPast(booking.date, booking.endTime) && (
                               <button

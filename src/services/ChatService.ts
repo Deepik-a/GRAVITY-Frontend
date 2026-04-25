@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import api from "./api/useApi";
-import { API_ROUTES } from "@/shared/constants/routes";
+import { API_ROUTES } from "@/shared/constants/AppRoutes";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"; // Adjust to your backend port
 

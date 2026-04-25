@@ -7,6 +7,7 @@ import Image from "next/image";
 import { resolveImageUrl } from "@/utils/urlHelper";
 import { useCallback } from "react";
 import { getUserBookings } from "@/services/UserService";
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
 
 interface Review {
   id: string;
@@ -65,7 +66,10 @@ export default function ReviewsSection({ companyId, isUser = false }: ReviewsSec
           const res = await getUserBookings(page, pageSize);
           const bookings = res.bookings || [];
           const eligible = bookings.some(
-            (b) => b.companyId === companyId && b.serviceStatus === "completed" && b.paymentStatus === "paid"
+            (b) =>
+              b.companyId === companyId &&
+              // b.serviceStatus === "completed" &&
+              b.paymentStatus === PaymentStatus.PAID
           );
           if (eligible) {
             if (!cancelled) setCanWriteReview(true);

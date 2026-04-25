@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import api from "./useApi";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { API_ROUTES, ROUTES } from "@/shared/constants/AppRoutes";
+import { STATUS_CODES } from "@/shared/constants/StatusCodes";
 
 export const useAxiosInterceptor = () => {
     const router = useRouter();
@@ -33,8 +35,15 @@ export const useAxiosInterceptor = () => {
     const originalRequest = error.config;
 
     // 401 എറർ വരികയും ഇതേ റിക്വസ്റ്റ് മുൻപ് retry ചെയ്യാതിരിക്കുകയും ആണെങ്കിൽ
-    const isAuthRoute = originalRequest.url?.includes("/auth/login") || originalRequest.url?.includes("/auth/register") || originalRequest.url?.includes("/auth/google");
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+    const isAuthRoute =
+      originalRequest.url?.includes(API_ROUTES.AUTH.LOGIN) ||
+      originalRequest.url?.includes(API_ROUTES.AUTH.SIGNUP) ||
+      originalRequest.url?.includes(API_ROUTES.AUTH.GOOGLE);
+    if (
+      error.response?.status === STATUS_CODES.UNAUTHORIZED &&
+      !originalRequest._retry &&
+      !isAuthRoute
+    ) {
       originalRequest._retry = true;
       console.warn("Access token expired, retrying with new cookie...");
       
@@ -51,7 +60,7 @@ export const useAxiosInterceptor = () => {
       backendMessage.toLowerCase().includes("blocked") || 
       backendMessage.toLowerCase().includes("contact admin");
 
-    if (error.response?.status === 403 && isBlockedMessage) {
+    if (error.response?.status === STATUS_CODES.FORBIDDEN && isBlockedMessage) {
       toast.error(backendMessage || "Your account has been blocked. Please contact admin.");
       
       // Clear all auth-related local storage
@@ -60,7 +69,7 @@ export const useAxiosInterceptor = () => {
       localStorage.removeItem("companyProfile");
       
       // Redirect to signup
-      router.push("/signup");
+      router.push(ROUTES.SIGNUP);
     }
 
     return Promise.reject(error);

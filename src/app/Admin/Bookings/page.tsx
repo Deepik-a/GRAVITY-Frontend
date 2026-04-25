@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { Calendar, Clock, Loader2, Search, Filter, AlertCircle, CheckCircle, XCircle, RefreshCcw } from "lucide-react";
 import { resolveImageUrl } from "@/utils/urlHelper";
 import Image from "next/image";
+import { PaymentStatus } from "@/shared/enums/PaymentStatus";
 
 interface Booking {
   id: string;
@@ -14,7 +15,7 @@ interface Booking {
   endTime: string;
   status: "pending" | "confirmed" | "cancelled";
   price: number;
-  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  paymentStatus: PaymentStatus;
   userDetails?: {
     name: string;
     email: string;
@@ -259,11 +260,11 @@ export default function AdminBookingsPage() {
                     <td className="px-6 py-5 text-right space-y-2">
                       <div>
                         <p className="font-black text-gray-900">₹{booking.price?.toLocaleString()}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-tighter ${booking.paymentStatus === 'paid' ? 'text-green-600' : booking.paymentStatus === 'refunded' ? 'text-blue-600' : 'text-orange-500'}`}>
+                        <p className={`text-[10px] font-bold uppercase tracking-tighter ${booking.paymentStatus === PaymentStatus.PAID ? 'text-green-600' : booking.paymentStatus === PaymentStatus.REFUNDED ? 'text-blue-600' : 'text-orange-500'}`}>
                           {booking.paymentStatus}
                         </p>
                       </div>
-                      {booking.status === "cancelled" && booking.paymentStatus !== "refunded" && (
+                      {booking.status === "cancelled" && booking.paymentStatus !== PaymentStatus.REFUNDED && (
                         <button
                           onClick={() => handleRefund(booking.id)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors"
