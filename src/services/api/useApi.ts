@@ -22,9 +22,9 @@ api.interceptors.response.use(
       // Retry the request - backend will automatically refresh token using refresh token
       try {
         return await api(originalRequest);
-      } catch (retryError) {
+      } catch (retryError: unknown) {
         // If retry also fails, then redirect to login
-        if (retryError.response?.status === STATUS_CODES.UNAUTHORIZED) {
+        if (axios.isAxiosError(retryError) && retryError.response?.status === STATUS_CODES.UNAUTHORIZED) {
           // Capture role before clearing
           const role = localStorage.getItem("role");
           
