@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ROUTES } from "@/shared/constants/AppRoutes";
-import { DOCUMENT_STATUS } from "@/shared/constants/StatusConstants";
 
 type Role = "user" | "company" | "admin" | null;
 
@@ -14,16 +13,19 @@ function getRoleFromCookies(req: NextRequest): Role {
   const hasAdmin =
     req.cookies.has("adminAccessToken") ||
     req.cookies.has("adminRefreshToken");
+
   if (hasAdmin) return "admin";
 
   const hasCompany =
     req.cookies.has("companyAccessToken") ||
     req.cookies.has("companyRefreshToken");
+
   if (hasCompany) return "company";
 
   const hasUser =
     req.cookies.has("userAccessToken") ||
     req.cookies.has("userRefreshToken");
+
   if (hasUser) return "user";
 
   return null;
@@ -57,16 +59,13 @@ function isAuthPage(pathname: string) {
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
   const role = getRoleFromCookies(req);
   const isAuthed = role !== null;
 
-  const docStatus = req.cookies.get("documentStatus")?.value;
-
-  // 🔍 DEBUG LOGS (check in terminal)
   console.log("---- MIDDLEWARE ----");
   console.log("PATH:", pathname);
   console.log("ROLE:", role);
-  console.log("DOC STATUS:", docStatus);
 
   // -------------------------------
   // 1️⃣ Block unauthenticated access
@@ -84,70 +83,33 @@ export function middleware(req: NextRequest) {
     url.searchParams.set("next", pathname + req.nextUrl.search);
 
     console.log("➡️ Redirect: Unauth user →", url.pathname);
+
     return NextResponse.redirect(url);
   }
 
   // ---------------------------------------------------
-  // 2️⃣ Company verification restriction (FIXED LOOP)
-  // ---------------------------------------------------
-  if (
-    isAuthed &&
-    role === "company" &&
-    pathname !== ROUTES.COMPANY.VERIFICATION_PAGE && //  prevent loop
-    (
-      pathname.startsWith(ROUTES.COMPANY.DASHBOARD) ||
-      pathname.startsWith(ROUTES.COMPANY.DETAIL)
-    )
-  ) {
-    const needsVerification =
-      docStatus === DOCUMENT_STATUS.PENDING ||
-      docStatus === DOCUMENT_STATUS.REJECTED ||
-      docStatus === DOCUMENT_STATUS.NOT_SUBMITTED;
-
-    if (needsVerification) {
-      const url = req.nextUrl.clone();
-      url.pathname = ROUTES.COMPANY.VERIFICATION_PAGE;
-      url.searchParams.set("role", "company");
-
-      console.log("➡️ Redirect: Company not verified → VerificationPage");
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // ---------------------------------------------------
-  // 3️⃣ Redirect authenticated users away from auth/root
+  // 2️⃣ Redirect authenticated users away from auth/root
   // ---------------------------------------------------
   if (isAuthed && (pathname === "/" || isAuthPage(pathname))) {
-    //Exception: allow unverified company to stay
-    if (
-      role === "company" &&
-      (
-        docStatus === DOCUMENT_STATUS.PENDING ||
-        docStatus === DOCUMENT_STATUS.REJECTED ||
-        docStatus === DOCUMENT_STATUS.NOT_SUBMITTED
-      )
-    ) {
-      console.log("Allow: Unverified company staying on auth/root");
-      return NextResponse.next();
-    }
-
     const redirectPath = DASHBOARD_BY_ROLE[role];
 
-    //  Prevent redirect loop
     if (pathname !== redirectPath) {
       const url = req.nextUrl.clone();
+
       url.pathname = redirectPath;
       url.search = "";
 
-      console.log("Redirect: Auth user →", redirectPath);
+      console.log("➡️ Redirect: Auth user →", redirectPath);
+
       return NextResponse.redirect(url);
     }
   }
 
   // -------------------------------
-  // 4️⃣ Default: allow request
+  // 3️⃣ Default: allow request
   // -------------------------------
-  console.log(" Allow: No redirect");
+  console.log("✅ Allow: No redirect");
+
   return NextResponse.next();
 }
 

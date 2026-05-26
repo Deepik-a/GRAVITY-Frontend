@@ -1,7 +1,5 @@
 import axios from "axios";
 import { STATUS_CODES } from "@/shared/constants/StatusCodes";
-import { toast } from "react-toastify";
-
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000",
   headers: {
