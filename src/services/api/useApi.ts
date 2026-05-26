@@ -1,5 +1,6 @@
 import axios from "axios";
 import { STATUS_CODES } from "@/shared/constants/StatusCodes";
+import Cookies from "js-cookie";
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000",
   headers: {
@@ -37,6 +38,7 @@ api.interceptors.response.use(
           localStorage.removeItem("role");
           localStorage.removeItem("companyProfile");
           localStorage.removeItem("adminId");
+          Cookies.remove("frontend_session", { path: "/" });
 
           // Redirect to login if not already there (with delay to allow toast to show)
           if (typeof window !== "undefined") {
