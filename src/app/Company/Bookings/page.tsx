@@ -147,7 +147,7 @@ export default function CompanyBookings() {
   };
 
   const handleCancelClick = async (booking: Booking) => {
-    const confirmToast = toast(
+    toast(
       ({ closeToast }) => (
         <div className="flex flex-col gap-3 p-2">
           <p className="font-medium text-gray-800">Are you sure you want to cancel this booking? This will refund the user if paid.</p>

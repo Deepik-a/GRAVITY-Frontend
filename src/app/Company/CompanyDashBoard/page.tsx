@@ -79,17 +79,7 @@ export default function DashboardPage() {
     if (storedUser) {
       const user = JSON.parse(storedUser);
       
-      // 🔥 Verification Check: Only allow verified companies to stay on Dashboard
-      if (user.role === 'company' && user.documentStatus !== 'verified') {
-         const email = user.email || "";
-         if (user.documentStatus === 'pending') {
-            toast.info("admin approval pending");
-         } else if (user.documentStatus === 'rejected') {
-            toast.error("document rejected by admin");
-         }
-         router.replace(`/Company/VerificationPage?role=company&email=${encodeURIComponent(email)}`);
-         return;
-      }
+
 
       setUserInfo(prev => ({
         ...prev,
@@ -138,14 +128,7 @@ export default function DashboardPage() {
           if (profile) {
             const displayName = profile.profile?.companyName || profile.name;
             
-            // 🔥 Refresh verification status from DB
-            if (profile.documentStatus !== 'verified') {
-               // Update local storage and redirect if it changed to non-verified
-               const updatedUser = { ...user, documentStatus: profile.documentStatus };
-               localStorage.setItem('user', JSON.stringify(updatedUser));
-               router.replace('/signup?show=login');
-               return;
-            }
+
 
             setUserInfo(prev => ({ 
               ...prev, 

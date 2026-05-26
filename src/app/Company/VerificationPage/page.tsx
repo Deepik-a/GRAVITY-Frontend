@@ -17,7 +17,7 @@ function DocumentUploadContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [documents, setDocuments] = useState<{
     rera: DocumentState;
     gst: DocumentState;
@@ -117,8 +117,8 @@ function DocumentUploadContent() {
       // 🔥 Update docStatus cookie to pending so middleware knows
       Cookies.set("documentStatus", "pending", { expires: 7 });
 
-      // use replace so back button won't return to upload-success
-      router.replace(`/signup?show=login`);
+      // Logout to clear the session so they are redirected to login page and not bounced back by middleware/dashboard guard
+      await logout({ showToast: false });
       return;
 
     } catch (error: unknown) {
@@ -227,6 +227,7 @@ function DocumentUploadContent() {
           {/* Left Image Section - Custom for Document Upload */}
           <div className="md:w-1/2 order-1 flex-shrink-0">
             <div className="h-full w-full flex items-center justify-center relative overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/building-side-river-sunset.jpg"
                 alt="Document upload illustration"

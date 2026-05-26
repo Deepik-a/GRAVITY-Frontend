@@ -16,7 +16,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (userData: Profile, userRole: "user" | "company" | "admin") => void;
-  logout: () => Promise<void>;
+  logout: (options?: { showToast?: boolean }) => Promise<void>;
   checkAuth: () => Promise<void>;
 }
 
@@ -28,36 +28,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (options?: { showToast?: boolean }) => {
+    const currentRole = role;
+    const showToast = options?.showToast ?? true;
+  
     try {
       await apiLogout();
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {
-      // Always clear local state
       localStorage.removeItem("user");
       localStorage.removeItem("role");
       localStorage.removeItem("companyProfile");
       localStorage.removeItem("adminId");
       
       Cookies.remove("documentStatus");
-
+  
       setUser(null);
       setRole(null);
       
-      toast.success("Logged out successfully");
+      if (showToast) {
+        toast.success("Logged out successfully");
+      }
       
-      // Redirect based on role
-      if (role === "admin") {
-        router.replace("/Login");
-      } else if (role === "company") {
-        router.replace("/signup?show=login");
+      if (currentRole === "admin") {
+        window.location.href = "/Login";
       } else {
-        // Default for users or others
-        router.replace("/signup?show=login");
+        window.location.href = "/signup?show=login";
       }
     }
-  }, [router, role]);
+  }, [role]); 
 
   const checkAuth = useCallback(async () => {
     setIsLoading(true);

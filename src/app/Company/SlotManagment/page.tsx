@@ -415,10 +415,6 @@ export default function SlotManagement() {
     return new Date().toISOString().split('T')[0];
   };
 
-  const getMinEndDate = () => {
-    return config.startDate || getMinDate();
-  };
-
   const atMaxRules = configs.length >= MAX_SLOT_RULES;
 
   return (

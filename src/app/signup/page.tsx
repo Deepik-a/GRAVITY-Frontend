@@ -24,7 +24,7 @@ import { MESSAGES } from "@/shared/constants/Messages";
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login: contextLogin, isAuthenticated, role: currentRole, isLoading: authLoading, user } = useAuth();
+  const { login: contextLogin, logout: contextLogout, isAuthenticated, role: currentRole, isLoading: authLoading, user } = useAuth();
   
   const [isSignup, setIsSignup] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -83,6 +83,7 @@ function SignupContent() {
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=company&email=${encodeURIComponent(email)}`);
         } else if (docStatus === DOCUMENT_STATUS.PENDING) {
            toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
+           contextLogout({ showToast: false });
         } else if (!docStatus || docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=company&email=${encodeURIComponent(email)}`);
         } else {
@@ -118,6 +119,8 @@ function SignupContent() {
     }
   }, [searchParams, router, isAuthenticated, currentRole, authLoading, user]);
 
+
+  console.log(formData, "signupData from frontend");
   //  Signup input change with validation
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -308,6 +311,7 @@ const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else if (docStatus === DOCUMENT_STATUS.PENDING) {
            toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
+           await contextLogout({ showToast: false });
         } else if (!docStatus || docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${response.role}&email=${encodeURIComponent(finalLoginData.email)}`);
         } else {
@@ -446,7 +450,7 @@ console.log(res,"res from signup")
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else if (docStatus === DOCUMENT_STATUS.PENDING) {
            toast.info(MESSAGES.TOAST.VERIFICATION_PENDING);
-           router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
+           await contextLogout({ showToast: false });
         } else if (docStatus === DOCUMENT_STATUS.NOT_SUBMITTED) {
            router.replace(`${ROUTES.COMPANY.VERIFICATION_PAGE}?role=${res.user.role}&email=${encodeURIComponent(res.user.email)}`);
         } else {
@@ -671,12 +675,13 @@ console.log(res,"res from signup")
 
                       {/* Phone */}
                       <div>
-                        <label className="block text-gray-700 text-xs font-semibold mb-2 tracking-wide">
+                        <label htmlFor="phone"  className="block text-gray-700 text-xs font-semibold mb-2 tracking-wide">
                           PHONE NUMBER
                         </label>
                         <input
-                          type="tel"
+                          id="phone"
                           name="phone"
+                          type="tel"
                           placeholder="+1 (555) 000-0000"
                           value={formData.phone}
                           onChange={handleChange}
