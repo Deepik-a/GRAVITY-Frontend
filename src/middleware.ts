@@ -10,6 +10,12 @@ const DASHBOARD_BY_ROLE: Record<Exclude<Role, null>, string> = {
 };
 
 function getRoleFromCookies(req: NextRequest): Role {
+  const hasFrontendSession = req.cookies.has("frontend_session");
+
+  if (!hasFrontendSession) {
+    return null;
+  }
+
   const hasAdmin =
     req.cookies.has("adminAccessToken") ||
     req.cookies.has("adminRefreshToken");

@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem("adminId");
       
       Cookies.remove("documentStatus");
+      Cookies.remove("frontend_session", { path: "/" });
   
       setUser(null);
       setRole(null);
@@ -107,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isUnauthorized) {
           localStorage.removeItem("user");
           localStorage.removeItem("role");
+          Cookies.remove("frontend_session", { path: "/" });
           setUser(null);
           setRole(null);
       }
@@ -157,6 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(userRole);
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("role", userRole);
+    Cookies.set("frontend_session", "true", { path: "/", expires: 7 });
   };
 
   const dispatch = useDispatch();
