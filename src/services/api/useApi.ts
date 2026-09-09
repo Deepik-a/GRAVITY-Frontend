@@ -39,6 +39,7 @@ api.interceptors.response.use(
           localStorage.removeItem("companyProfile");
           localStorage.removeItem("adminId");
           Cookies.remove("frontend_session", { path: "/" });
+          Cookies.remove("user_role", { path: "/" });
 
           // Redirect to login if not already there (with delay to allow toast to show)
           if (typeof window !== "undefined") {

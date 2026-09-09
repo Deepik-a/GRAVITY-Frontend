@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       Cookies.remove("documentStatus");
       Cookies.remove("frontend_session", { path: "/" });
+      Cookies.remove("user_role", { path: "/" });
   
       setUser(null);
       setRole(null);
@@ -99,7 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(normalizedProfile);
       setRole(storedRole);
 
-      // Keep localStorage `user` in sync so non-context consumers update correctly.
+      // Keep cookies and localStorage in sync so Next.js middleware works
+      Cookies.set("frontend_session", "true", { path: "/", expires: 7 });
+      Cookies.set("user_role", storedRole, { path: "/", expires: 7 });
       localStorage.setItem("user", JSON.stringify(normalizedProfile));
     } catch (error: unknown) {
       console.error("Auth check failed:", error);
@@ -111,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem("user");
           localStorage.removeItem("role");
           Cookies.remove("frontend_session", { path: "/" });
+          Cookies.remove("user_role", { path: "/" });
           setUser(null);
           setRole(null);
       }
@@ -162,6 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("role", userRole);
     Cookies.set("frontend_session", "true", { path: "/", expires: 7 });
+    Cookies.set("user_role", userRole, { path: "/", expires: 7 });
   };
 
   const dispatch = useDispatch();

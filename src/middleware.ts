@@ -16,6 +16,13 @@ function getRoleFromCookies(req: NextRequest): Role {
     return null;
   }
 
+  // 1. Direct role cookie set by client-side auth context (works across different backend domains like Render)
+  const roleCookie = req.cookies.get("user_role")?.value as Role;
+  if (roleCookie === "admin" || roleCookie === "company" || roleCookie === "user") {
+    return roleCookie;
+  }
+
+  // 2. Fallback check for same-domain or localhost auth cookies
   const hasAdmin =
     req.cookies.has("adminAccessToken") ||
     req.cookies.has("adminRefreshToken");
