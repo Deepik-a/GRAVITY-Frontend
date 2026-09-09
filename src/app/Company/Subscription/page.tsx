@@ -5,7 +5,7 @@ import { SubscriptionPlan } from "@/types/SubscriptionTypes";
 import { getSubscriptionPlans, createSubscriptionCheckout } from "@/services/SubscriptionService";
 import { getProfile } from "@/services/CompanyService";
 import { toast } from "react-toastify";
-import { Check, ShieldCheck, CreditCard, Calendar, Star } from "lucide-react";
+import { Check, ShieldCheck, CreditCard, Calendar, Star, Lock } from "lucide-react";
 
 interface CurrentSubscription {
   planId?: string;
@@ -60,10 +60,26 @@ export default function CompanySubscriptionPage() {
     }
   };
 
+  const isActive = currentSub?.status === 'active';
+  
+  // Find name of current plan if active
+  const currentPlanDetails = plans.find(p => p._id === currentSub?.planId);
+  const currentPlanName = (currentPlanDetails?.name || currentSub?.planName || "").toLowerCase();
+  const hasActiveBasicPlan = isActive && currentPlanName.includes("basic");
+
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!companyId) {
         toast.error("Company information missing. Please re-login.");
         return;
+    }
+
+    const planName = plan.name.toLowerCase();
+    const isUpgradePlan = planName.includes("upgrade");
+
+    if (isUpgradePlan && !hasActiveBasicPlan) {
+      alert("Please subscribe to the Basic plan first before upgrading.");
+      toast.warning("Please subscribe to the Basic plan first before upgrading.");
+      return;
     }
 
     setProcessingId(plan._id);
@@ -75,11 +91,6 @@ export default function CompanySubscriptionPage() {
       setProcessingId(null);
     }
   };
-
-  const isActive = currentSub?.status === 'active';
-  
-  // Find name of current plan if active
-  const currentPlanDetails = plans.find(p => p._id === currentSub?.planId);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-12 text-black">
@@ -144,17 +155,24 @@ export default function CompanySubscriptionPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {plans.map((plan) => {
                  const isCurrent = currentSub?.planId === plan._id && isActive;
-                 const currentName = currentPlanDetails?.name?.toLowerCase();
                  const planName = plan.name.toLowerCase();
+                 const isUpgradePlan = planName.includes("upgrade");
+                 const isRestrictedUpgrade = isUpgradePlan && !hasActiveBasicPlan;
 
-                 // Optimization: Highlight "Upgrade Plan" if they are on "Basic Plan"
-                 const isMajorUpgrade = currentName === 'basic plan' && planName === 'upgrade plan';
+                 // Highlight "Upgrade Plan" if they have an active Basic Plan
+                 const isMajorUpgrade = hasActiveBasicPlan && isUpgradePlan;
                  
                  return (
                     <div 
                         key={plan._id} 
                         className={`bg-white rounded-3xl shadow-xl overflow-hidden border-2 flex flex-col transition-all duration-300 transform hover:-translate-y-2 relative
-                        ${isCurrent ? 'border-green-500 ring-4 ring-green-500/10' : isMajorUpgrade ? 'border-blue-500 scale-105 z-10' : 'border-transparent hover:border-gray-200'}
+                        ${isCurrent 
+                            ? 'border-green-500 ring-4 ring-green-500/10' 
+                            : isMajorUpgrade 
+                            ? 'border-blue-500 scale-105 z-10' 
+                            : isRestrictedUpgrade
+                            ? 'border-amber-200 bg-gray-50/70'
+                            : 'border-transparent hover:border-gray-200'}
                         `}
                     >
                         {isCurrent ? (
@@ -165,10 +183,17 @@ export default function CompanySubscriptionPage() {
                             <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest">
                                 Recommended Upgrade
                             </div>
+                        ) : isRestrictedUpgrade ? (
+                            <div className="absolute top-0 left-0 right-0 bg-amber-500 text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 z-10 shadow-sm">
+                                <Lock size={13} /> Requires Active Basic Plan
+                            </div>
                         ) : null}
                         
-                        <div className={`p-8 ${(isCurrent || isMajorUpgrade) ? 'pt-10' : ''}`}>
-                            <h3 className="text-2xl font-black mb-2 text-gray-900">{plan.name}</h3>
+                        <div className={`p-8 ${(isCurrent || isMajorUpgrade || isRestrictedUpgrade) ? 'pt-10' : ''}`}>
+                            <h3 className="text-2xl font-black mb-2 text-gray-900 flex items-center justify-between">
+                              {plan.name}
+                              {isRestrictedUpgrade && <Lock size={18} className="text-amber-500" />}
+                            </h3>
                             <p className="text-gray-500 font-medium text-sm mb-6">{plan.description}</p>
                             
                             <div className="flex items-baseline mb-8">
@@ -182,6 +207,8 @@ export default function CompanySubscriptionPage() {
                                 className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95
                                     ${isCurrent 
                                         ? 'bg-green-100 text-green-700 cursor-default shadow-none' 
+                                        : isRestrictedUpgrade
+                                        ? 'bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-800 border border-gray-200 hover:border-amber-300 shadow-none cursor-pointer'
                                         : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:shadow-xl'}
                                     ${processingId === plan._id ? 'opacity-70 cursor-wait' : ''}
                                 `}
@@ -190,6 +217,8 @@ export default function CompanySubscriptionPage() {
                                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                                 ) : isCurrent ? (
                                     <> <Check size={20} /> Active </>
+                                ) : isRestrictedUpgrade ? (
+                                    <> <Lock size={18} /> Upgrade Plan (Requires Basic) </>
                                 ) : (
                                     <> <CreditCard size={20} /> Choose {plan.name} </>
                                 )}

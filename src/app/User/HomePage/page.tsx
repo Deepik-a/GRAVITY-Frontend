@@ -30,7 +30,7 @@ const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?
         if (!startTime) startTime = timestamp;
         const progress = Math.min((timestamp - startTime) / duration, 1);
         setCount(Math.floor(progress * end));
-        
+
         if (progress < 1) {
           animationFrame = requestAnimationFrame(animate);
         }
@@ -42,7 +42,7 @@ const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?
   }, [isInView, end, duration, controls]);
 
   return (
-    <motion.h2 
+    <motion.h2
       ref={ref}
       initial={{ opacity: 0, scale: 0.5 }}
       animate={controls}
@@ -60,20 +60,20 @@ const CountUp = ({ end, duration = 2000, suffix = "" }: { end: number; duration?
 const StatCard = ({ stat, index }: { stat: { icon: React.ReactNode; label: string; value: number; suffix: string; color: string }; index: number }) => {
   const cardRef = useRef(null);
   const isInView = useInView(cardRef, { once: true, amount: 0.2 });
-  
+
   return (
-    <motion.div 
+    <motion.div
       ref={cardRef}
       initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
       transition={{ duration: 0.5, delay: index * 0.1, type: "spring", stiffness: 150 }}
       className="relative group cursor-pointer"
     >
-    <div 
-  className="p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border border-[#EEB21B]/10   transition-all duration-500 flex flex-col items-center text-center h-full relative z-10 overflow-hidden"
-  style={{ background: stat.color }}
->
-        <motion.div 
+      <div
+        className="p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border border-[#EEB21B]/10   transition-all duration-500 flex flex-col items-center text-center h-full relative z-10 overflow-hidden"
+        style={{ background: stat.color }}
+      >
+        <motion.div
           className="flex justify-center mb-2"
           animate={isInView ? { rotate: [0, 360] } : {}}
           transition={{ duration: 0.8, delay: index * 0.1 }}
@@ -124,35 +124,35 @@ function HomePageContent() {
           setFavourites(favs.map((f: { _id?: string, id?: string }) => f._id || f.id || ""));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
     getPublicStats()
       .then(setStats)
-      .catch(() => {});
+      .catch(() => { });
   }, [])
 
   const handleToggleFavourite = useCallback(async (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-        const updatedFavs = await toggleFavourite(companyId);
-        setFavourites(updatedFavs);
-        const isNowFav = updatedFavs.includes(companyId);
-        toast.success(isNowFav ? "Added to favorites" : "Removed from favorites");
+      const updatedFavs = await toggleFavourite(companyId);
+      setFavourites(updatedFavs);
+      const isNowFav = updatedFavs.includes(companyId);
+      toast.success(isNowFav ? "Added to favorites" : "Removed from favorites");
     } catch {
-        toast.error("Please login to manage favorites");
+      toast.error("Please login to manage favorites");
     }
   }, []);
 
   // // Gradient for stats section
   // const statsGradient = "linear-gradient(to right, #020D2E, #0F2FA8)";
 
- const statItems = [
-  { label: "SUCCESSFUL PROJECTS", value: stats.successfulProjects, suffix: "+", icon: <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
-  { label: "HAPPY CUSTOMERS", value: stats.happyCustomers, suffix: "+", icon: <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
-  { label: "EXPERT CONSULTANTS", value: stats.expertConsultants, suffix: "+", icon: <Award className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
-  { label: "YEARS OF EXCELLENCE", value: stats.yearsExperience, suffix: "+", icon: <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
-  { label: "ONGOING PROJECTS", value: stats.ongoingProjects, suffix: "", icon: <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
-];
+  const statItems = [
+    { label: "SUCCESSFUL PROJECTS", value: stats.successfulProjects, suffix: "+", icon: <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+    { label: "HAPPY CUSTOMERS", value: stats.happyCustomers, suffix: "+", icon: <Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+    { label: "EXPERT CONSULTANTS", value: stats.expertConsultants, suffix: "+", icon: <Award className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+    { label: "YEARS OF EXCELLENCE", value: stats.yearsExperience, suffix: "+", icon: <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+    { label: "ONGOING PROJECTS", value: stats.ongoingProjects, suffix: "", icon: <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-[#EEB21B]" />, color: "linear-gradient(to right, #020D2E, #0F2FA8)" },
+  ];
 
   const expertiseItems = [
     {
@@ -183,27 +183,27 @@ function HomePageContent() {
 
   return (
     <div className="bg-gray-50 text-gray-800 overflow-x-hidden">
-      
+
       {/* Hero Section with Carousel */}
       <section className="relative group">
         <HeroCarousel />
 
         {/* Stats Section - Reduced Height with Gradient Background */}
-      <div className="relative z-20 overflow-hidden ">
+        <div className="relative z-20 overflow-hidden ">
           {/* Animated background elements */}
           <div className="absolute inset-0 overflow-hidden">
-            <motion.div 
+            <motion.div
               className="absolute -top-40 -right-40 w-80 h-80 bg-transparent rounded-full blur-3xl"
-              animate={{ 
+              animate={{
                 scale: [1, 1.2, 1],
                 x: [0, -50, 0],
                 y: [0, 30, 0]
               }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
             />
-            <motion.div 
+            <motion.div
               className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl"
-              animate={{ 
+              animate={{
                 scale: [1, 1.3, 1],
                 x: [0, 50, 0],
                 y: [0, -30, 0]
@@ -247,14 +247,14 @@ function HomePageContent() {
           </h2>
           <div className="w-20 h-1 bg-gradient-to-r from-[#020D2E] to-[#0F2FA8] mx-auto mb-4 sm:mb-6 rounded-full"></div>
           <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto px-4">
-            Specialized solutions tailored to your unique needs across residential, 
+            Specialized solutions tailored to your unique needs across residential,
             commercial, and luxury villa projects
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {expertiseItems.map((item, index) => (
-            <motion.div 
+            <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -264,27 +264,27 @@ function HomePageContent() {
               className="group relative bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500"
             >
               <div className="relative h-48 sm:h-56 md:h-64 overflow-hidden">
-                <Image 
+                <Image
 
 
-                  src={item.image} 
+                  src={item.image}
                   alt={item.title}
                   width={800}
                   height={600}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                
+
                 {/* Animated overlay on hover */}
-                <motion.div 
+                <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-[#020D2E]/50 to-[#0F2FA8]/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   initial={false}
                   animate={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
                 />
-                
+
                 <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                  <motion.div 
+                  <motion.div
                     className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-[#020D2E] to-[#0F2FA8] rounded-full flex items-center justify-center shadow-lg"
                     whileHover={{ scale: 1.1, rotate: 360 }}
                     transition={{ duration: 0.5 }}
@@ -294,13 +294,13 @@ function HomePageContent() {
                   <h3 className="text-xl sm:text-2xl font-bold text-white">{item.title}</h3>
                 </div>
               </div>
-              
+
               <div className="p-5 sm:p-6">
                 <p className="text-gray-600 text-sm sm:text-base mb-4">{`Creating ${item.title.toLowerCase()} spaces that inspire and delight`}</p>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-5 sm:mb-6">
                   {item.features.map((feature, idx) => (
-                    <motion.div 
-                      key={idx} 
+                    <motion.div
+                      key={idx}
                       className="flex items-center gap-1 sm:gap-2"
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -312,13 +312,13 @@ function HomePageContent() {
                   ))}
                 </div>
                 <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-gray-200">
-                  <motion.span 
+                  <motion.span
                     className="text-xs sm:text-sm font-bold bg-gradient-to-r from-[#020D2E] to-[#0F2FA8] bg-clip-text text-transparent"
                     whileHover={{ scale: 1.05 }}
                   >
                     {item.stat}
                   </motion.span>
-             
+
                 </div>
               </div>
             </motion.div>
@@ -348,9 +348,9 @@ function HomePageContent() {
           </h2>
           <div className="w-20 h-1 bg-gradient-to-r from-[#020D2E] to-[#0F2FA8] mx-auto rounded-full"></div>
         </motion.div>
-        
+
         {error && (
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center text-red-500 mb-4 text-sm"
@@ -358,7 +358,7 @@ function HomePageContent() {
             {error}
           </motion.p>
         )}
-        
+
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-4">
             {[...Array(3)].map((_, i) => (
@@ -366,9 +366,9 @@ function HomePageContent() {
             ))}
           </div>
         )}
-        
+
         {!loading && !error && companies.length === 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center py-12"
@@ -381,15 +381,15 @@ function HomePageContent() {
             <p className="text-gray-500 text-sm">No companies available yet. Please check back later.</p>
           </motion.div>
         )}
-        
-        <motion.div 
+
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mt-4"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, staggerChildren: 0.1 }}
         >
-          {companies.map((company, index) => (
-            <CompanyCard 
+          {(companies || []).map((company, index) => (
+            <CompanyCard
               key={company.id}
               company={company as unknown as Company}
               index={index}
@@ -406,7 +406,7 @@ function HomePageContent() {
 export default function Home() {
   return (
     <Suspense fallback={
-       <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#0F1E50]"></div>
           <p className="text-[#0F1E50] font-bold animate-pulse">Loading Premium Professionals...</p>

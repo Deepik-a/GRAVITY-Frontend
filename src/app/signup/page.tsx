@@ -39,8 +39,7 @@ function SignupContent() {
     if (userType === 'user' || userType === 'company') {
       setRole(userType);
       console.log(" Role detected from URL:", userType);
-    } else if (isSignup && !role) {
-      // Set a default role if none found in URL and we are signing up
+    } else if (!role) {
       setRole('user');
     }
   }, [searchParams, isSignup, role]);
@@ -796,10 +795,12 @@ console.log(res,"res from signup")
                       style={{ animationDelay: "0.1s" }}
                     >
                       <h2 className="text-3xl font-bold bg-gradient-to-r from-[#081C45] to-[#1E40AF] bg-clip-text text-transparent mb-2">
-                        Welcome Back
+                        {role === "company" ? "Company Sign In" : "Welcome Back"}
                       </h2>
                       <p className="text-gray-600 text-sm">
-                        Sign in to continue building your dreams
+                        {role === "company"
+                          ? "Sign in to manage your company profile and services"
+                          : "Sign in to continue building your dreams"}
                       </p>
                     </div>
 

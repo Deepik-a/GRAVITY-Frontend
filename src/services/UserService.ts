@@ -28,8 +28,14 @@ export interface SlotConfig {
 
 export const getAllCompanies = async (params: Record<string, unknown> = {}): Promise<{ companies: CompanyProfile[]; total: number; totalPages: number }> => {
   try {
-    const response = await api.get<{ companies: CompanyProfile[]; total: number; totalPages: number }>(API_ROUTES.USER.COMPANIES, { params });
-    return response.data;
+    const response = await api.get<{ companies?: CompanyProfile[]; data?: CompanyProfile[]; total: number; totalPages: number }>(API_ROUTES.USER.COMPANIES, { params });
+    const companies = response.data?.companies || response.data?.data || [];
+    return {
+      ...response.data,
+      companies,
+      total: response.data?.total ?? companies.length,
+      totalPages: response.data?.totalPages ?? 1,
+    };
   } catch (error) {
     throw new Error(extractAxiosError(error));
   }

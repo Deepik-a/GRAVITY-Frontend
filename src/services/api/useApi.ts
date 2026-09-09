@@ -51,13 +51,16 @@ api.interceptors.response.use(
              
              // For protected paths, determine redirect based on stored role or current path
              const isAdmin = role === "admin" || path.startsWith("/Admin");
+             const isCompany = role === "company" || path.startsWith("/Company");
              
              // Delay redirect to allow toast to be visible
              setTimeout(() => {
                 if (isAdmin) {
                    window.location.href = "/Login";
+                } else if (isCompany) {
+                   window.location.href = "/signup?show=login&userType=company";
                 } else {
-                   window.location.href = "/signup?show=login";
+                   window.location.href = "/signup?show=login&userType=user";
                 }
              }, 1500);
           }

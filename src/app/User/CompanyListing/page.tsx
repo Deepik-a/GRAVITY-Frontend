@@ -19,7 +19,7 @@ function CompanyListingContent() {
   const [totalPages, setTotalPages] = useState(0)
   const [fadeIn, setFadeIn] = useState(false)
   const [favourites, setFavourites] = useState<string[]>([])
-  
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -63,26 +63,26 @@ function CompanyListingContent() {
     // Fetch favourites
     getFavourites()
       .then(favs => {
-          if (Array.isArray(favs)) {
-              setFavourites(favs.map((f: { _id?: string, id?: string }) => f._id || f.id || ""));
-          }
+        if (Array.isArray(favs)) {
+          setFavourites(favs.map((f: { _id?: string, id?: string }) => f._id || f.id || ""));
+        }
       })
       .catch(() => {
-          // Ignore error (likely not logged in)
+        // Ignore error (likely not logged in)
       });
   }, [])
-  
+
   // optimized: useCallback to prevent unnecessary function recreation
   const handleToggleFavourite = useCallback(async (e: React.MouseEvent, companyId: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-        const updatedFavs = await toggleFavourite(companyId);
-        setFavourites(updatedFavs);
-        const isNowFav = updatedFavs.includes(companyId);
-        toast.success(isNowFav ? "Added to favorites" : "Removed from favorites");
+      const updatedFavs = await toggleFavourite(companyId);
+      setFavourites(updatedFavs);
+      const isNowFav = updatedFavs.includes(companyId);
+      toast.success(isNowFav ? "Added to favorites" : "Removed from favorites");
     } catch {
-        toast.error("Please login to manage favorites");
+      toast.error("Please login to manage favorites");
     }
   }, []);
 
@@ -104,11 +104,13 @@ function CompanyListingContent() {
       }
 
       const response = await getAllCompanies(params)
-      setCompanies(response.companies as unknown as Company[])
-      setTotal(response.total)
-      setTotalPages(response.totalPages)
+      const list = (response.companies || []) as unknown as Company[]
+      setCompanies(Array.isArray(list) ? list : [])
+      setTotal(response.total ?? 0)
+      setTotalPages(response.totalPages ?? 0)
     } catch (error) {
       console.error("Failed to fetch companies:", error)
+      setCompanies([])
     } finally {
       setLoading(false)
     }
@@ -120,14 +122,14 @@ function CompanyListingContent() {
 
   // optimized: useCallback for handlers
   const handleCategoryChange = useCallback((category: string) => {
-    setSelectedCategories(prev => 
+    setSelectedCategories(prev =>
       prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
     )
     setPage(1)
   }, []);
 
   const handleServiceChange = useCallback((service: string) => {
-    setSelectedServices(prev => 
+    setSelectedServices(prev =>
       prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]
     )
     setPage(1)
@@ -168,7 +170,7 @@ function CompanyListingContent() {
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Hero Header */}
-      <div 
+      <div
         className="relative h-80 bg-cover bg-center bg-no-repeat transition-all duration-700"
         style={{ backgroundImage: "url('/assets/high-building-construction-city.jpg')" }}
       >
@@ -176,72 +178,72 @@ function CompanyListingContent() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20 transition-all duration-700"></div>
 
         {/* Hero Content */}
-      <div className={`relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-  <div className="flex items-center justify-center min-h-[400px]">
-    {/* Search Bar Centered */}
-    <div className="max-w-4xl w-full mx-auto animate-fadeInUp">
-      <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 shadow-2xl transform transition-all duration-500 hover:shadow-3xl border border-white/20">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-3">
-            <div className="relative group">
-              <input 
-                type="text" 
-                placeholder="Search companies by name or services..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-12 py-4 pr-12 rounded-xl bg-white/95 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-[#FFD700]/30 focus:outline-none transition-all duration-300 group-hover:shadow-lg"
-              />
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-              </svg>
-              {searchQuery.trim().length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setDebouncedQuery('');
-                    setPage(1);
-                  }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors"
-                  aria-label="Clear search"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              )}
+        <div className={`relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-1000 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="flex items-center justify-center min-h-[400px]">
+            {/* Search Bar Centered */}
+            <div className="max-w-4xl w-full mx-auto animate-fadeInUp">
+              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 shadow-2xl transform transition-all duration-500 hover:shadow-3xl border border-white/20">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-3">
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        placeholder="Search companies by name or services..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-12 py-4 pr-12 rounded-xl bg-white/95 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-[#FFD700]/30 focus:outline-none transition-all duration-300 group-hover:shadow-lg"
+                      />
+                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-300 group-hover:text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      {searchQuery.trim().length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setDebouncedQuery('');
+                            setPage(1);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="group">
+                    <button
+                      onClick={() => fetchCompanies()}
+                      className="w-full px-6 py-4 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#0F1E50] font-bold rounded-xl shadow-lg hover:shadow-2xl transform transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 animate-shimmer"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        Search
+                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="group">
-            <button 
-              onClick={() => fetchCompanies()}
-              className="w-full px-6 py-4 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-[#0F1E50] font-bold rounded-xl shadow-lg hover:shadow-2xl transform transition-all duration-300 hover:scale-105 hover:-translate-y-0.5 animate-shimmer"
-            >
-              <span className="flex items-center justify-center gap-2">
-                Search
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                </svg>
-              </span>
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
+
           {/* Advanced Filters */}
           <aside className="lg:col-span-1">
             <div className="glass-effect rounded-2xl p-6 sticky top-6 shadow-xl transition-all duration-500 hover:shadow-2xl">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-lg flex items-center justify-center shadow-md">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                 </span>
                 Advanced Filters
@@ -252,20 +254,20 @@ function CompanyListingContent() {
                   <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Project Category</label>
                   <div className="space-y-2">
                     {['Residential', 'Commercial', 'Villas'].map((category) => (
-                      <label 
-                        key={category} 
+                      <label
+                        key={category}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50/80 cursor-pointer transition-all duration-300 hover:translate-x-1 animate-fadeInUp"
                       >
                         <div className="relative">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={selectedCategories.includes(category)}
                             onChange={() => handleCategoryChange(category)}
                             className="w-5 h-5 appearance-none border-2 border-gray-300 rounded checked:border-[#FFD700] checked:bg-[#FFD700] focus:ring-2 focus:ring-[#FFD700]/50 transition-all duration-300"
                           />
                           {selectedCategories.includes(category) && (
                             <svg className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
                         </div>
@@ -279,20 +281,20 @@ function CompanyListingContent() {
                   <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Specialized Services</label>
                   <div className="space-y-2 h-48 overflow-y-auto pr-2 custom-scrollbar">
                     {['Architecture', 'Interior Design', 'Renovation'].map((service) => (
-                      <label 
-                        key={service} 
+                      <label
+                        key={service}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50/80 cursor-pointer transition-all duration-300 hover:translate-x-1"
                       >
                         <div className="relative">
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             checked={selectedServices.includes(service)}
                             onChange={() => handleServiceChange(service)}
                             className="w-5 h-5 appearance-none border-2 border-gray-300 rounded checked:border-[#FFD700] checked:bg-[#FFD700] focus:ring-2 focus:ring-[#FFD700]/50 transition-all duration-300"
                           />
                           {selectedServices.includes(service) && (
                             <svg className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
                         </div>
@@ -307,10 +309,10 @@ function CompanyListingContent() {
                     Experience: <span className="text-[#FFD700]">{experienceLevel}+ years</span>
                   </label>
                   <div className="px-3">
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="30" 
+                    <input
+                      type="range"
+                      min="0"
+                      max="30"
                       value={experienceLevel}
                       onChange={(e) => {
                         setExperienceLevel(parseInt(e.target.value))
@@ -318,7 +320,7 @@ function CompanyListingContent() {
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider transition-all duration-300 hover:bg-gray-300"
                       style={{
-                        background: `linear-gradient(to right, #FFD700 0%, #FFD700 ${(experienceLevel/30)*100}%, #E5E7EB ${(experienceLevel/30)*100}%, #E5E7EB 100%)`
+                        background: `linear-gradient(to right, #FFD700 0%, #FFD700 ${(experienceLevel / 30) * 100}%, #E5E7EB ${(experienceLevel / 30) * 100}%, #E5E7EB 100%)`
                       }}
                     />
                     <div className="flex justify-between text-xs text-gray-600 mt-2">
@@ -331,7 +333,7 @@ function CompanyListingContent() {
                 <div className="animate-fadeIn">
                   <label className="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Company Size</label>
                   <div className="relative group">
-                    <select 
+                    <select
                       value={companySize}
                       onChange={(e) => {
                         setCompanySize(e.target.value)
@@ -345,7 +347,7 @@ function CompanyListingContent() {
                       <option value="50+ employees">Large (50+)</option>
                     </select>
                     <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none transition-transform duration-300 group-hover:text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </div>
@@ -355,9 +357,9 @@ function CompanyListingContent() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="relative group">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">₹</span>
-                      <input 
-                        type="number" 
-                        placeholder="Min" 
+                      <input
+                        type="number"
+                        placeholder="Min"
                         value={minPrice}
                         onChange={(e) => {
                           setMinPrice(e.target.value)
@@ -368,9 +370,9 @@ function CompanyListingContent() {
                     </div>
                     <div className="relative group">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">₹</span>
-                      <input 
-                        type="number" 
-                        placeholder="Max" 
+                      <input
+                        type="number"
+                        placeholder="Max"
                         value={maxPrice}
                         onChange={(e) => {
                           setMaxPrice(e.target.value)
@@ -382,14 +384,14 @@ function CompanyListingContent() {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={handleResetFilters}
                   className="w-full px-6 py-3 border-2 border-[#0F1E50] bg-transparent text-[#0F1E50] font-bold rounded-xl hover:bg-[#0F1E50] hover:text-white shadow-md hover:shadow-lg transform transition-all duration-300 hover:scale-105 animate-fadeInUp"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Reset Filters
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   </span>
                 </button>
@@ -409,7 +411,7 @@ function CompanyListingContent() {
                   </p>
                 </div>
                 <div className="relative group">
-                  <select 
+                  <select
                     onChange={handleSortChange}
                     className="px-4 py-2 border-2 border-gray-200 bg-white text-gray-800 rounded-lg focus:ring-2 focus:ring-[#FFD700]/50 focus:border-[#FFD700] outline-none transition-all duration-300 group-hover:border-[#FFD700]/50 appearance-none pr-8"
                   >
@@ -419,7 +421,7 @@ function CompanyListingContent() {
                     <option value="experience">Most Experienced</option>
                   </select>
                   <svg className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-[#FFD700] transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
@@ -437,7 +439,7 @@ function CompanyListingContent() {
               <div className="glass-effect rounded-2xl p-12 text-center shadow-xl animate-bounceIn">
                 <div className="w-24 h-24 bg-gradient-to-r from-[#FFD700]/20 to-[#FFA500]/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
                   <svg className="w-12 h-12 text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900">No companies found</h3>
@@ -447,8 +449,8 @@ function CompanyListingContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {companies.map((company, index) => (
-                  <CompanyCard 
+                {(companies || []).map((company, index) => (
+                  <CompanyCard
                     key={company.id}
                     company={company}
                     index={index}
@@ -464,7 +466,7 @@ function CompanyListingContent() {
               <div className="mt-12 flex justify-center animate-fadeInUp">
                 <nav className="glass-effect rounded-2xl p-2 shadow-xl">
                   <div className="flex items-center gap-1">
-                    <button 
+                    <button
                       onClick={() => setPage(prev => Math.max(1, prev - 1))}
                       disabled={page === 1}
                       className="px-4 py-2 text-[#0F1E50] font-semibold rounded-xl hover:bg-[#0F1E50]/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
@@ -472,19 +474,18 @@ function CompanyListingContent() {
                       Previous
                     </button>
                     {[...Array(totalPages)].map((_, i) => (
-                      <button 
+                      <button
                         key={i + 1}
                         onClick={() => setPage(i + 1)}
-                        className={`px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-110 ${
-                          page === i + 1 
-                            ? 'bg-gradient-to-r from-[#0F1E50] to-[#1A3A8F] text-white shadow-lg' 
+                        className={`px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-110 ${page === i + 1
+                            ? 'bg-gradient-to-r from-[#0F1E50] to-[#1A3A8F] text-white shadow-lg'
                             : 'text-[#0F1E50] hover:bg-[#0F1E50]/10'
-                        }`}
+                          }`}
                       >
                         {i + 1}
                       </button>
                     ))}
-                    <button 
+                    <button
                       onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={page === totalPages}
                       className="px-4 py-2 text-[#0F1E50] font-semibold rounded-xl hover:bg-[#0F1E50]/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"

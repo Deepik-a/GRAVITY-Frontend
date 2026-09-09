@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   const logout = useCallback(async (options?: { showToast?: boolean }) => {
-    const currentRole = role;
+    const currentRole = role || (typeof window !== "undefined" ? (localStorage.getItem("role") as "user" | "company" | "admin" | null) : null);
     const showToast = options?.showToast ?? true;
   
     try {
@@ -54,8 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (currentRole === "admin") {
         window.location.href = "/Login";
+      } else if (currentRole === "company") {
+        window.location.href = "/signup?show=login&userType=company";
       } else {
-        window.location.href = "/signup?show=login";
+        window.location.href = "/signup?show=login&userType=user";
       }
     }
   }, [role]); 
@@ -143,9 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (path.startsWith("/Admin")) {
           router.replace("/Login");
         } else if (path.startsWith("/Company")) {
-          router.replace("/signup?show=login");
+          router.replace("/signup?show=login&userType=company");
         } else {
-          router.replace("/signup?show=login");
+          router.replace("/signup?show=login&userType=user");
         }
       }
     };

@@ -81,9 +81,14 @@ export function middleware(req: NextRequest) {
 
     if (pathname.startsWith("/Admin")) {
       url.pathname = ROUTES.LOGIN;
+    } else if (pathname.startsWith("/Company")) {
+      url.pathname = ROUTES.SIGNUP;
+      url.searchParams.set("show", "login");
+      url.searchParams.set("userType", "company");
     } else {
       url.pathname = ROUTES.SIGNUP;
       url.searchParams.set("show", "login");
+      url.searchParams.set("userType", "user");
     }
 
     url.searchParams.set("next", pathname + req.nextUrl.search);
